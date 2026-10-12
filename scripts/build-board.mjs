@@ -338,9 +338,15 @@ const shownDays = Object.keys(state.days).sort().reverse()
   .filter((k) => (tba ? true : k >= dayKey(start) && k <= dayKey(Math.min(end, now) - 1))).slice(0, tba ? 30 : KEEP_DAYS);
 const names = new Set(shownDays.flatMap((k) => state.days[k].map(([u]) => u)));
 for (const u of Object.keys(state.meta)) if (!Object.values(state.days).some((rows) => rows.some(([x]) => x === u))) delete state.meta[u];
+// private profiles that traded today: not ranked, but the page says how many there are
+const hiddenToday = Object.values(state.users).filter((s) => s.p && Object.keys(s.f).some((id) => state.rounds[id] && dayKey(state.rounds[id][0] * 1000 - ROUND) === todayKey)).length;
+// The page reads only this file. (board.json, the whole-window ranking, is still written: a competition will need it.)
 const days = {
   updatedAt: Date.now(),
   today: dayKey(now),
+  window: board.window,
+  event: board.event,
+  hidden: hiddenToday,
   users: Object.fromEntries([...names].map((u) => [u, state.meta[u] || ["", 0, ""]])),
   days: shownDays.map((k) => ({ d: k, rounds: (state.dayTotals[k] || [0, 0])[0], volume: (state.dayTotals[k] || [0, 0])[1], rows: state.days[k] })),
   // today's totals even when nobody ranked has traded yet
