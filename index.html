@@ -79,19 +79,18 @@
   .btn[disabled] { opacity: .55; pointer-events: none; }
 
   /* ---------- hero ---------- */
-  .hero { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(0,1fr); gap: 16px; margin-top: 20px; }
-  .intro { padding: 24px; display: flex; flex-direction: column; gap: 16px; justify-content: space-between; }
+  .hero { display: grid; grid-template-columns: minmax(0,1.75fr) minmax(0,1fr); gap: 16px; margin-top: 20px; }
+  .side-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
   .eyebrow { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 8px; font-size: 12px; font-weight: 600; background: var(--control); color: var(--ink-2); white-space: nowrap; }
   .chip.up { background: var(--up-soft); color: var(--up-text); }
   .chip.down { background: var(--down-soft); color: var(--down-text); }
   .chip .btc { width: 14px; height: 14px; border-radius: 4px; background: #f7931a; color: #fff; font-size: 10px; display: grid; place-items: center; font-weight: 700; }
-  h1 { font-size: clamp(28px, 4.2vw, 40px); line-height: 1.08; font-weight: 700; letter-spacing: -.02em; text-wrap: balance; }
+  h1 { font-size: clamp(26px, 3.4vw, 34px); line-height: 1.1; font-weight: 700; letter-spacing: -.02em; }
   h1 em { font-style: normal; color: var(--up-text); }
-  .lede { font-size: 15px; color: var(--ink-2); max-width: 52ch; }
   .facts { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); border: 1px solid var(--line); border-radius: 12px; }
   .facts[hidden] { display: none; }
-  .today { display: flex; flex-direction: column; gap: 8px; }
+  .today { flex: 1; padding: 16px 20px 20px; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
   .today-head { display: flex; align-items: baseline; gap: 8px; }
   .today-head b { font-size: 14px; font-weight: 600; }
   .today-head small { font-size: 12.5px; color: var(--ink-2); }
@@ -101,7 +100,7 @@
   .fact b { display: block; font-size: 16px; font-weight: 600; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .fact b.tba { color: var(--ink-3); }
 
-  .live { padding: 24px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; }
+  .live { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
   .live-head { display: flex; align-items: center; gap: 10px; }
   .live-head .btc-lg { width: 40px; height: 40px; border-radius: 10px; background: #f7931a; color: #fff; display: grid; place-items: center; font-size: 22px; font-weight: 700; flex: none; }
   .live-head small { display: block; font-size: 12px; color: var(--ink-2); }
@@ -137,23 +136,23 @@
   .side:active { transform: scale(.98); }
 
   /* ---------- totals ---------- */
-  .totals { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-  .total { padding: 14px 18px; min-width: 0; }
-  .total + .total { border-left: 1px solid var(--line); }
-  .total small { display: block; font-size: 12px; color: var(--ink-3); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .total b { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+  /* today's numbers as a short list: label on the left, the figure on the right */
+  .totals { display: flex; flex-direction: column; }
+  .total { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 10px 0; border-radius: 8px; }
+  .total + .total { border-top: 1px solid var(--line-soft); }
+  .total small { font-size: 13.5px; color: var(--ink-2); font-weight: 500; }
+  .total b { font-size: 24px; font-weight: 700; letter-spacing: -.02em; }
 
   /* ---------- race chart ---------- */
-  .race { margin-top: 16px; padding: 16px 16px 12px; }
+  .race { padding: 20px 20px 14px; display: flex; flex-direction: column; min-width: 0; }
   .race-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
-  .race-head h2 { font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
-  .race-head p { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
+  .race-head p { font-size: 14px; color: var(--ink-2); margin-top: 6px; max-width: 46ch; }
   .race-ctl { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .seg { display: inline-flex; background: var(--control); border-radius: 10px; padding: 3px; }
   .seg button { height: 28px; padding: 0 10px; border: 0; background: none; border-radius: 8px; font-weight: 600; font-size: 12.5px; color: var(--ink-2); cursor: pointer; white-space: nowrap; }
   .seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(16,17,20,.12); }
   .race-ctl .btn { height: 34px; }
-  .race-box { position: relative; height: 440px; margin-top: 12px; }
+  .race-box { position: relative; flex: 1; min-height: 400px; margin-top: 12px; }
   .race-box canvas { width: 100%; height: 100%; display: block; touch-action: pan-y; }
   .race-legend { display: flex; gap: 6px 18px; flex-wrap: wrap; font-size: 12px; color: var(--ink-3); margin-top: 6px; }
   .race-legend i.dash { display: inline-block; width: 18px; height: 0; border-top: 2px dashed var(--ink-3); vertical-align: middle; margin-right: 6px; }
@@ -201,6 +200,10 @@
   .pod:hover { border-color: var(--line-hover, #cfd2d6); }
   .pod .top { display: flex; align-items: center; gap: 10px; min-width: 0; }
   .pod .place { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-weight: 700; font-size: 14px; flex: none; }
+  .pod { transition: transform .18s ease-out, border-color .15s; will-change: transform; }
+  .pod.p1::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,.5) 50%, transparent 58%); transform: translateX(-130%); animation: sheen 7s ease-in-out infinite; }
+  :root[data-theme="dark"] .pod.p1::after { background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,.09) 50%, transparent 58%); }
+  @keyframes sheen { 0%, 72% { transform: translateX(-130%); } 100% { transform: translateX(130%); } }
   /* gold, silver, bronze exactly as XO's referral tiers use them (base fill, ring, dark ink) */
   .pod.p1 .place { background: #C7B583; color: #3A331F; box-shadow: inset 0 0 0 1.5px #867852; }
   .pod.p2 .place { background: #B7BABE; color: #2C2E30; box-shadow: inset 0 0 0 1.5px #75787C; }
@@ -341,8 +344,6 @@
     .pod .top { flex: 1; }
     .pod .pnl { font-size: 20px; }
     .pod .sub, .pod svg.spark { display: none; }
-    .total { padding: 12px; }
-    .total b { font-size: 17px; }
     /* phones: the table becomes a list of cards, so every number is visible without scrolling sideways */
     .tscroll { display: none; }
     .mlist { display: block; }
@@ -366,7 +367,7 @@
     .find-row { flex-wrap: wrap; }
     .find label { width: 100%; }
     main.wrap { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
-    .race-box { height: 380px; }
+    .race-box { flex: none; height: 380px; min-height: 0; }
     .facts { grid-template-columns: 1fr 1fr; }
     .fact:nth-child(3) { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); }
   }
@@ -398,21 +399,67 @@
 
 <main class="wrap">
   <section class="hero">
-    <div class="card intro">
-      <div class="eyebrow">
-        <span class="chip"><span class="btc">₿</span><span>BTC<span class="long"> Up or Down</span> 5m</span></span>
-        <!-- the two chips and the facts row below exist only while a competition is switched on (config.json "event") -->
-        <span class="chip up ev" id="ev-name" hidden></span>
-        <span class="chip down ev" id="phase" hidden></span>
+    <!-- first screen: today's race, with the live round and today's numbers beside it -->
+    <div class="card race" id="race">
+      <div class="race-head">
+        <div>
+          <h1>Who's <em>up</em> on Pulse?</h1>
+          <p>Today's PnL race in XO Market's five-minute BTC rounds. Drag across the chart to rewind.</p>
+        </div>
+        <div class="race-ctl">
+          <div class="seg" id="race-n" role="group" aria-label="Traders shown">
+            <button data-n="5" aria-pressed="false"><span class="pre">Top </span>5</button><button data-n="10" aria-pressed="true"><span class="pre">Top </span>10</button><button data-n="20" aria-pressed="false"><span class="pre">Top </span>20</button>
+          </div>
+          <div class="seg" id="race-scale" role="group" aria-label="Scale">
+            <button data-log="1" aria-pressed="true">Log</button><button data-log="0" aria-pressed="false">Linear</button>
+          </div>
+          <button class="btn" id="race-play" aria-label="Replay the race"><span id="race-ic" aria-hidden="true">▶</span><span id="race-tx">Replay</span></button>
+        </div>
       </div>
-      <h1>Who's <em>up</em> on Pulse?</h1>
-      <p class="lede">Today's trading in XO Market's five-minute BTC rounds: who's in profit, who's racing ahead, and where you stand. Past days are in the leaderboard.</p>
-      <div class="facts ev" hidden>
-        <div class="fact"><small>Dates (UTC)</small><b id="f-dates"></b></div>
-        <div class="fact"><small>Prizes</small><b id="f-prizes"></b></div>
-        <div class="fact"><small id="f-left-label">Ranked by</small><b id="f-left">Net profit / loss</b></div>
+      <div class="race-box"><canvas id="race-cv" role="img" aria-label="Line chart of the leaders' cumulative PnL through today"></canvas></div>
+      <div class="race-legend"><span><i class="dash"></i>$0 line</span></div>
+    </div>
+
+    <div class="side-col">
+      <div class="card live" aria-live="off">
+        <div class="result" id="l-result"></div>
+        <div class="live-head">
+          <span class="btc-lg">₿</span>
+          <div><small id="l-window">Current round</small><b>BTC Up or Down 5m</b></div>
+          <span class="live-dot"><i></i><span id="l-state">LIVE</span></span>
+        </div>
+        <div class="live-now">
+          <div class="live-grid">
+            <div><small>Price to beat</small><div class="v num" id="l-price">…</div></div>
+            <div class="clock"><small id="l-clock-label">Ends in</small><div class="v num" id="l-clock">0:00</div></div>
+          </div>
+          <div class="meter"><i id="l-meter"></i></div>
+        </div>
+        <div class="past-wrap">
+          <small>Last rounds · BTC move</small>
+          <div class="past" id="l-past"></div>
+        </div>
+        <div class="odds">
+          <div class="odds-head"><span>Crowd odds this round</span><span class="num" id="o-pct"></span></div>
+          <div class="split" aria-hidden="true"><i id="o-bar"></i><i></i></div>
+          <div class="sides">
+            <a class="side up ref" target="_blank" rel="noopener" aria-label="Trade Up on XO Market">Up<b class="num" id="o-up"></b></a>
+            <a class="side down ref" target="_blank" rel="noopener" aria-label="Trade Down on XO Market">Down<b class="num" id="o-down"></b></a>
+          </div>
+        </div>
       </div>
-      <div class="today">
+
+      <div class="card today">
+        <!-- the chips and the facts row exist only while a competition is switched on (config.json "event") -->
+        <div class="eyebrow ev" hidden>
+          <span class="chip up" id="ev-name"></span>
+          <span class="chip down" id="phase"></span>
+        </div>
+        <div class="facts ev" hidden>
+          <div class="fact"><small>Dates (UTC)</small><b id="f-dates"></b></div>
+          <div class="fact"><small>Prizes</small><b id="f-prizes"></b></div>
+          <div class="fact"><small id="f-left-label">Ranked by</small><b id="f-left">Net profit / loss</b></div>
+        </div>
         <div class="today-head"><b>Today so far</b><small id="totals-note"></small></div>
         <div class="totals" aria-label="Today's totals">
           <div class="total"><small>Traders</small><b class="num" id="t-traders">–</b></div>
@@ -421,54 +468,6 @@
         </div>
       </div>
     </div>
-
-    <div class="card live" aria-live="off">
-      <div class="result" id="l-result"></div>
-      <div class="live-head">
-        <span class="btc-lg">₿</span>
-        <div><small id="l-window">Current round</small><b>BTC Up or Down 5m</b></div>
-        <span class="live-dot"><i></i><span id="l-state">LIVE</span></span>
-      </div>
-      <div class="live-now">
-        <div class="live-grid">
-          <div><small>Price to beat</small><div class="v num" id="l-price">…</div></div>
-          <div class="clock"><small id="l-clock-label">Ends in</small><div class="v num" id="l-clock">0:00</div></div>
-        </div>
-        <div class="meter"><i id="l-meter"></i></div>
-      </div>
-      <div class="past-wrap">
-        <small>Last rounds · BTC move</small>
-        <div class="past" id="l-past"></div>
-      </div>
-      <div class="odds">
-        <div class="odds-head"><span>Crowd odds this round</span><span class="num" id="o-pct"></span></div>
-        <div class="split" aria-hidden="true"><i id="o-bar"></i><i></i></div>
-        <div class="sides">
-          <a class="side up ref" target="_blank" rel="noopener" aria-label="Trade Up on XO Market">Up<b class="num" id="o-up"></b></a>
-          <a class="side down ref" target="_blank" rel="noopener" aria-label="Trade Down on XO Market">Down<b class="num" id="o-down"></b></a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="card race" id="race">
-    <div class="race-head">
-      <div>
-        <h2>Today's race</h2>
-        <p>Today's PnL of the leaders, round by round. Drag across the chart to rewind.</p>
-      </div>
-      <div class="race-ctl">
-        <div class="seg" id="race-n" role="group" aria-label="Traders shown">
-          <button data-n="5" aria-pressed="false"><span class="pre">Top </span>5</button><button data-n="10" aria-pressed="true"><span class="pre">Top </span>10</button><button data-n="20" aria-pressed="false"><span class="pre">Top </span>20</button>
-        </div>
-        <div class="seg" id="race-scale" role="group" aria-label="Scale">
-          <button data-log="1" aria-pressed="true">Log</button><button data-log="0" aria-pressed="false">Linear</button>
-        </div>
-        <button class="btn" id="race-play" aria-label="Replay the race"><span id="race-ic" aria-hidden="true">▶</span><span id="race-tx">Replay</span></button>
-      </div>
-    </div>
-    <div class="race-box"><canvas id="race-cv" role="img" aria-label="Line chart of the leaders' cumulative PnL through today"></canvas></div>
-    <div class="race-legend"><span><i class="dash"></i>$0 line</span></div>
   </section>
 
   <section class="card find" id="find">
@@ -716,6 +715,7 @@ function render() {
   const top3 = rows.slice(0, 3);
   $("podium-note").textContent = `since ${dayStartLocal()} · live`;
   $("totals-note").textContent = `since ${dayStartLocal()} · live`;
+  const podWas = new Map([...$("podium").querySelectorAll(".pod")].map((el) => [el.dataset.u, el.getBoundingClientRect()]));
   $("podium").innerHTML = top3.length ? top3.map((r, i) => `
     <div class="card pod p${i + 1}" data-u="${esc(r.u)}" tabindex="0" role="button" aria-label="${esc(r.u)}, rank ${i + 1}">
       <div class="top"><span class="place">${i + 1}</span>${avatar(r, "md")}<span class="name"><span>${esc(r.u)}</span>${r.v ? VER : ""}</span></div>
@@ -724,6 +724,11 @@ function render() {
       <div class="sub"><span><b class="num">${r.rounds.toLocaleString("en-US")}</b> ${plural(r.rounds)}</span><span><b class="num">${(winRate(r) * 100).toFixed(0)}%</b> won</span><span><b class="num">${money(r.vol, false)}</b> vol</span></div>
     </div>`).join("") : `<div class="card pod-empty">No settled rounds yet today. The day started at ${dayStartLocal()} your time.</div>`;
   animateNums($("podium"));
+  if (podWas.size && !noMotion() && !document.hidden) for (const el of $("podium").querySelectorAll(".pod")) {
+    const was = podWas.get(el.dataset.u), now = el.getBoundingClientRect();
+    if (!was) el.animate([{ opacity: 0, transform: "scale(.94)" }, { opacity: 1, transform: "none" }], { duration: 450, easing: "ease-out" }); // new to the top three
+    else if (Math.abs(was.left - now.left) > 1 || Math.abs(was.top - now.top) > 1) el.animate([{ transform: `translate(${was.left - now.left}px, ${was.top - now.top}px)` }, { transform: "none" }], { duration: 700, easing: "cubic-bezier(.2,.8,.2,1)" });
+  }
 
   // tabs + table
   const txt = (v) => (typeof v === "function" ? v() : v || "");
@@ -818,6 +823,15 @@ function renderYou() {
   } else $("you").innerHTML = "";
 }
 
+// the top-three cards lean towards the cursor (mouse only: on a phone it would fight scrolling)
+$("podium").addEventListener("pointermove", (e) => {
+  const card = e.target.closest(".pod");
+  if (!card || e.pointerType !== "mouse" || noMotion()) return;
+  const r = card.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+  card.style.transform = `perspective(800px) rotateX(${(-y * 7).toFixed(2)}deg) rotateY(${(x * 7).toFixed(2)}deg) translateY(-2px)`;
+});
+$("podium").addEventListener("pointerout", (e) => { const card = e.target.closest(".pod"); if (card && !card.contains(e.relatedTarget)) card.style.transform = ""; });
+
 // ---------- search ----------
 let searched = false, hot = -1;
 function suggest() {
@@ -896,11 +910,12 @@ function tickRound() {
 async function loadRound(startT) {
   try {
     const [act, past, mk] = await Promise.all([`pulse/markets?status=ACTIVE&limit=6`, `pulse/markets?limit=7`, `markets?marketScope=onlyClobPulse&statuses=ACTIVE&page=1&take=10`].map((q) => fetch(`${XO_API}/${q}`).then((r) => r.json())));
-    const market = (mk.data || []).find((m) => Date.parse(m.startsAt) === startT), up = market && (market.outcomes || []).find((o) => o.index === 0);
-    if (odds.start !== startT) { odds.start = startT; odds.p = null; $("o-up").textContent = $("o-down").textContent = $("o-pct").textContent = ""; $("o-bar").style.width = "50%"; }
-    odds.token = up ? up.outcomeTokenId : null;
+    const market = (mk.data || []).find((m) => Date.parse(m.startsAt) === startT), up = market && (market.outcomes || []).find((o) => o.index === 0), down = market && (market.outcomes || []).find((o) => o.index === 1);
+    if (odds.start !== startT) { odds.start = startT; odds.a = odds.b = null; $("o-up").textContent = $("o-down").textContent = $("o-pct").textContent = ""; $("o-bar").style.width = "50%"; }
+    odds.up = up ? up.outcomeTokenId : null;
+    odds.down = down ? down.outcomeTokenId : null;
     // start from XO's last known price, so the card isn't blank while the book has no two-sided quote (common in a round's last minute)
-    if (up && !$("o-up").textContent) setOdds(Number(up.currentPrice) / 1e6);
+    if (up && down && !$("o-up").textContent) setOdds(Number(up.currentPrice) / 1e6, Number(down.currentPrice) / 1e6);
     pollOdds();
     const cur = (act.data || []).find((m) => Date.parse(m.startsAt) === startT);
     if (cur && cur.openingPrice) setNum($("l-price"), "l-price", Number(cur.openingPrice), "price");
@@ -974,24 +989,31 @@ function settle(m) {
 tickRound();
 
 // ---------- crowd odds ----------
-// The price of Up in the live round, read from the public order book every few seconds.
-const odds = { start: 0, token: null, p: null };
+// What it costs right now to buy each side of the live round: the best ask for Up and the best ask for Down,
+// read from the public order book every few seconds. The split bar is the two asks relative to each other.
+const odds = { start: 0, up: null, down: null, a: null, b: null }; // token ids, last Up ask, last Down ask
 const cents = (p) => (p * 100).toFixed(1).replace(/\.0$/, "") + "¢";
+const ask = (token) => fetch(`${XO_BOOK}/price?token_id=${token}&side=SELL`).then((r) => r.json()).then((j) => Number(j.price)); // SELL side of the book = asks
 async function pollOdds() {
-  if (!odds.token || document.hidden) return;
-  const token = odds.token;
+  if (!odds.up || !odds.down || document.hidden) return;
+  const { up, down } = odds;
   try {
-    const j = await fetch(`${XO_BOOK}/midpoint?token_id=${token}`).then((r) => r.json());
-    if (token === odds.token) setOdds(Number(j.mid));
-  } catch {}
+    const [a, b] = await Promise.all([ask(up), ask(down)]);
+    if (up === odds.up) setOdds(a, b);
+  } catch {} // the book didn't answer: the last prices stay
 }
-function setOdds(p) {
-  if (!(p > 0 && p < 1)) return; // "0.000" means one side of the book is empty: keep the last price
-  if (odds.p == null) { $("o-up").textContent = cents(p); $("o-down").textContent = cents(1 - p); }
-  else if (Math.abs(odds.p - p) > 1e-9) { tweenNum($("o-up"), odds.p, p, "cents", 500); tweenNum($("o-down"), 1 - odds.p, 1 - p, "cents", 500); }
-  odds.p = p;
-  $("o-bar").style.width = `${(p * 100).toFixed(1)}%`;
-  $("o-pct").textContent = `${Math.round(p * 100)}% Up · ${100 - Math.round(p * 100)}% Down`;
+function setOdds(a, b) {
+  const ok = (p) => p > 0 && p < 1; // "0.000" means nobody is selling that side right now: keep its last price
+  for (const [el, key, p] of [[$("o-up"), "a", a], [$("o-down"), "b", b]]) {
+    if (!ok(p)) continue;
+    if (odds[key] == null) el.textContent = cents(p);
+    else if (Math.abs(odds[key] - p) > 1e-9) tweenNum(el, odds[key], p, "cents", 500);
+    odds[key] = p;
+  }
+  if (odds.a == null || odds.b == null) return;
+  const share = odds.a / (odds.a + odds.b);
+  $("o-bar").style.width = `${(share * 100).toFixed(1)}%`;
+  $("o-pct").textContent = `${Math.round(share * 100)}% Up · ${100 - Math.round(share * 100)}% Down`;
 }
 setInterval(pollOdds, 3000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) pollOdds(); });
@@ -1009,7 +1031,7 @@ function tickLeft() {
 const RACE_COLORS = ["#ff5c8a", "#7c5cff", "#2fc04a", "#f7931a", "#18b6d9", "#d9a400", "#e5484d", "#3b82f6", "#c026d3", "#14b8a6"];
 const RACE_MS = 8000, SUB = 6;
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const race = { n: 10, log: true, p: 1, hover: null, playing: false, t0: 0, visible: false, looping: false, played: false, hits: [], imgs: new Map() };
+const race = { n: 10, log: true, p: 1, hover: null, playing: false, t0: 0, visible: false, looping: false, played: false, morph: 0, hits: [], imgs: new Map() };
 
 // monotone cubic through [0, ...spark], sampled SUB times per step: smooth like the Pulse line, never overshoots
 function dense(r) {
@@ -1027,6 +1049,18 @@ function dense(r) {
   const first = out.findIndex((x) => Math.abs(x) > 0.004);
   out.from = first < 0 ? out.length - 1 : Math.max(0, first - SUB); // where this trader's first round lands
   return (r._d = out);
+}
+// while new data is settling in, each line is drawn part-way between what it was and what it is now
+const MORPH_MS = 1500;
+function series(r) {
+  const d = dense(r);
+  if (!race.morph) return d;
+  const p = (performance.now() - race.morph) / MORPH_MS;
+  if (p >= 1) return d;
+  const e = 1 - Math.pow(1 - p, 3), f = r._from; // someone new to the board grows up from the $0 line
+  const out = d.map((v, i) => { const o = f ? f[Math.min(i, f.length - 1)] : 0; return o + (v - o) * e; });
+  out.from = f ? Math.min(d.from, f.from) : d.from;
+  return out;
 }
 const valueAt = (d, p) => { const f = p * (d.length - 1), i = Math.min(d.length - 2, Math.floor(f)); return d[i] + (d[i + 1] - d[i]) * (f - i); };
 function raceImg(r) {
@@ -1064,7 +1098,8 @@ function drawRace() {
 
   // scale: signed log by default, because one whale would flatten everyone else on a linear axis
   let lo = 0, hi = 0;
-  for (const { r } of set) for (const v of dense(r)) { if (v < lo) lo = v; if (v > hi) hi = v; }
+  const lines = new Map(set.map((x) => [x.r, series(x.r)])); // one series per trader for this frame
+  for (const d of lines.values()) for (const v of d) { if (v < lo) lo = v; if (v > hi) hi = v; }
   const tr = race.log ? (v) => Math.sign(v) * Math.log10(1 + Math.abs(v)) : (v) => v;
   let a = tr(lo), b = tr(hi);
   const pad = Math.max((b - a) * 0.08, race.log ? 0.15 : 1);
@@ -1109,7 +1144,7 @@ function drawRace() {
   const order = [...set].reverse().sort((p, q) => (p.r === me) - (q.r === me));
   c.lineJoin = "round"; c.lineCap = "round";
   for (const s of order) {
-    const d = dense(s.r), M = d.length - 1, K = P * M, k = Math.min(M, Math.floor(K));
+    const d = lines.get(s.r), M = d.length - 1, K = P * M, k = Math.min(M, Math.floor(K));
     const isMe = s.r === me;
     c.strokeStyle = s.color;
     if (race.hover != null && P < 1) { // the part still ahead of the cursor
@@ -1130,8 +1165,8 @@ function drawRace() {
 
   // heads + labels, pushed apart so they never overlap
   const hx = X(P), gap = Math.max(15, Math.min(28, ph / set.length)), av = Math.min(22, gap - 5), fs = gap < 20 ? 11 : 12.5;
-  const heads = set.filter((s) => P * (dense(s.r).length - 1) >= dense(s.r).from)
-    .map((s) => { const v = valueAt(dense(s.r), P); return { ...s, v, y: Y(v), ly: Y(v) }; }).sort((p, q) => p.ly - q.ly);
+  const heads = set.filter((s) => P * (lines.get(s.r).length - 1) >= lines.get(s.r).from)
+    .map((s) => { const v = valueAt(lines.get(s.r), P); return { ...s, v, y: Y(v), ly: Y(v) }; }).sort((p, q) => p.ly - q.ly);
   if (heads.length) {
   for (let i = 1; i < heads.length; i++) heads[i].ly = Math.max(heads[i].ly, heads[i - 1].ly + gap);
   const over = heads[heads.length - 1].ly - (B - 2);
@@ -1177,6 +1212,7 @@ function drawRace() {
 function raceFrame(now) {
   race.looping = false;
   if (race.playing) { race.p = Math.min(1, (now - race.t0) / RACE_MS); if (race.p >= 1) racePlaying(false); }
+  if (race.morph && now - race.morph > MORPH_MS) race.morph = 0;
   drawRace();
   if (race.visible && !reduced) raceKick();
 }
@@ -1302,9 +1338,12 @@ async function load() {
   const dl = await get(LOCAL_DAYS).catch(() => null);
   if (dl && (!dd || dl.updatedAt > dd.updatedAt)) dd = dl;
   if (dd) {
+    const again = !!days;
     days = dd; dayCache.clear();
     // the page is about today (UTC day): the race, the podium, the totals and "Find yourself" all read today's ranking
+    const was = again ? new Map(rows.filter((r) => r.spark).map((r) => [r.u, dense(r)])) : null; // the lines as they were drawn until now
     rows = dayRows(days.today); byName = new Map(rows.map((r) => [r.u.toLowerCase(), r]));
+    if (was && !noMotion() && !document.hidden) { for (const r of rows) r._from = was.get(r.u) || null; race.morph = performance.now(); }
     if (period !== "all" && !days.days.some((x) => x.d === period)) period = "all";
     // the page opens on today's ranking (or the latest day, if nobody has traded yet today); after that the choice is the visitor's
     if (!periodSet && days.days.length) { period = days.days.some((x) => x.d === days.today) ? days.today : days.days[0].d; periodSet = true; }
