@@ -151,7 +151,7 @@
   .race-ctl { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .seg { display: inline-flex; background: var(--control); border-radius: 10px; padding: 3px; }
   .seg button { height: 28px; padding: 0 10px; border: 0; background: none; border-radius: 8px; font-weight: 600; font-size: 12.5px; color: var(--ink-2); cursor: pointer; white-space: nowrap; }
-  .seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(16,17,20,.12); }
+  .seg button[aria-pressed="true"] { color: var(--ink); } /* the white highlight behind it is .pill */
   .race-ctl .btn { height: 34px; }
   .race-box { position: relative; height: 440px; margin-top: 12px; }
   .race-box canvas { width: 100%; height: 100%; display: block; touch-action: pan-y; }
@@ -241,8 +241,8 @@
   .tabs { display: flex; gap: 4px; padding: 12px 16px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--line); }
   .tabs::-webkit-scrollbar { display: none; }
   .tab { height: 32px; padding: 0 12px; border-radius: 9px; border: 0; background: none; font-weight: 600; font-size: 13px; color: var(--ink-2); cursor: pointer; white-space: nowrap; }
-  .tab:hover { background: var(--control); }
-  .tab[aria-selected="true"] { background: var(--ink); color: var(--card); }
+  .tab:hover:not([aria-selected="true"]) { background: var(--control); }
+  .tab[aria-selected="true"] { color: var(--card); } /* the dark highlight behind it is .pill */
   .hint { padding: 8px 16px; font-size: 12.5px; color: var(--ink-2); border-bottom: 1px solid var(--line-soft); background: var(--control); }
   .tscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .mlist { display: none; }
@@ -338,6 +338,27 @@
   .delta { position: absolute; right: 0; bottom: 100%; font-style: normal; font-size: 11px; font-weight: 700; white-space: nowrap; pointer-events: none; animation: floatUp 2.4s ease-out forwards; }
   @keyframes floatUp { 0% { opacity: 0; transform: translateY(8px); } 15%, 70% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-10px); } }
 
+  /* ---------- polish: nothing appears or changes in a jump ---------- */
+  /* 1. the page arrives: cards rise one after another; until the data is in, placeholders shimmer where numbers will be */
+  .hero > *, main > .race, main > .find, main > .sec-title, main > .podium, main > .board, main > .how { animation: enter .55s cubic-bezier(.2,.8,.2,1) both; }
+  .hero > :nth-child(2) { animation-delay: .07s; }
+  main > .race { animation-delay: .14s; } main > .find { animation-delay: .2s; } main > .sec-title { animation-delay: .24s; }
+  main > .podium { animation-delay: .27s; } main > .board { animation-delay: .32s; } main > .how { animation-delay: .38s; }
+  @keyframes enter { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .sk, .sk-card, .sk-row, .race-box.sk-box { background: linear-gradient(90deg, var(--control) 25%, var(--control-hover) 50%, var(--control) 75%); background-size: 200% 100%; animation: shimmer 1.3s linear infinite; }
+  .sk { display: inline-block; min-width: 56px; border-radius: 6px; color: transparent !important; }
+  .sk-card { height: 150px; border-radius: 16px; }
+  .sk-row { height: 44px; margin: 10px 16px; border-radius: 10px; }
+  .race-box.sk-box { border-radius: 12px; }
+  @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+  /* 2. the highlight of the active tab or switch slides to its new place */
+  .tabs, .seg { position: relative; }
+  .tab, .seg button { position: relative; z-index: 1; transition: color .2s; }
+  .pill { position: absolute; left: 0; top: 0; z-index: 0; pointer-events: none; border-radius: 9px; background: var(--ink); transition: transform .3s cubic-bezier(.3,.8,.2,1), width .3s cubic-bezier(.3,.8,.2,1); }
+  .seg .pill { border-radius: 8px; background: var(--card); box-shadow: 0 1px 2px rgba(16,17,20,.12); }
+  /* 4. light and dark cross-fade (only used where the browser can't snapshot the page) */
+  .theming, .theming * { transition: background-color .3s ease, color .3s ease, border-color .3s ease !important; }
+
   @media (max-width: 860px) {
     .hero { grid-template-columns: 1fr; }
     .total { padding: 12px; }
@@ -419,9 +440,9 @@
       <div class="today">
         <div class="today-head"><b>Today so far</b><small id="totals-note"></small></div>
         <div class="totals" aria-label="Today's totals">
-          <div class="total"><small>Traders</small><b class="num" id="t-traders">–</b></div>
-          <div class="total"><small>Rounds</small><b class="num" id="t-rounds">–</b></div>
-          <div class="total"><small>Volume</small><b class="num" id="t-volume">–</b></div>
+          <div class="total"><small>Traders</small><b class="num sk" id="t-traders">–</b></div>
+          <div class="total"><small>Rounds</small><b class="num sk" id="t-rounds">–</b></div>
+          <div class="total"><small>Volume</small><b class="num sk" id="t-volume">–</b></div>
         </div>
       </div>
     </div>
@@ -435,7 +456,7 @@
       </div>
       <div class="live-now">
         <div class="live-grid">
-          <div><small>Price to beat</small><div class="v num" id="l-price">…</div></div>
+          <div><small>Price to beat</small><div class="v num sk" id="l-price">…</div></div>
           <div class="clock"><small id="l-clock-label">Ends in</small><div class="v num" id="l-clock">0:00</div></div>
         </div>
         <div class="meter"><i id="l-meter"></i></div>
@@ -471,7 +492,7 @@
         <button class="btn" id="race-play" aria-label="Replay the race"><span id="race-ic" aria-hidden="true">▶</span><span id="race-tx">Replay</span></button>
       </div>
     </div>
-    <div class="race-box"><canvas id="race-cv" role="img" aria-label="Line chart of the leaders' cumulative PnL through today"></canvas></div>
+    <div class="race-box sk-box"><canvas id="race-cv" role="img" aria-label="Line chart of the leaders' cumulative PnL through today"></canvas></div>
     <div class="race-legend"><span><i class="dash"></i>$0 line</span></div>
   </section>
 
@@ -488,7 +509,7 @@
   </section>
 
   <div class="sec-title"><h2 id="podium-title">Today's top 3</h2><small id="podium-note"></small></div>
-  <section class="podium" id="podium" aria-label="Top three"></section>
+  <section class="podium" id="podium" aria-label="Top three"><div class="sk-card"></div><div class="sk-card"></div><div class="sk-card"></div></section>
 
   <section class="card board">
     <div class="board-head">
@@ -499,7 +520,7 @@
     <div class="days" id="days" role="group" aria-label="Period" hidden></div>
     <div class="tabs" role="tablist" id="tabs"></div>
     <div class="hint" id="hint" hidden></div>
-    <div id="table"></div>
+    <div id="table"><div class="sk-row"></div><div class="sk-row"></div><div class="sk-row"></div><div class="sk-row"></div><div class="sk-row"></div></div>
   </section>
 
   <section class="card how">
@@ -551,7 +572,19 @@ const setTheme = (t) => { root.dataset.theme = t; document.querySelector('meta[n
 let saved = null;
 try { saved = localStorage.getItem("theme"); } catch {}
 setTheme(saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
-$("theme").onclick = () => { const t = root.dataset.theme === "dark" ? "light" : "dark"; setTheme(t); try { localStorage.setItem("theme", t); } catch {} render(); };
+$("theme").onclick = () => {
+  const t = root.dataset.theme === "dark" ? "light" : "dark";
+  const swap = () => { setTheme(t); try { localStorage.setItem("theme", t); } catch {} render(); drawRace(); };
+  // the browser cross-fades a snapshot of the whole page (chart included) where it can; elsewhere the colours ease over
+  if (document.startViewTransition && !noMotion() && !document.hidden) {
+    const vt = document.startViewTransition(swap);
+    for (const part of [vt.ready, vt.finished, vt.updateCallbackDone]) part.catch(() => {}); // an aborted fade still switched the theme
+    return;
+  }
+  root.classList.add("theming");
+  swap();
+  setTimeout(() => root.classList.remove("theming"), 350);
+};
 
 // ---------- formatting ----------
 const money = (x, sign = true) => {
@@ -638,20 +671,46 @@ function animateNums(scope) {
     }
   }
 }
+// el.animate(), with a guarantee: shortly after it should have ended it is finished by hand. If the browser isn't ticking
+// animations (a throttled or background page), nothing is left invisible or half-moved.
+function play(el, frames, opt) {
+  const a = el.animate(frames, opt);
+  setTimeout(() => { try { a.finish(); } catch {} }, (opt.duration || 0) + (opt.delay || 0) + 80);
+  return a;
+}
+// the highlight behind the active tab / switch: one element that slides to whichever button is active
+function movePill(box, sel) {
+  const on = box.querySelector(sel);
+  let pill = box.querySelector(":scope > .pill");
+  if (!on || !on.offsetWidth) return;
+  const fresh = !pill;
+  if (fresh) { pill = document.createElement("i"); pill.className = "pill"; pill.setAttribute("aria-hidden", "true"); box.prepend(pill); }
+  if (fresh || noMotion()) pill.style.transition = "none"; // placed, not animated, the first time
+  pill.style.width = `${on.offsetWidth}px`;
+  pill.style.height = `${on.offsetHeight}px`;
+  pill.style.transform = `translate(${on.offsetLeft}px, ${on.offsetTop}px)`;
+  if (fresh) requestAnimationFrame(() => requestAnimationFrame(() => (pill.style.transition = "")));
+}
 // where each row was before a re-render, so it can glide to where it is after (same day and tab), or fade in (new view)
 let lastView = "";
 const rowTops = () => new Map([...$("table").querySelectorAll("[data-u]")].filter((el) => el.offsetParent).map((el) => [el.dataset.u, el.getBoundingClientRect().top]));
+let slide = null; // set by a click in the day strip: -1 / 0 / 1 = which side the new ranking comes in from
 function moveRows(before, view) {
   const same = view === lastView;
   lastView = view;
-  if (noMotion() || document.hidden) return;
+  if (noMotion() || document.hidden) { slide = null; return; }
+  if (slide != null) { // a day change: the whole ranking arrives as one piece
+    play($("table"), [{ opacity: 0, transform: `translateX(${slide * 28}px)` }, { opacity: 1, transform: "none" }], { duration: 260, easing: "cubic-bezier(.2,.8,.2,1)" });
+    slide = null;
+    return;
+  }
   [...$("table").querySelectorAll("[data-u]")].filter((el) => el.offsetParent).forEach((el, i) => {
     const was = before.get(el.dataset.u), now = el.getBoundingClientRect().top;
     if (same && was != null && Math.abs(was - now) > 1) {
-      el.animate([{ transform: `translateY(${was - now}px)` }, { transform: "none" }], { duration: 650, easing: "cubic-bezier(.2,.8,.2,1)" });
+      play(el, [{ transform: `translateY(${was - now}px)` }, { transform: "none" }], { duration: 650, easing: "cubic-bezier(.2,.8,.2,1)" });
       if (was > now) flash(el, true); // climbed
     } else if (!same || was == null) {
-      el.animate([{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: 320, delay: Math.min(i, 14) * 22, easing: "ease-out", fill: "backwards" });
+      play(el, [{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: 320, delay: Math.min(i, 14) * 22, easing: "ease-out", fill: "backwards" });
     }
   });
 }
@@ -710,6 +769,7 @@ function render() {
   // the strip is about today (UTC day), like the podium below it
   if (days) {
     const [dRounds, dVolume] = days.todayTotals || [0, 0];
+    for (const el of document.querySelectorAll(".totals .sk, .race-box.sk-box")) el.classList.remove("sk", "sk-box");
     setNum($("t-traders"), "t-traders", dayRows(days.today).length, "int", true);
     setNum($("t-rounds"), "t-rounds", dRounds, "int", true);
     setNum($("t-volume"), "t-volume", dVolume, "usd", true);
@@ -731,8 +791,8 @@ function render() {
   animateNums($("podium"));
   if (podWas.size && !noMotion() && !document.hidden) for (const el of $("podium").querySelectorAll(".pod")) {
     const was = podWas.get(el.dataset.u), now = el.getBoundingClientRect();
-    if (!was) el.animate([{ opacity: 0, transform: "scale(.94)" }, { opacity: 1, transform: "none" }], { duration: 450, easing: "ease-out" }); // new to the top three
-    else if (Math.abs(was.left - now.left) > 1 || Math.abs(was.top - now.top) > 1) el.animate([{ transform: `translate(${was.left - now.left}px, ${was.top - now.top}px)` }, { transform: "none" }], { duration: 700, easing: "cubic-bezier(.2,.8,.2,1)" });
+    if (!was) play(el, [{ opacity: 0, transform: "scale(.94)" }, { opacity: 1, transform: "none" }], { duration: 450, easing: "ease-out" }); // new to the top three
+    else if (Math.abs(was.left - now.left) > 1 || Math.abs(was.top - now.top) > 1) play(el, [{ transform: `translate(${was.left - now.left}px, ${was.top - now.top}px)` }, { transform: "none" }], { duration: 700, easing: "cubic-bezier(.2,.8,.2,1)" });
   }
 
   // tabs + table
@@ -756,7 +816,9 @@ function render() {
     $("hint").hidden = true;
     $("table").innerHTML = days && days.days.length ? `<div class="pickday">Pick a day to see its ranking.</div>` : `<div class="empty"><b>No day results yet</b>The first settled round starts the record.</div>`;
   } else {
-    $("tabs").innerHTML = TABS.map((x) => `<button class="tab" role="tab" aria-selected="${x.id === tab}" data-tab="${x.id}">${txt(x.label)}</button>`).join("");
+    if ($("tabs").querySelectorAll(".tab").length !== TABS.length) $("tabs").innerHTML = TABS.map((x) => `<button class="tab" role="tab" data-tab="${x.id}">${txt(x.label)}</button>`).join("");
+    for (const b of $("tabs").querySelectorAll(".tab")) b.setAttribute("aria-selected", String(b.dataset.tab === tab));
+    movePill($("tabs"), '.tab[aria-selected="true"]');
     const T = TABS.find((x) => x.id === tab), list = sorted(T);
     const from = Date.parse(period + "T00:00:00Z");
     const dayHint = period === days.today ? `Today's rounds so far. The day started at ${dayStartLocal()} your time.` : `A finished day: ${day(from)}, ${hm(from)} to ${day(from + 864e5)}, ${hm(from + 864e5)}, your time.`;
@@ -800,6 +862,7 @@ function render() {
       animateNums($("table"));
     }
   }
+  slide = null; // a day change that ended on an empty state has nothing to slide
   renderYou();
   raceKick();
 }
@@ -875,7 +938,15 @@ document.addEventListener("click", (e) => {
   if (e.target.closest("#open-share")) return openShare();
   if (e.target.closest("#more")) { shown += PAGE; return render(); }
   const dy = e.target.closest("[data-day]");
-  if (dy) { period = dy.dataset.day === period ? "all" : dy.dataset.day; shown = PAGE; return render(); }
+  if (dy) {
+    const next = dy.dataset.day === period ? "all" : dy.dataset.day, order = (k) => days.days.findIndex((d) => d.d === k);
+    slide = next === "all" || period === "all" ? 0 : order(next) > order(period) ? 1 : -1; // later in the strip = further right
+    const go = () => { period = next; shown = PAGE; render(); };
+    if (noMotion() || document.hidden || !$("table").firstElementChild) return go();
+    const out = $("table").animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: `translateX(${-slide * 28}px)` }], { duration: 130, easing: "ease-in", fill: "forwards" });
+    // on a timer, not on the animation's promise: the click must land even if the browser isn't animating
+    return void setTimeout(() => { out.cancel(); go(); }, 130);
+  }
   if (t) { tab = t.dataset.tab; shown = PAGE; return render(); }
   // rows in the table only do something for traders on today's board (a past day's row has no "today" to show)
   if (u && u.closest("#table") && !byName.has(u.dataset.u.toLowerCase())) return;
@@ -923,7 +994,7 @@ async function loadRound(startT) {
     if (up && down && !$("o-up").textContent) setOdds(Number(up.currentPrice) / 1e6, Number(down.currentPrice) / 1e6);
     pollOdds();
     const cur = (act.data || []).find((m) => Date.parse(m.startsAt) === startT);
-    if (cur && cur.openingPrice) setNum($("l-price"), "l-price", Number(cur.openingPrice), "price");
+    if (cur && cur.openingPrice) { $("l-price").classList.remove("sk"); setNum($("l-price"), "l-price", Number(cur.openingPrice), "price"); }
     else { $("l-price").textContent = "…"; liveFor = 0; } // not published yet: ask again on the next tick
     const done = (past.data || []).filter((m) => m.winningOutcome != null);
     // a result that arrived while its "settling" chip was still up gets its moment here too
@@ -1231,8 +1302,8 @@ function racePlay() {
 }
 $("race-play").onclick = () => { if (race.playing) { racePlaying(false); raceKick(); } else racePlay(); };
 if (reduced) $("race-play").hidden = true;
-$("race-n").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; race.n = +b.dataset.n; [...$("race-n").children].forEach((x) => x.setAttribute("aria-pressed", String(x === b))); raceKick(); };
-$("race-scale").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; race.log = b.dataset.log === "1"; [...$("race-scale").children].forEach((x) => x.setAttribute("aria-pressed", String(x === b))); raceKick(); };
+$("race-n").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; race.n = +b.dataset.n; [...$("race-n").querySelectorAll("button")].forEach((x) => x.setAttribute("aria-pressed", String(x === b))); movePill($("race-n"), '[aria-pressed="true"]'); raceKick(); };
+$("race-scale").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; race.log = b.dataset.log === "1"; [...$("race-scale").querySelectorAll("button")].forEach((x) => x.setAttribute("aria-pressed", String(x === b))); movePill($("race-scale"), '[aria-pressed="true"]'); raceKick(); };
 {
   const cv = $("race-cv");
   const at = (e) => { const b = cv.getBoundingClientRect(); return { x: e.clientX - b.left, y: e.clientY - b.top, w: b.width }; };
@@ -1252,6 +1323,13 @@ $("race-scale").onclick = (e) => { const b = e.target.closest("button"); if (!b)
   }, { threshold: 0.35 }).observe(cv);
   new ResizeObserver(raceKick).observe(cv.parentElement);
   document.fonts.ready.then(raceKick);
+  // the highlights are measured, so they are placed again whenever sizes can have changed
+  const placePills = () => { movePill($("race-n"), '[aria-pressed="true"]'); movePill($("race-scale"), '[aria-pressed="true"]'); if (!$("tabs").hidden) movePill($("tabs"), '.tab[aria-selected="true"]'); };
+  placePills();
+  document.fonts.ready.then(placePills);
+  const sized = new ResizeObserver(placePills);
+  for (const id of ["race-n", "race-scale", "tabs"]) sized.observe($(id));
+  addEventListener("resize", placePills);
 }
 
 // ---------- share card ----------
