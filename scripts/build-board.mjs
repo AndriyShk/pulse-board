@@ -83,12 +83,14 @@ const inWindow = (exp) => exp - ROUND >= start && exp <= end;
 //                                r: { marketId: [expiresSec, pnl, stake] }, f: { marketId: takerFees } }
 // rounds: marketId -> [expiresSec, volumeUSD] for every traded round
 // days: "YYYY-MM-DD" (UTC) -> that day's ranking, kept after the day has left the window
+// dayTotals: "YYYY-MM-DD" -> [traded rounds, volumeUSD] for that day
 // meta: username -> [avatar, verified, colour], so old days can still show who it was
-let state = { from: start, scanned: 0, users: {}, rounds: {}, days: {}, meta: {} };
+let state = { from: start, scanned: 0, users: {}, rounds: {}, days: {}, dayTotals: {}, meta: {} };
 try { state = JSON.parse(await readFile(STATE, "utf8")); } catch (e) { if (e.code !== "ENOENT") throw e; }
 const FULL = !!process.env.FULL || start < state.from - ROUND; // the window now starts before what we have
-if (FULL) state = { from: start, scanned: 0, users: {}, rounds: {}, days: state.days, meta: state.meta }; // the day record survives a rebuild
+if (FULL) state = { from: start, scanned: 0, users: {}, rounds: {}, days: state.days, dayTotals: state.dayTotals, meta: state.meta }; // the day record survives a rebuild
 state.days ??= {};
+state.dayTotals ??= {};
 state.meta ??= {};
 const user = (name) => (state.users[name.toLowerCase()] ??= { u: name, a: "", v: 0, c: "", p: 0, r: {}, f: {} });
 
@@ -300,12 +302,22 @@ for (const [k, users] of perDay) {
   state.days[k] = [...users].map(([u, a]) => [u, r2(a.pnl), r2(a.vol), a.rounds, a.wins, a.losses, a.bestStreak, r2(a.best)])
     .sort((a, b) => b[1] - a[1] || b[2] - a[2]);
 }
+// how much Pulse was traded each day (every round, private profiles included)
+const dayTotals = new Map();
+for (const [t, vol] of Object.values(state.rounds)) {
+  if (!inWindow(t * 1000)) continue;
+  const k = dayKey(t * 1000 - ROUND), a = dayTotals.get(k) || [0, 0];
+  a[0]++; a[1] += vol;
+  dayTotals.set(k, a);
+}
+for (const [k, a] of dayTotals) if (Date.parse(k + "T00:00:00Z") >= start) state.dayTotals[k] = [a[0], r2(a[1])];
 // nobody who is excluded, or has since made their profile private, stays in the record
 for (const k of Object.keys(state.days)) {
   state.days[k] = state.days[k].filter(([u]) => !EXCLUDE.has(u.toLowerCase()) && !(state.users[u.toLowerCase()] || {}).p);
   if (!state.days[k].length) delete state.days[k];
 }
 for (const k of Object.keys(state.days).sort().slice(0, -KEEP_DAYS)) delete state.days[k];
+for (const k of Object.keys(state.dayTotals).sort().slice(0, -KEEP_DAYS)) delete state.dayTotals[k];
 // with real dates only the competition's own days are shown; in the warm-up, the last 30
 const shownDays = Object.keys(state.days).sort().reverse()
   .filter((k) => (tba ? true : k >= dayKey(start) && k <= dayKey(Math.min(end, now) - 1))).slice(0, tba ? 30 : KEEP_DAYS);
@@ -315,7 +327,9 @@ const days = {
   updatedAt: Date.now(),
   today: dayKey(now),
   users: Object.fromEntries([...names].map((u) => [u, state.meta[u] || ["", 0, ""]])),
-  days: shownDays.map((k) => ({ d: k, rows: state.days[k] })),
+  days: shownDays.map((k) => ({ d: k, rounds: (state.dayTotals[k] || [0, 0])[0], volume: (state.dayTotals[k] || [0, 0])[1], rows: state.days[k] })),
+  // today's totals even when nobody ranked has traded yet
+  todayTotals: state.dayTotals[dayKey(now)] || [0, 0],
 };
 
 await save(board, days);

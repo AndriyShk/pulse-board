@@ -385,10 +385,10 @@
     </div>
   </section>
 
-  <section class="card totals" aria-label="Competition totals">
-    <div class="total"><small>Ranked traders</small><b class="num" id="t-traders">–</b></div>
-    <div class="total"><small>Rounds traded</small><b class="num" id="t-rounds">–</b></div>
-    <div class="total"><small>Pulse volume</small><b class="num" id="t-volume">–</b></div>
+  <section class="card totals" aria-label="Today's totals (UTC day)">
+    <div class="total"><small>Traders today</small><b class="num" id="t-traders">–</b></div>
+    <div class="total"><small>Rounds traded today</small><b class="num" id="t-rounds">–</b></div>
+    <div class="total"><small>Volume today</small><b class="num" id="t-volume">–</b></div>
   </section>
 
   <section class="card race" id="race">
@@ -562,9 +562,13 @@ function render() {
   $("how-hidden").textContent = t.hidden ? ` (${t.hidden} right now)` : "";
   if (live && w.end) { $("f-left-label").textContent = "Time left"; tickLeft(); }
 
-  $("t-traders").textContent = t.traders.toLocaleString("en-US");
-  $("t-rounds").textContent = t.rounds.toLocaleString("en-US");
-  $("t-volume").textContent = money(t.volume, false);
+  // the strip is about today (UTC day), like the podium below it
+  if (days) {
+    const [dRounds, dVolume] = days.todayTotals || [0, 0];
+    $("t-traders").textContent = dayRows(days.today).length.toLocaleString("en-US");
+    $("t-rounds").textContent = dRounds.toLocaleString("en-US");
+    $("t-volume").textContent = money(dVolume, false);
+  }
   $("upd").textContent = `Updated ${ago(board.updatedAt)}`;
 
   // podium: today's top three (UTC day). Without the day record it falls back to the whole period and says so.
