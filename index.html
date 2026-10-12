@@ -71,7 +71,6 @@
   .cta { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 16px; border-radius: 12px; background: var(--cta); color: var(--cta-ink); border: 0; font-weight: 600; text-decoration: none; white-space: nowrap; cursor: pointer; transition: filter .12s, transform .08s; }
   .cta:hover, .btn:hover { filter: brightness(.95); }
   .cta:active, .btn:active { transform: scale(.98); }
-  .cta.updown { background: linear-gradient(105deg, var(--up) 0 50%, var(--down) 50% 100%); color: #1d0f2e; }
   .cta.big { height: 48px; border-radius: 14px; font-size: 15px; padding: 0 22px; }
   .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 38px; padding: 0 14px; border-radius: 10px; background: var(--control-hover); border: 0; font-weight: 600; font-size: 13px; cursor: pointer; text-decoration: none; white-space: nowrap; transition: filter .12s, transform .08s; }
   .btn.pink { background: var(--up); color: var(--up-ink); }
@@ -246,10 +245,6 @@
   .how ul { margin: 0; padding-left: 18px; color: var(--ink-2); display: grid; gap: 4px; font-size: 13.5px; }
   main.wrap { padding-bottom: 16px; } /* same as the gap between cards; .wrap's own padding would win over a bare `main` */
 
-  /* mobile sticky CTA */
-  .dock { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--card); border-top: 1px solid var(--line); align-items: center; gap: 12px; }
-  .dock span { font-size: 13px; font-weight: 500; flex: 1; min-width: 0; }
-
   /* share modal */
   dialog { border: 1px solid var(--line); border-radius: 18px; padding: 16px; background: var(--card); color: var(--ink); width: min(680px, calc(100vw - 24px)); box-shadow: 0 16px 48px rgba(0,0,0,.3); }
   dialog::backdrop { background: rgba(0,0,0,.5); }
@@ -282,8 +277,7 @@
     .you .acts > * { flex: 1; }
     .find-row { flex-wrap: wrap; }
     .find label { width: 100%; }
-    .dock { display: flex; }
-    main.wrap { padding-bottom: calc(78px + env(safe-area-inset-bottom)); } /* the 16px gap plus the dock that covers the bottom */
+    main.wrap { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
     .race-box { height: 380px; }
     .facts { grid-template-columns: 1fr 1fr; }
     .fact:nth-child(3) { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); }
@@ -420,11 +414,6 @@
     </ul>
   </section>
 </main>
-
-<div class="dock">
-  <span id="dock-text">A new BTC round every 5 minutes.</span>
-  <a class="cta updown ref" target="_blank" rel="noopener">Trade Pulse ↗</a>
-</div>
 
 <dialog id="share">
   <canvas id="cv" width="1200" height="675"></canvas>
@@ -584,7 +573,6 @@ function renderYou() {
       </div>
       <div class="acts"><button class="btn pink" id="open-share">Share my rank</button><a class="btn ref" href="${REF}" target="_blank" rel="noopener">Trade Pulse ↗</a></div>
     </div>`;
-    $("dock-text").innerHTML = `You're <b>#${me.rank}</b> on Pulse Board.`;
   } else if (q && searched) {
     $("you").innerHTML = `<div class="miss">
       <div><b>${esc(q)} isn't on the board yet</b>
