@@ -299,6 +299,10 @@
   /* the last 30 seconds of a round */
   .live.urgent #l-clock { color: var(--neg); animation: tick 1s ease-in-out infinite; transform-origin: right center; }
   @keyframes tick { 0%, 100% { transform: scale(1); } 12% { transform: scale(1.07); } }
+  /* the round is over and its winner isn't published yet */
+  .live.settling #l-clock { color: var(--ink-3); }
+  .live.settling .meter i { animation: blink 1s ease-in-out infinite; }
+  .live.settling .live-dot { color: var(--ink-2); }
   /* a round just settled: the result sweeps over the card, a soft band runs down the page */
   .live { position: relative; overflow: hidden; }
   .result { position: absolute; inset: 0; z-index: 3; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; pointer-events: none; }
@@ -412,12 +416,12 @@
       <div class="live-head">
         <span class="btc-lg">₿</span>
         <div><small id="l-window">Current round</small><b>BTC Up or Down 5m</b></div>
-        <span class="live-dot"><i></i>LIVE</span>
+        <span class="live-dot"><i></i><span id="l-state">LIVE</span></span>
       </div>
       <div class="live-now">
         <div class="live-grid">
           <div><small>Price to beat</small><div class="v num" id="l-price">…</div></div>
-          <div class="clock"><small>Ends in</small><div class="v num" id="l-clock">0:00</div></div>
+          <div class="clock"><small id="l-clock-label">Ends in</small><div class="v num" id="l-clock">0:00</div></div>
         </div>
         <div class="meter"><i id="l-meter"></i></div>
       </div>
@@ -859,20 +863,30 @@ document.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.
 
 // ---------- live round ----------
 // rounds sit on five-minute boundaries, so the clock needs no API; the price to beat and past results do
-let liveFor = 0, seenStart = 0;
+let liveFor = 0, seenStart = 0, holding = 0, holdTimer = 0, beatFast = false;
+const setBeat = (fast) => { if (fast !== beatFast) { beatFast = fast; root.style.setProperty("--beat", fast ? "0.7s" : "1.8s"); } };
 function tickRound() {
-  const now = Date.now(), startT = Math.floor(now / ROUND) * ROUND, left = startT + ROUND - now;
+  const now = Date.now(), startT = Math.floor(now / ROUND) * ROUND, left = startT + ROUND - now, live = document.querySelector(".live");
+  if (seenStart && startT !== seenStart) roundEnded(seenStart);
+  seenStart = startT;
+  // XO names the winner about ten seconds after a round ends. Until then the card stays on that round, clock at 0:00;
+  // the next round (already running) is shown once the result is in.
+  live.classList.toggle("settling", !!holding);
+  $("l-clock-label").textContent = holding ? "Round ended" : "Ends in";
+  $("l-state").textContent = holding ? "SETTLING" : "LIVE";
+  if (holding) {
+    $("l-clock").textContent = "0:00";
+    $("l-meter").style.width = "100%";
+    $("l-window").textContent = `${day(holding)}, ${hm(holding)} – ${hm(holding + ROUND)}`;
+    live.classList.remove("urgent");
+    return setBeat(true);
+  }
   $("l-clock").textContent = `${Math.floor(left / 6e4)}:${String(Math.floor(left / 1000) % 60).padStart(2, "0")}`;
   $("l-meter").style.width = `${((ROUND - left) / ROUND) * 100}%`;
   $("l-window").textContent = `${day(startT)}, ${hm(startT)} – ${hm(startT + ROUND)}`;
   // the last 30 seconds: the clock turns red and the header's heartbeat quickens
-  const urgent = left <= 30000;
-  if (urgent !== document.querySelector(".live").classList.contains("urgent")) {
-    document.querySelector(".live").classList.toggle("urgent", urgent);
-    root.style.setProperty("--beat", urgent ? "0.7s" : "1.8s");
-  }
-  if (seenStart && startT !== seenStart) roundEnded(seenStart);
-  seenStart = startT;
+  live.classList.toggle("urgent", left <= 30000);
+  setBeat(left <= 30000);
   if (liveFor !== startT && now - startT > 4000) { liveFor = startT; loadRound(startT); }
 }
 async function loadRound(startT) {
@@ -913,6 +927,9 @@ function renderPast(popLast) {
 }
 function roundEnded(prev) {
   pendingStart = prev;
+  holding = prev;
+  clearTimeout(holdTimer);
+  holdTimer = setTimeout(() => { holding = 0; tickRound(); }, 30e3); // no result after half a minute: move on to the live round
   renderPast();
   let tries = 0;
   clearInterval(resultTimer);
@@ -927,7 +944,10 @@ function roundEnded(prev) {
 }
 function settle(m) {
   clearInterval(resultTimer);
+  clearTimeout(holdTimer);
   pendingStart = 0;
+  holding = 0;
+  tickRound(); // the card moves on to the round that is running; the result panel below covers the switch
   if (!pastRounds.some((x) => x.id === m.id)) pastRounds.push(m);
   pastRounds.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
   renderPast(true);
