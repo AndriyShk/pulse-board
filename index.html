@@ -390,7 +390,7 @@
     </div>
   </section>
 
-  <section class="card totals" aria-label="Today's totals (UTC day)">
+  <section class="card totals" aria-label="Today's totals">
     <div class="total"><small>Traders today</small><b class="num" id="t-traders">–</b></div>
     <div class="total"><small>Rounds traded today</small><b class="num" id="t-rounds">–</b></div>
     <div class="total"><small>Volume today</small><b class="num" id="t-volume">–</b></div>
@@ -447,7 +447,7 @@
     <h2>How this is counted</h2>
     <ul>
       <li>PnL is the sum of your settled BTC Up or Down 5m rounds, taken from your public XO portfolio (the same per-round numbers the app shows).</li>
-      <li>Day results use UTC days (00:00 to 24:00 UTC); today's keeps updating until the day ends.</li>
+      <li id="how-day">A day on this board runs from 00:00 to 24:00 UTC; today's numbers keep updating until it ends.</li>
       <li id="how-window">Everything on this page is today's trading, unless you pick another day in the leaderboard.</li>
       <li>Private profiles aren't ranked<span id="how-hidden"></span>. Make your profile public in XO settings to appear.</li>
       <li>The Win rate tab needs at least 5 decided rounds that day.</li>
@@ -538,6 +538,8 @@ function dayRows(k) {
   dayCache.set(k, out);
   return out;
 }
+// when a board day starts on the visitor's clock (the day itself runs 00:00-24:00 UTC), e.g. "3:00 AM"
+const dayStartLocal = (k) => hm(Date.parse((k || (days ? days.today : new Date().toISOString().slice(0, 10))) + "T00:00:00Z"));
 const dayTitle = (k) => (k === days.today ? "Today" : new Date(k + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" }));
 
 const TABS = [
@@ -565,6 +567,7 @@ function render() {
   $("phase-note").hidden = !w.tba;
   $("phase-note").textContent = "Dates and prizes are still to be announced. Until then this is a warm-up: today's Pulse trading, with past days one tap away.";
   $("how-window").textContent = w.tba ? "Everything on this page is today's trading, unless you pick another day in the leaderboard." : `Only rounds that open and settle between ${dayUTC(w.start)} and ${w.end ? dayUTC(w.end) : "the end date"}, 00:00 UTC, count.`;
+  $("how-day").textContent = `A day on this board runs from ${dayStartLocal()} to ${dayStartLocal()} your time (00:00 to 24:00 UTC); today's numbers keep updating until it ends.`;
   $("how-hidden").textContent = t.hidden ? ` (${t.hidden} right now)` : "";
   if (live && w.end) { $("f-left-label").textContent = "Time left"; tickLeft(); }
 
@@ -579,14 +582,14 @@ function render() {
 
   // podium: today's top three (UTC day). Without the day record it falls back to the whole period and says so.
   const top3 = rows.slice(0, 3);
-  $("podium-note").textContent = "UTC day · live";
+  $("podium-note").textContent = `since ${dayStartLocal()} · live`;
   $("podium").innerHTML = top3.length ? top3.map((r, i) => `
     <div class="card pod p${i + 1}" data-u="${esc(r.u)}" tabindex="0" role="button" aria-label="${esc(r.u)}, rank ${i + 1}">
       <div class="top"><span class="place">${i + 1}</span>${avatar(r, "md")}<span class="name"><span>${esc(r.u)}</span>${r.v ? VER : ""}</span></div>
       <div class="pnl num ${cls(r.pnl)}">${money(r.pnl)}</div>
       ${r.spark ? spark(r.spark, 300, 44) : ""}
       <div class="sub"><span><b class="num">${r.rounds.toLocaleString("en-US")}</b> ${plural(r.rounds)}</span><span><b class="num">${(winRate(r) * 100).toFixed(0)}%</b> won</span><span><b class="num">${money(r.vol, false)}</b> vol</span></div>
-    </div>`).join("") : `<div class="card pod-empty">No settled rounds yet today. The day starts at 00:00 UTC.</div>`;
+    </div>`).join("") : `<div class="card pod-empty">No settled rounds yet today. The day started at ${dayStartLocal()} your time.</div>`;
 
   // tabs + table
   const txt = (v) => (typeof v === "function" ? v() : v || "");
@@ -602,7 +605,7 @@ function render() {
     $("days").hidden = false;
     $("days").scrollLeft = at;
   } else $("days").hidden = true;
-  $("board-period").innerHTML = allDay ? "" : `${dayTitle(period)} · UTC day <button class="clear" data-day="all" aria-label="Close this day">✕</button>`;
+  $("board-period").innerHTML = allDay ? "" : `${dayTitle(period)}${period === days.today ? ` · since ${dayStartLocal()}` : ""} <button class="clear" data-day="all" aria-label="Close this day">✕</button>`;
   // the ranking is always one day's. Until a day is picked there is nothing to rank, so only the strip shows.
   $("tabs").hidden = allDay;
   if (allDay) {
@@ -611,7 +614,8 @@ function render() {
   } else {
     $("tabs").innerHTML = TABS.map((x) => `<button class="tab" role="tab" aria-selected="${x.id === tab}" data-tab="${x.id}">${txt(x.label)}</button>`).join("");
     const T = TABS.find((x) => x.id === tab), list = sorted(T);
-    const dayHint = period === days.today ? "Today so far, 00:00 UTC to now." : "A finished day, 00:00 to 24:00 UTC.";
+    const from = Date.parse(period + "T00:00:00Z");
+    const dayHint = period === days.today ? `Today's rounds so far. The day started at ${dayStartLocal()} your time.` : `A finished day: ${day(from)}, ${hm(from)} to ${day(from + 864e5)}, ${hm(from + 864e5)}, your time.`;
     $("hint").hidden = false;
     $("hint").textContent = [dayHint, txt(T.hint)].filter(Boolean).join(" ");
     if (!list.length) {
@@ -669,7 +673,7 @@ function renderYou() {
   } else if (q && searched) {
     $("you").innerHTML = `<div class="miss">
       <div><b>${esc(q)} isn't on today's board</b>
-      <p>Either no settled Pulse round yet today (the day starts at 00:00 UTC), or the profile is private (private profiles aren't ranked). One settled round is enough to get on.</p></div>
+      <p>Either no settled Pulse round yet today (the day started at ${dayStartLocal()} your time), or the profile is private (private profiles aren't ranked). One settled round is enough to get on.</p></div>
       <a class="cta ref" href="${REF}" target="_blank" rel="noopener">Trade a round ↗</a>
     </div>`;
   } else $("you").innerHTML = "";
