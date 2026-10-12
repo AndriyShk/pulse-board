@@ -276,6 +276,10 @@
     /* phones: the table becomes a list of cards, so every number is visible without scrolling sideways */
     .tscroll { display: none; }
     .mlist { display: block; }
+    /* the three chips above the headline stay on one line */
+    .eyebrow { flex-wrap: nowrap; gap: 5px; }
+    .chip { padding: 0 8px; font-size: 11.5px; }
+    .chip .long { display: none; }
     /* race controls on one line */
     .race-ctl { flex-wrap: nowrap; gap: 6px; width: 100%; }
     .seg button { padding: 0 8px; }
@@ -321,7 +325,7 @@
   <section class="hero">
     <div class="card intro">
       <div class="eyebrow">
-        <span class="chip"><span class="btc">₿</span> BTC Up or Down 5m</span>
+        <span class="chip"><span class="btc">₿</span><span>BTC<span class="long"> Up or Down</span> 5m</span></span>
         <span class="chip up">PnL competition</span>
         <span class="chip down" id="phase">Warm-up</span>
       </div>
