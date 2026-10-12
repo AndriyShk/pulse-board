@@ -286,6 +286,47 @@
   dialog .acts { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
   dialog .acts .sp { flex: 1; }
 
+  /* ---------- motion: the page moves with the rounds ---------- */
+  :root { --beat: 1.8s; --beat-color: var(--up); }
+  /* heartbeat: the logo line redraws on every beat and a blip runs along the header; both speed up as a round runs out */
+  .brand svg { animation: thump var(--beat) ease-in-out infinite; }
+  .brand svg path.ecg { stroke-dasharray: 100; animation: ecg var(--beat) linear infinite; } /* drawn over a faint copy, so the logo is never blank */
+  @keyframes thump { 0%, 24%, 100% { transform: scale(1); } 10% { transform: scale(1.09); } }
+  @keyframes ecg { 0% { stroke-dashoffset: 100; } 42%, 100% { stroke-dashoffset: 0; } }
+  .bar { overflow: hidden; }
+  .bar::after { content: ""; position: absolute; left: 0; bottom: 0; width: 140px; height: 2px; background: linear-gradient(90deg, transparent, var(--beat-color), transparent); animation: blip calc(var(--beat) * 2.4) linear infinite; }
+  @keyframes blip { from { transform: translateX(-140px); } to { transform: translateX(100vw); } }
+  /* the last 30 seconds of a round */
+  .live.urgent #l-clock { color: var(--neg); animation: tick 1s ease-in-out infinite; transform-origin: right center; }
+  @keyframes tick { 0%, 100% { transform: scale(1); } 12% { transform: scale(1.07); } }
+  /* a round just settled: the result sweeps over the card, a soft band runs down the page */
+  .live { position: relative; overflow: hidden; }
+  .result { position: absolute; inset: 0; z-index: 3; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; pointer-events: none; }
+  .result.u { background: var(--up); color: var(--up-ink); } .result.d { background: var(--down); color: var(--down-ink); }
+  .result small { font-size: 13px; font-weight: 600; opacity: .75; }
+  .result b { font-size: 38px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+  .result span { font-size: 16px; font-weight: 600; }
+  .result.show { display: flex; animation: wipe 3s cubic-bezier(.7,0,.2,1) both; }
+  .result.show > * { animation: rise .5s .3s both; }
+  @keyframes wipe { 0% { clip-path: inset(0 100% 0 0); } 15%, 84% { clip-path: inset(0 0 0 0); } 100% { clip-path: inset(0 0 0 100%); } }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  #wave { position: fixed; left: 0; right: 0; top: 0; height: 70vh; z-index: 15; pointer-events: none; opacity: 0; }
+  #wave.u { background: linear-gradient(180deg, transparent, rgba(255,135,166,.20) 60%, transparent); }
+  #wave.d { background: linear-gradient(180deg, transparent, rgba(162,147,255,.22) 60%, transparent); }
+  #wave.go { animation: wave 1.4s ease-out; }
+  @keyframes wave { 0% { opacity: 1; transform: translateY(-70vh); } 100% { opacity: 0; transform: translateY(100vh); } }
+  .past .r.pending em { color: var(--ink-3); animation: blink 1s ease-in-out infinite; }
+  .past .r.pop { animation: pop .55s cubic-bezier(.2,1.5,.4,1); }
+  @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+  /* a number changed: the row (or tile) flashes and the difference floats up beside it */
+  tr.flash-up td, .mrow.flash-up, .pod.flash-up, .total.flash-up, .side.flash-up { animation: flashUp 1.6s ease-out; }
+  tr.flash-down td, .mrow.flash-down, .pod.flash-down, .total.flash-down, .side.flash-down { animation: flashDown 1.6s ease-out; }
+  @keyframes flashUp { 0% { box-shadow: inset 0 0 0 999px var(--pos-soft); } 100% { box-shadow: inset 0 0 0 999px transparent; } }
+  @keyframes flashDown { 0% { box-shadow: inset 0 0 0 999px var(--neg-soft); } 100% { box-shadow: inset 0 0 0 999px transparent; } }
+  .mainv { position: relative; display: inline-block; }
+  .delta { position: absolute; right: 0; bottom: 100%; font-style: normal; font-size: 11px; font-weight: 700; white-space: nowrap; pointer-events: none; animation: floatUp 2.4s ease-out forwards; }
+  @keyframes floatUp { 0% { opacity: 0; transform: translateY(8px); } 15%, 70% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-10px); } }
+
   @media (max-width: 860px) {
     .hero { grid-template-columns: 1fr; }
     .podium { grid-template-columns: 1fr; gap: 10px; }
@@ -338,7 +379,7 @@
 <header class="bar">
   <div class="wrap">
     <a class="brand" href="./" aria-label="Pulse Board home">
-      <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#ff87a6"/><path d="M10 34h11l5-14 9 26 6-18 3 6h10" fill="none" stroke="#7a1230" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#ff87a6"/><path d="M10 34h11l5-14 9 26 6-18 3 6h10" fill="none" stroke="#7a1230" stroke-opacity=".3" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path class="ecg" pathLength="100" d="M10 34h11l5-14 9 26 6-18 3 6h10" fill="none" stroke="#7a1230" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Pulse Board
     </a>
     <span class="sp"></span>
@@ -367,6 +408,7 @@
     </div>
 
     <div class="card live" aria-live="off">
+      <div class="result" id="l-result"></div>
       <div class="live-head">
         <span class="btc-lg">₿</span>
         <div><small id="l-window">Current round</small><b>BTC Up or Down 5m</b></div>
@@ -461,6 +503,8 @@
   </section>
 </main>
 
+<div id="wave" aria-hidden="true"></div>
+
 <dialog id="share">
   <canvas id="cv" width="1200" height="675"></canvas>
   <div class="acts">
@@ -526,6 +570,81 @@ function spark(points, w, h) {
   return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path d="M1 ${y(0).toFixed(1)}H${w - 1}" stroke="var(--line)" stroke-dasharray="2 3"/><path d="${d}" fill="none" stroke="${c}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>`;
 }
 
+// ---------- motion ----------
+// Numbers roll from the old value to the new one; whatever holds them flashes green or red; rows glide to their new places.
+const noMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+const fmt = {
+  money: (v) => money(v), usd: (v) => money(v, false), int: (v) => Math.round(v).toLocaleString("en-US"),
+  pct1: (v) => v.toFixed(1) + "%", wins: (v) => Math.round(v) + " wins",
+  price: (v) => "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+  cents: (v) => (v * 100).toFixed(1).replace(/\.0$/, "") + "¢",
+};
+const numStore = new Map(); // key -> last value shown, so a re-render knows what changed
+function tweenNum(el, from, to, f, ms = 650) {
+  // write into the element's own text node, so a difference floating beside the number isn't wiped
+  const text = el.firstChild && el.firstChild.nodeType === 3 ? el.firstChild : el.insertBefore(document.createTextNode(""), el.firstChild);
+  const paint = (v) => { text.nodeValue = fmt[f](v); if (f === "money") { el.classList.remove("pos", "neg", "muted"); el.classList.add(cls(v)); } };
+  if (noMotion() || document.hidden) return paint(to);
+  const t0 = performance.now(), my = (el._tw = (el._tw || 0) + 1);
+  const step = (now) => {
+    if (el._tw !== my) return; // a newer change took over
+    const p = Math.min(1, (now - t0) / ms);
+    paint(p < 1 ? from + (to - from) * (1 - Math.pow(1 - p, 3)) : to);
+    if (p < 1 && el.isConnected) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+function flash(host, up) {
+  if (!host || noMotion()) return;
+  host.classList.remove("flash-up", "flash-down");
+  void host.offsetWidth; // restart the animation
+  host.classList.add(up ? "flash-up" : "flash-down");
+}
+// a fixed element (totals, price): show v, rolling from the previous value; `intro` counts up from zero the first time
+function setNum(el, key, v, f, intro) {
+  const prev = numStore.get(key);
+  numStore.set(key, v);
+  if (prev == null) return intro ? tweenNum(el, 0, v, f, 900) : (el.textContent = fmt[f](v));
+  if (Math.abs(prev - v) < 1e-9) return (el.textContent = fmt[f](v));
+  tweenNum(el, prev, v, f);
+  flash(el.closest(".total, .side"), v > prev);
+}
+// freshly rendered markup: every [data-k] element rolls from the value it had in the previous render
+function animateNums(scope) {
+  for (const el of scope.querySelectorAll("[data-k]")) {
+    const k = el.dataset.k, v = Number(el.dataset.v), prev = numStore.get(k);
+    numStore.set(k, v);
+    if (prev == null) { if (el.dataset.intro) tweenNum(el, 0, v, el.dataset.f, 900); continue; }
+    if (Math.abs(prev - v) < 1e-9) continue;
+    tweenNum(el, prev, v, el.dataset.f);
+    flash(el.closest("tr, .mrow, .pod"), v > prev);
+    if (el.dataset.delta && !noMotion() && Math.abs(v - prev) > 0.004) {
+      const d = document.createElement("i");
+      d.className = "delta " + cls(v - prev);
+      d.textContent = money(v - prev);
+      el.appendChild(d);
+      setTimeout(() => d.remove(), 2500);
+    }
+  }
+}
+// where each row was before a re-render, so it can glide to where it is after (same day and tab), or fade in (new view)
+let lastView = "";
+const rowTops = () => new Map([...$("table").querySelectorAll("[data-u]")].filter((el) => el.offsetParent).map((el) => [el.dataset.u, el.getBoundingClientRect().top]));
+function moveRows(before, view) {
+  const same = view === lastView;
+  lastView = view;
+  if (noMotion() || document.hidden) return;
+  [...$("table").querySelectorAll("[data-u]")].filter((el) => el.offsetParent).forEach((el, i) => {
+    const was = before.get(el.dataset.u), now = el.getBoundingClientRect().top;
+    if (same && was != null && Math.abs(was - now) > 1) {
+      el.animate([{ transform: `translateY(${was - now}px)` }, { transform: "none" }], { duration: 650, easing: "cubic-bezier(.2,.8,.2,1)" });
+      if (was > now) flash(el, true); // climbed
+    } else if (!same || was == null) {
+      el.animate([{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: 320, delay: Math.min(i, 14) * 22, easing: "ease-out", fill: "backwards" });
+    }
+  });
+}
+
 // ---------- state ----------
 let board = null, rows = [], byName = new Map(), tab = "pnl", shown = PAGE, me = null;
 let days = null, period = "all", periodSet = false; // period: a UTC day "YYYY-MM-DD", or "all" when no day is open
@@ -548,12 +667,12 @@ const dayStartLocal = (k) => hm(Date.parse((k || (days ? days.today : new Date()
 const dayTitle = (k) => (k === days.today ? "Today" : new Date(k + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" }));
 
 const TABS = [
-  { id: "pnl", label: "Top PnL", head: "PnL", val: (r) => r.pnl, show: (r) => `<span class="${cls(r.pnl)}">${money(r.pnl)}</span>` },
-  { id: "win", label: "Win rate", head: "Win rate", val: (r) => winRate(r), keep: (r) => r.wins + r.losses >= MIN_DECIDED, show: (r) => `${(winRate(r) * 100).toFixed(1)}%`, hint: `Share of decided rounds won. Needs at least ${MIN_DECIDED} decided rounds.` },
-  { id: "best", label: "Biggest round", head: "Best round", val: (r) => (r.best ? r.best[0] : -Infinity), keep: (r) => r.best, show: (r) => `<span class="pos">${money(r.best[0])}</span>`, hint: "The most profit taken from a single five-minute round." },
-  { id: "streak", label: "Hot streak", head: "Best streak", val: (r) => r.bestStreak, keep: (r) => r.bestStreak > 1, show: (r) => `${r.bestStreak} wins`, hint: "Longest run of winning rounds in a row." },
-  { id: "vol", label: "Volume", head: "Volume", val: (r) => r.vol, show: (r) => money(r.vol, false), hint: "Total stake across settled rounds." },
-  { id: "rekt", label: "Rekt", head: "PnL", val: (r) => -r.pnl, keep: (r) => r.pnl < -0.004, show: (r) => `<span class="neg">${money(r.pnl)}</span>`, hint: "The other end of the board. Respect for showing up." },
+  { id: "pnl", label: "Top PnL", head: "PnL", val: (r) => r.pnl, num: (r) => r.pnl, f: "money" },
+  { id: "win", label: "Win rate", head: "Win rate", val: (r) => winRate(r), num: (r) => winRate(r) * 100, f: "pct1", keep: (r) => r.wins + r.losses >= MIN_DECIDED, hint: `Share of decided rounds won. Needs at least ${MIN_DECIDED} decided rounds.` },
+  { id: "best", label: "Biggest round", head: "Best round", val: (r) => (r.best ? r.best[0] : -Infinity), num: (r) => r.best[0], f: "money", keep: (r) => r.best, hint: "The most profit taken from a single five-minute round." },
+  { id: "streak", label: "Hot streak", head: "Best streak", val: (r) => r.bestStreak, num: (r) => r.bestStreak, f: "wins", keep: (r) => r.bestStreak > 1, hint: "Longest run of winning rounds in a row." },
+  { id: "vol", label: "Volume", head: "Volume", val: (r) => r.vol, num: (r) => r.vol, f: "usd", hint: "Total stake across settled rounds." },
+  { id: "rekt", label: "Rekt", head: "PnL", val: (r) => -r.pnl, num: (r) => r.pnl, f: "money", keep: (r) => r.pnl < -0.004, hint: "The other end of the board. Respect for showing up." },
 ];
 const sorted = (t) => dayRows(period).filter(t.keep || (() => true)).sort((a, b) => t.val(b) - t.val(a) || b.vol - a.vol);
 
@@ -579,9 +698,9 @@ function render() {
   // the strip is about today (UTC day), like the podium below it
   if (days) {
     const [dRounds, dVolume] = days.todayTotals || [0, 0];
-    $("t-traders").textContent = dayRows(days.today).length.toLocaleString("en-US");
-    $("t-rounds").textContent = dRounds.toLocaleString("en-US");
-    $("t-volume").textContent = money(dVolume, false);
+    setNum($("t-traders"), "t-traders", dayRows(days.today).length, "int", true);
+    setNum($("t-rounds"), "t-rounds", dRounds, "int", true);
+    setNum($("t-volume"), "t-volume", dVolume, "usd", true);
   }
   showUpdated();
 
@@ -592,10 +711,11 @@ function render() {
   $("podium").innerHTML = top3.length ? top3.map((r, i) => `
     <div class="card pod p${i + 1}" data-u="${esc(r.u)}" tabindex="0" role="button" aria-label="${esc(r.u)}, rank ${i + 1}">
       <div class="top"><span class="place">${i + 1}</span>${avatar(r, "md")}<span class="name"><span>${esc(r.u)}</span>${r.v ? VER : ""}</span></div>
-      <div class="pnl num ${cls(r.pnl)}">${money(r.pnl)}</div>
+      <div class="pnl num ${cls(r.pnl)}" data-k="pod|${esc(r.u)}" data-v="${r.pnl}" data-f="money" data-intro="1">${money(r.pnl)}</div>
       ${r.spark ? spark(r.spark, 300, 44) : ""}
       <div class="sub"><span><b class="num">${r.rounds.toLocaleString("en-US")}</b> ${plural(r.rounds)}</span><span><b class="num">${(winRate(r) * 100).toFixed(0)}%</b> won</span><span><b class="num">${money(r.vol, false)}</b> vol</span></div>
     </div>`).join("") : `<div class="card pod-empty">No settled rounds yet today. The day started at ${dayStartLocal()} your time.</div>`;
+  animateNums($("podium"));
 
   // tabs + table
   const txt = (v) => (typeof v === "function" ? v() : v || "");
@@ -633,10 +753,13 @@ function render() {
         ? { head: "Best round", short: "Best", val: (r) => (r.best ? `<span class="pos">${money(r.best[0])}</span>` : "–") }
         : { head: "PnL", short: "PnL", val: (r) => `<span class="${cls(r.pnl)}">${money(r.pnl)}</span>` };
       const off = (r) => (byName.has(r.u.toLowerCase()) ? "" : " off"); // not on today's board: the row is not clickable
+      // the ranked number, tagged so the next render can roll it from this value (and float the PnL difference beside it)
+      const main = (r, sfx) => `<span class="mainv ${T.f === "money" ? cls(T.num(r)) : ""}" data-k="${period}|${tab}|${esc(r.u)}${sfx}" data-v="${T.num(r)}" data-f="${T.f}"${tab === "pnl" ? ' data-delta="1"' : ""}>${fmt[T.f](T.num(r))}</span>`;
+      const before = rowTops();
       const body = list.slice(0, shown).map((r, i) => `<tr data-u="${esc(r.u)}" class="${me && me.u === r.u ? "me" : ""}${off(r)}">
           <td><span class="rk"><span class="n num">${i + 1}</span></span></td>
           <td><span class="trader">${avatar(r)}<span style="min-width:0"><span class="nm" style="display:flex;align-items:center;gap:4px">${name(r)}</span></span></span></td>
-          <td class="main num">${T.show(r)}</td>
+          <td class="main num">${main(r, "")}</td>
           <td class="num">${side.val(r)}</td>
           <td class="num">${r.rounds.toLocaleString("en-US")}</td>
           <td class="num"><span class="wr">${(winRate(r) * 100).toFixed(0)}%<i><u style="width:${(winRate(r) * 100).toFixed(0)}%"></u></i></span></td>
@@ -644,7 +767,7 @@ function render() {
         </tr>`).join("");
       // the same rows as cards, shown instead of the table on phones
       const cards = list.slice(0, shown).map((r, i) => `<div class="mrow ${me && me.u === r.u ? "me" : ""}${off(r)}" data-u="${esc(r.u)}">
-          <div class="mtop"><span class="rk"><span class="n num">${i + 1}</span></span>${avatar(r)}<span class="nm">${name(r)}</span><span class="mmain num">${T.show(r)}</span></div>
+          <div class="mtop"><span class="rk"><span class="n num">${i + 1}</span></span>${avatar(r)}<span class="nm">${name(r)}</span><span class="mmain num">${main(r, "|m")}</span></div>
           <div class="mstats num">
             <span><i>${side.short}</i><b>${side.val(r)}</b></span>
             <span><i>Rounds</i>${r.rounds.toLocaleString("en-US")}</span><span><i>Won</i>${(winRate(r) * 100).toFixed(0)}%</span><span><i>Vol</i>${money(r.vol, false)}</span>
@@ -655,6 +778,8 @@ function render() {
         <tbody>${body}</tbody></table></div>
         <div class="mlist">${cards}</div>
         ${list.length > shown ? `<div class="more"><button class="btn" id="more">Show ${Math.min(PAGE, list.length - shown)} more of ${list.length - shown}</button></div>` : ""}`;
+      moveRows(before, `${period}|${tab}`);
+      animateNums($("table"));
     }
   }
   renderYou();
@@ -734,41 +859,100 @@ document.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.
 
 // ---------- live round ----------
 // rounds sit on five-minute boundaries, so the clock needs no API; the price to beat and past results do
-let liveFor = 0;
+let liveFor = 0, seenStart = 0;
 function tickRound() {
   const now = Date.now(), startT = Math.floor(now / ROUND) * ROUND, left = startT + ROUND - now;
   $("l-clock").textContent = `${Math.floor(left / 6e4)}:${String(Math.floor(left / 1000) % 60).padStart(2, "0")}`;
   $("l-meter").style.width = `${((ROUND - left) / ROUND) * 100}%`;
   $("l-window").textContent = `${day(startT)}, ${hm(startT)} – ${hm(startT + ROUND)}`;
+  // the last 30 seconds: the clock turns red and the header's heartbeat quickens
+  const urgent = left <= 30000;
+  if (urgent !== document.querySelector(".live").classList.contains("urgent")) {
+    document.querySelector(".live").classList.toggle("urgent", urgent);
+    root.style.setProperty("--beat", urgent ? "0.7s" : "1.8s");
+  }
+  if (seenStart && startT !== seenStart) roundEnded(seenStart);
+  seenStart = startT;
   if (liveFor !== startT && now - startT > 4000) { liveFor = startT; loadRound(startT); }
 }
 async function loadRound(startT) {
   try {
     const [act, past, mk] = await Promise.all([`pulse/markets?status=ACTIVE&limit=6`, `pulse/markets?limit=7`, `markets?marketScope=onlyClobPulse&statuses=ACTIVE&page=1&take=10`].map((q) => fetch(`${XO_API}/${q}`).then((r) => r.json())));
     const market = (mk.data || []).find((m) => Date.parse(m.startsAt) === startT), up = market && (market.outcomes || []).find((o) => o.index === 0);
-    if (odds.start !== startT) { odds.start = startT; $("o-up").textContent = $("o-down").textContent = $("o-pct").textContent = ""; $("o-bar").style.width = "50%"; }
+    if (odds.start !== startT) { odds.start = startT; odds.p = null; $("o-up").textContent = $("o-down").textContent = $("o-pct").textContent = ""; $("o-bar").style.width = "50%"; }
     odds.token = up ? up.outcomeTokenId : null;
     // start from XO's last known price, so the card isn't blank while the book has no two-sided quote (common in a round's last minute)
     if (up && !$("o-up").textContent) setOdds(Number(up.currentPrice) / 1e6);
     pollOdds();
     const cur = (act.data || []).find((m) => Date.parse(m.startsAt) === startT);
-    $("l-price").textContent = cur && cur.openingPrice ? "$" + Number(cur.openingPrice).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "…";
-    if (!cur || !cur.openingPrice) liveFor = 0; // not published yet: ask again on the next tick window
-    const done = (past.data || []).filter((m) => m.winningOutcome != null).sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)).slice(-5);
-    $("l-past").innerHTML = done.map((m) => {
-      const d = Number(m.closingPrice) - Number(m.openingPrice), up = m.winningOutcome === 0;
-      const move = Number.isFinite(d) ? (d < 0 ? "−" : "+") + "$" + (Math.abs(d) >= 10 ? Math.abs(d).toFixed(0) : Math.abs(d).toFixed(2)) : "";
-      return `<span class="r ${up ? "u" : "d"}" title="${up ? "Up" : "Down"} won"><span><i>${up ? "▲" : "▼"}</i>${hm(Date.parse(m.startsAt)).replace(/ [AP]M/, "")}</span><em class="num">${move}</em></span>`;
-    }).join("");
+    if (cur && cur.openingPrice) setNum($("l-price"), "l-price", Number(cur.openingPrice), "price");
+    else { $("l-price").textContent = "…"; liveFor = 0; } // not published yet: ask again on the next tick
+    const done = (past.data || []).filter((m) => m.winningOutcome != null);
+    // a result that arrived while its "settling" chip was still up gets its moment here too
+    const late = pendingStart && done.find((m) => Date.parse(m.startsAt) === pendingStart);
+    pastRounds = done.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+    if (late) settle(late); else renderPast();
   } catch { liveFor = 0; }
 }
 let retry = 0;
 setInterval(() => { tickRound(); if (!liveFor && ++retry % 10 === 0) liveFor = 0; }, 1000);
+
+// ---------- the moment a round settles ----------
+// XO publishes the winner about ten seconds after a round ends. Until then its chip says "…"; when it lands the result
+// sweeps across the card, a band in the winner's colour runs down the page, and the board is re-read soon after.
+let pastRounds = [], pendingStart = 0, resultTimer = 0;
+const clockShort = (t) => hm(t).replace(/ [AP]M/, "");
+function renderPast(popLast) {
+  const chips = pastRounds.slice(pendingStart ? -4 : -5).map((m, i, all) => {
+    const d = Number(m.closingPrice) - Number(m.openingPrice), up = m.winningOutcome === 0;
+    const move = Number.isFinite(d) ? (d < 0 ? "−" : "+") + "$" + (Math.abs(d) >= 10 ? Math.abs(d).toFixed(0) : Math.abs(d).toFixed(2)) : "";
+    return `<span class="r ${up ? "u" : "d"}${popLast && i === all.length - 1 ? " pop" : ""}" title="${up ? "Up" : "Down"} won"><span><i>${up ? "▲" : "▼"}</i>${clockShort(Date.parse(m.startsAt))}</span><em class="num">${move}</em></span>`;
+  });
+  if (pendingStart) chips.push(`<span class="r pending" title="Settling"><span>${clockShort(pendingStart)}</span><em>…</em></span>`);
+  $("l-past").innerHTML = chips.join("");
+}
+function roundEnded(prev) {
+  pendingStart = prev;
+  renderPast();
+  let tries = 0;
+  clearInterval(resultTimer);
+  resultTimer = setInterval(async () => {
+    if (++tries > 20) { clearInterval(resultTimer); pendingStart = 0; return renderPast(); } // a minute with no result: stop waiting
+    try {
+      const j = await fetch(`${XO_API}/pulse/markets?limit=4`).then((r) => r.json());
+      const m = (j.data || []).find((x) => Date.parse(x.startsAt) === prev && x.winningOutcome != null);
+      if (m && pendingStart === prev) settle(m);
+    } catch {} // XO didn't answer: the next try is three seconds away
+  }, 3000);
+}
+function settle(m) {
+  clearInterval(resultTimer);
+  pendingStart = 0;
+  if (!pastRounds.some((x) => x.id === m.id)) pastRounds.push(m);
+  pastRounds.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+  renderPast(true);
+  // the board changes once the indexer has seen this round: look again shortly instead of waiting for the next minute tick
+  setTimeout(load, 45e3);
+  setTimeout(load, 100e3);
+  if (noMotion() || document.hidden) return;
+  const up = m.winningOutcome === 0, d = Number(m.closingPrice) - Number(m.openingPrice);
+  const el = $("l-result");
+  el.className = "result " + (up ? "u" : "d");
+  el.innerHTML = `<small>${clockShort(Date.parse(m.startsAt))} round</small><b>${up ? "▲ Up" : "▼ Down"} won</b>${Number.isFinite(d) ? `<span class="num">BTC ${d < 0 ? "−" : "+"}$${Math.abs(d).toFixed(2)}</span>` : ""}`;
+  void el.offsetWidth;
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 3050);
+  const wave = $("wave");
+  wave.className = up ? "u" : "d";
+  void wave.offsetWidth;
+  wave.classList.add("go");
+  root.style.setProperty("--beat-color", up ? "var(--up)" : "var(--down)");
+}
 tickRound();
 
 // ---------- crowd odds ----------
 // The price of Up in the live round, read from the public order book every few seconds.
-const odds = { start: 0, token: null };
+const odds = { start: 0, token: null, p: null };
 const cents = (p) => (p * 100).toFixed(1).replace(/\.0$/, "") + "¢";
 async function pollOdds() {
   if (!odds.token || document.hidden) return;
@@ -780,8 +964,9 @@ async function pollOdds() {
 }
 function setOdds(p) {
   if (!(p > 0 && p < 1)) return; // "0.000" means one side of the book is empty: keep the last price
-  $("o-up").textContent = cents(p);
-  $("o-down").textContent = cents(1 - p);
+  if (odds.p == null) { $("o-up").textContent = cents(p); $("o-down").textContent = cents(1 - p); }
+  else if (Math.abs(odds.p - p) > 1e-9) { tweenNum($("o-up"), odds.p, p, "cents", 500); tweenNum($("o-down"), 1 - odds.p, 1 - p, "cents", 500); }
+  odds.p = p;
   $("o-bar").style.width = `${(p * 100).toFixed(1)}%`;
   $("o-pct").textContent = `${Math.round(p * 100)}% Up · ${100 - Math.round(p * 100)}% Down`;
 }
