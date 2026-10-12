@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pulse Board</title>
-<meta name="description" content="Community leaderboard for the XO Market Pulse PnL competition: every BTC Up or Down 5m trader, ranked by net profit / loss.">
+<meta name="description" content="Live stats for XO Market's Pulse: today's BTC Up or Down 5m traders, ranked by net profit / loss.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Pulse Board: who's up on XO Pulse?">
 <meta property="og:description" content="Every BTC Up or Down 5m trader on XO Market, ranked by net profit / loss. Find your rank.">
@@ -47,6 +47,7 @@
   }
 
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html { -webkit-text-size-adjust: 100%; }
   body { margin: 0; background: var(--page); color: var(--ink); font: 400 14px/1.45 "Open Runde", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
   a { color: inherit; }
@@ -79,7 +80,7 @@
 
   /* ---------- hero ---------- */
   .hero { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(0,1fr); gap: 16px; margin-top: 20px; }
-  .intro { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+  .intro { padding: 24px; display: flex; flex-direction: column; gap: 16px; justify-content: space-between; }
   .eyebrow { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 8px; font-size: 12px; font-weight: 600; background: var(--control); color: var(--ink-2); white-space: nowrap; }
   .chip.up { background: var(--up-soft); color: var(--up-text); }
@@ -88,13 +89,17 @@
   h1 { font-size: clamp(28px, 4.2vw, 40px); line-height: 1.08; font-weight: 700; letter-spacing: -.02em; text-wrap: balance; }
   h1 em { font-style: normal; color: var(--up-text); }
   .lede { font-size: 15px; color: var(--ink-2); max-width: 52ch; }
-  .facts { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); border: 1px solid var(--line); border-radius: 12px; margin-top: auto; }
+  .facts { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); border: 1px solid var(--line); border-radius: 12px; }
+  .facts[hidden] { display: none; }
+  .today { display: flex; flex-direction: column; gap: 8px; }
+  .today-head { display: flex; align-items: baseline; gap: 8px; }
+  .today-head b { font-size: 14px; font-weight: 600; }
+  .today-head small { font-size: 12.5px; color: var(--ink-2); }
   .fact { padding: 12px 14px; min-width: 0; }
   .fact + .fact { border-left: 1px solid var(--line); }
   .fact small { display: block; font-size: 12px; color: var(--ink-3); font-weight: 500; }
   .fact b { display: block; font-size: 16px; font-weight: 600; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .fact b.tba { color: var(--ink-3); }
-  .note { font-size: 12.5px; color: var(--ink-2); background: var(--control); border-radius: 10px; padding: 9px 12px; }
 
   .live { padding: 24px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; }
   .live-head { display: flex; align-items: center; gap: 10px; }
@@ -132,7 +137,7 @@
   .side:active { transform: scale(.98); }
 
   /* ---------- totals ---------- */
-  .totals { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); margin-top: 10px; }
+  .totals { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
   .total { padding: 14px 18px; min-width: 0; }
   .total + .total { border-left: 1px solid var(--line); }
   .total small { display: block; font-size: 12px; color: var(--ink-3); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -398,16 +403,24 @@
     <div class="card intro">
       <div class="eyebrow">
         <span class="chip"><span class="btc">₿</span><span>BTC<span class="long"> Up or Down</span> 5m</span></span>
-        <span class="chip up">PnL competition</span>
-        <span class="chip down" id="phase">Warm-up</span>
+        <!-- the two chips and the facts row below exist only while a competition is switched on (config.json "event") -->
+        <span class="chip up ev" id="ev-name" hidden></span>
+        <span class="chip down ev" id="phase" hidden></span>
       </div>
       <h1>Who's <em>up</em> on Pulse?</h1>
       <p class="lede">Today's trading in XO Market's five-minute BTC rounds: who's in profit, who's racing ahead, and where you stand. Past days are in the leaderboard.</p>
-      <p class="note" id="phase-note" hidden></p>
-      <div class="facts">
-        <div class="fact"><small id="f-dates-label">Dates</small><b id="f-dates" class="tba">TBA</b></div>
-        <div class="fact"><small>Prizes</small><b id="f-prizes" class="tba">TBA</b></div>
+      <div class="facts ev" hidden>
+        <div class="fact"><small>Dates (UTC)</small><b id="f-dates"></b></div>
+        <div class="fact"><small>Prizes</small><b id="f-prizes"></b></div>
         <div class="fact"><small id="f-left-label">Ranked by</small><b id="f-left">Net profit / loss</b></div>
+      </div>
+      <div class="today">
+        <div class="today-head"><b>Today so far</b><small id="totals-note"></small></div>
+        <div class="totals" aria-label="Today's totals">
+          <div class="total"><small>Traders</small><b class="num" id="t-traders">–</b></div>
+          <div class="total"><small>Rounds</small><b class="num" id="t-rounds">–</b></div>
+          <div class="total"><small>Volume</small><b class="num" id="t-volume">–</b></div>
+        </div>
       </div>
     </div>
 
@@ -440,13 +453,6 @@
     </div>
   </section>
 
-  <div class="sec-title"><h2>Today so far</h2><small id="totals-note"></small></div>
-  <section class="card totals" aria-label="Today's totals">
-    <div class="total"><small>Traders</small><b class="num" id="t-traders">–</b></div>
-    <div class="total"><small>Rounds</small><b class="num" id="t-rounds">–</b></div>
-    <div class="total"><small>Volume</small><b class="num" id="t-volume">–</b></div>
-  </section>
-
   <section class="card race" id="race">
     <div class="race-head">
       <div>
@@ -463,7 +469,7 @@
         <button class="btn" id="race-play" aria-label="Replay the race"><span id="race-ic" aria-hidden="true">▶</span><span id="race-tx">Replay</span></button>
       </div>
     </div>
-    <div class="race-box"><canvas id="race-cv" role="img" aria-label="Line chart of the leaders' cumulative PnL over the competition window"></canvas></div>
+    <div class="race-box"><canvas id="race-cv" role="img" aria-label="Line chart of the leaders' cumulative PnL through today"></canvas></div>
     <div class="race-legend"><span><i class="dash"></i>$0 line</span></div>
   </section>
 
@@ -502,7 +508,7 @@
       <li id="how-window">Everything on this page is today's trading, unless you pick another day in the leaderboard.</li>
       <li>Private profiles aren't ranked<span id="how-hidden"></span>. Make your profile public in XO settings to appear.</li>
       <li>The Win rate tab needs at least 5 decided rounds that day.</li>
-      <li>This is a community page. XO Market's own results decide any prizes.</li>
+      <li class="ev" hidden>This is a community page. XO Market's own results decide any prizes.</li>
     </ul>
   </section>
 </main>
@@ -523,7 +529,6 @@
 <script>
 // ---------- config ----------
 const REF = "https://beta.xo.market/?r=andriy_shkinder";
-const PRIZES = null; // e.g. "$5,000 USDC" once announced
 const XO_API = "https://api-mainnet.xo.market/api";
 const XO_BOOK = "https://orderbooks.xo.market"; // public order book: live Up / Down prices
 // the indexer publishes to the repo's `data` branch; the copy next to the page is the fallback
@@ -684,20 +689,21 @@ const sorted = (t) => dayRows(period).filter(t.keep || (() => true)).sort((a, b)
 function render() {
   if (!board) return;
   const w = board.window, t = board.totals;
-  const live = !w.tba && Date.now() >= w.start && (!w.end || Date.now() <= w.end);
-  const over = !w.tba && w.end && Date.now() > w.end;
-  $("phase").textContent = w.tba ? "Warm-up" : over ? "Final" : live ? "Live" : "Starts soon";
-  $("f-dates").textContent = w.tba ? "TBA" : `${dayUTC(w.start)} – ${w.end ? dayUTC(w.end) : "TBA"}`;
-  $("f-dates-label").textContent = w.tba ? "Dates" : "Dates (UTC)";
-  $("f-dates").classList.toggle("tba", w.tba);
-  $("f-prizes").textContent = PRIZES || "TBA";
-  $("f-prizes").classList.toggle("tba", !PRIZES);
-  $("phase-note").hidden = !w.tba;
-  $("phase-note").textContent = "Dates and prizes are still to be announced. Until then this is a warm-up: today's Pulse trading, with past days one tap away.";
-  $("how-window").textContent = w.tba ? "Everything on this page is today's trading, unless you pick another day in the leaderboard." : `Only rounds that open and settle between ${dayUTC(w.start)} and ${w.end ? dayUTC(w.end) : "the end date"}, 00:00 UTC, count.`;
+  // plain Pulse statistics by default; the competition chips, facts and wording appear only while an event is switched on
+  const ev = board.event;
+  document.querySelectorAll(".ev").forEach((el) => (el.hidden = !ev));
+  if (ev) {
+    const live = Date.now() >= w.start && (!w.end || Date.now() <= w.end), over = w.end && Date.now() > w.end;
+    $("ev-name").textContent = ev.name;
+    $("phase").textContent = over ? "Final" : live ? "Live" : "Starts soon";
+    $("f-dates").textContent = `${dayUTC(w.start)} – ${w.end ? dayUTC(w.end) : "TBA"}`;
+    $("f-prizes").textContent = ev.prizes || "TBA";
+    $("f-prizes").classList.toggle("tba", !ev.prizes);
+    if (live && w.end) { $("f-left-label").textContent = "Time left"; tickLeft(); }
+  }
+  $("how-window").textContent = ev ? `Only rounds that open and settle between ${dayUTC(w.start)} and ${w.end ? dayUTC(w.end) : "the end date"}, 00:00 UTC, count.` : "Everything on this page is today's trading, unless you pick another day in the leaderboard.";
   $("how-day").textContent = `A day on this board runs from ${dayStartLocal()} to ${dayStartLocal()} your time (00:00 to 24:00 UTC); today's numbers keep updating until it ends.`;
   $("how-hidden").textContent = t.hidden ? ` (${t.hidden} right now)` : "";
-  if (live && w.end) { $("f-left-label").textContent = "Time left"; tickLeft(); }
 
   // the strip is about today (UTC day), like the podium below it
   if (days) {
@@ -1315,7 +1321,7 @@ async function load() {
 }
 load();
 setInterval(load, 6e4);
-setInterval(() => { if (board) { showUpdated(); if (!board.window.tba) tickLeft(); } }, 3e4);
+setInterval(() => { if (board) { showUpdated(); if (board.event) tickLeft(); } }, 3e4);
 </script>
 </body>
 </html>

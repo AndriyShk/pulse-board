@@ -69,7 +69,10 @@ const r2 = (x) => Math.round(x * 100) / 100;
 // ---------- window ----------
 const cfg = JSON.parse(await readFile(CONFIG, "utf8"));
 const now = Date.now();
-const tba = !cfg.start; // no dates yet: show a rolling warm-up window
+// A competition is an event switched on in config.json ("event": { "enabled": true, ... } plus start/end).
+// Without one the site is plain Pulse statistics over a rolling window.
+const event = cfg.event && cfg.event.enabled && cfg.start ? cfg.event : null;
+const tba = !event;
 const start = tba ? now - (cfg.previewDays || 7) * DAY : Date.parse(cfg.start);
 const end = cfg.end ? Date.parse(cfg.end) : Infinity;
 if (Number.isNaN(start) || Number.isNaN(end)) throw new Error("config.json: start/end must be ISO dates or null");
@@ -268,6 +271,7 @@ const played = Object.values(state.rounds).filter(([t]) => inWindow(t * 1000));
 const board = {
   updatedAt: Date.now(), // when the run finished, not when it started: a run on GitHub can take minutes
   window: { start, end: Number.isFinite(end) ? end : null, tba, previewDays: tba ? cfg.previewDays || 7 : null },
+  event: event ? { name: event.name || "PnL competition", prizes: event.prizes || null } : null,
   metric: NET ? "net" : "pnl",
   look: LOOK,
   totals: { traders: rows.length, hidden, rounds: played.length, volume: r2(played.reduce((s, [, v]) => s + v, 0)) },

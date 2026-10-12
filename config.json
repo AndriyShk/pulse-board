@@ -1,4 +1,9 @@
 {
+  "event": {
+    "enabled": false,
+    "name": "PnL competition",
+    "prizes": null
+  },
   "start": null,
   "end": null,
   "previewDays": 7,
