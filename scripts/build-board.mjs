@@ -256,7 +256,7 @@ rows.forEach((r, i) => { r.rank = i + 1; delete r.before; });
 
 const played = Object.values(state.rounds).filter(([t]) => inWindow(t * 1000));
 const board = {
-  updatedAt: now,
+  updatedAt: Date.now(), // when the run finished, not when it started: a run on GitHub can take minutes
   window: { start, end: Number.isFinite(end) ? end : null, tba, previewDays: tba ? cfg.previewDays || 7 : null },
   metric: NET ? "net" : "pnl",
   look: LOOK,
