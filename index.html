@@ -348,7 +348,7 @@
         <span class="chip down" id="phase">Warm-up</span>
       </div>
       <h1>Who's <em>up</em> on Pulse?</h1>
-      <p class="lede">Every trader in XO Market's five-minute BTC rounds, ranked by net profit / loss. Find your rank, see who's climbing, and take a spot on the board.</p>
+      <p class="lede">Every trader in XO Market's five-minute BTC rounds, ranked by net profit / loss. See who won each day, watch the race, and find your own rank.</p>
       <p class="note" id="phase-note" hidden></p>
       <div class="facts">
         <div class="fact"><small id="f-dates-label">Dates</small><b id="f-dates" class="tba">TBA</b></div>
@@ -443,7 +443,7 @@
     <ul>
       <li>PnL is the sum of your settled BTC Up or Down 5m rounds, taken from your public XO portfolio (the same per-round numbers the app shows).</li>
       <li>Day results use UTC days (00:00 to 24:00 UTC); today's keeps updating until the day ends.</li>
-      <li id="how-window">While the competition dates are TBA, the board covers the last 7 days.</li>
+      <li id="how-window">While the competition dates are TBA, the race chart and "Find yourself" cover the last 7 days.</li>
       <li>Private profiles aren't ranked<span id="how-hidden"></span>. Make your profile public in XO settings to appear.</li>
       <li>The Win rate tab needs at least 5 decided rounds that day.</li>
       <li>This is a community page. XO Market's own results decide any prizes.</li>
@@ -517,7 +517,7 @@ function spark(points, w, h) {
 
 // ---------- state ----------
 let board = null, rows = [], byName = new Map(), tab = "pnl", shown = PAGE, me = null;
-let days = null, period = "all"; // "all" = the whole window, otherwise a UTC day "YYYY-MM-DD"
+let days = null, period = "all", periodSet = false; // period: a UTC day "YYYY-MM-DD", or "all" when no day is open
 
 // one day's ranking in the same shape as the main rows (no trend line or rank movement for a single day)
 const dayCache = new Map();
@@ -557,8 +557,8 @@ function render() {
   $("f-prizes").textContent = PRIZES || "TBA";
   $("f-prizes").classList.toggle("tba", !PRIZES);
   $("phase-note").hidden = !w.tba;
-  $("phase-note").textContent = `Dates and prizes are still to be announced. Until then the board shows the last ${w.previewDays} days of Pulse as a warm-up.`;
-  $("how-window").textContent = w.tba ? `While the competition dates are TBA, the board covers the last ${w.previewDays} days.` : `Only rounds that open and settle between ${dayUTC(w.start)} and ${w.end ? dayUTC(w.end) : "the end date"}, 00:00 UTC, count.`;
+  $("phase-note").textContent = `Dates and prizes are still to be announced. Until then this is a warm-up: each day's ranking, plus the last ${w.previewDays} days in the race chart.`;
+  $("how-window").textContent = w.tba ? `While the competition dates are TBA, the race chart and "Find yourself" cover the last ${w.previewDays} days.` : `Only rounds that open and settle between ${dayUTC(w.start)} and ${w.end ? dayUTC(w.end) : "the end date"}, 00:00 UTC, count.`;
   $("how-hidden").textContent = t.hidden ? ` (${t.hidden} right now)` : "";
   if (live && w.end) { $("f-left-label").textContent = "Time left"; tickLeft(); }
 
@@ -1072,7 +1072,12 @@ async function load() {
   let dd = local ? null : await get(REMOTE_DAYS).catch(() => null);
   const dl = await get(LOCAL_DAYS).catch(() => null);
   if (dl && (!dd || dl.updatedAt > dd.updatedAt)) dd = dl;
-  if (dd) { days = dd; dayCache.clear(); if (period !== "all" && !days.days.some((x) => x.d === period)) period = "all"; }
+  if (dd) {
+    days = dd; dayCache.clear();
+    if (period !== "all" && !days.days.some((x) => x.d === period)) period = "all";
+    // the page opens on today's ranking (or the latest day, if nobody has traded yet today); after that the choice is the visitor's
+    if (!periodSet && days.days.length) { period = days.days.some((x) => x.d === days.today) ? days.today : days.days[0].d; periodSet = true; }
+  }
   // a shared link (?u=name) picks that trader once; the address is then cleaned, so a reload starts with nobody picked
   const u = me ? me.u : new URLSearchParams(location.search).get("u");
   if (location.search) history.replaceState(null, "", location.pathname);
