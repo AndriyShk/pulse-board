@@ -132,10 +132,10 @@
   .side:active { transform: scale(.98); }
 
   /* ---------- totals ---------- */
-  .totals { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); margin-top: 16px; }
+  .totals { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); margin-top: 10px; }
   .total { padding: 14px 18px; min-width: 0; }
   .total + .total { border-left: 1px solid var(--line); }
-  .total small { display: block; font-size: 12px; color: var(--ink-3); font-weight: 500; }
+  .total small { display: block; font-size: 12px; color: var(--ink-3); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .total b { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
 
   /* ---------- race chart ---------- */
@@ -390,10 +390,11 @@
     </div>
   </section>
 
+  <div class="sec-title"><h2>Today so far</h2><small id="totals-note"></small></div>
   <section class="card totals" aria-label="Today's totals">
-    <div class="total"><small>Traders today</small><b class="num" id="t-traders">–</b></div>
-    <div class="total"><small>Rounds traded today</small><b class="num" id="t-rounds">–</b></div>
-    <div class="total"><small>Volume today</small><b class="num" id="t-volume">–</b></div>
+    <div class="total"><small>Traders</small><b class="num" id="t-traders">–</b></div>
+    <div class="total"><small>Rounds</small><b class="num" id="t-rounds">–</b></div>
+    <div class="total"><small>Volume</small><b class="num" id="t-volume">–</b></div>
   </section>
 
   <section class="card race" id="race">
@@ -583,6 +584,7 @@ function render() {
   // podium: today's top three (UTC day). Without the day record it falls back to the whole period and says so.
   const top3 = rows.slice(0, 3);
   $("podium-note").textContent = `since ${dayStartLocal()} · live`;
+  $("totals-note").textContent = `since ${dayStartLocal()} · live`;
   $("podium").innerHTML = top3.length ? top3.map((r, i) => `
     <div class="card pod p${i + 1}" data-u="${esc(r.u)}" tabindex="0" role="button" aria-label="${esc(r.u)}, rank ${i + 1}">
       <div class="top"><span class="place">${i + 1}</span>${avatar(r, "md")}<span class="name"><span>${esc(r.u)}</span>${r.v ? VER : ""}</span></div>
