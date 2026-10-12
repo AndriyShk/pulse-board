@@ -151,8 +151,7 @@
   .race-box { position: relative; height: 440px; margin-top: 12px; }
   .race-box canvas { width: 100%; height: 100%; display: block; touch-action: pan-y; }
   .race-legend { display: flex; gap: 6px 18px; flex-wrap: wrap; font-size: 12px; color: var(--ink-3); margin-top: 6px; }
-  .race-legend i { display: inline-block; width: 18px; height: 0; border-top: 2px solid var(--up); vertical-align: middle; margin-right: 6px; border-radius: 2px; }
-  .race-legend i.dash { border-top: 2px dashed var(--ink-3); }
+  .race-legend i.dash { display: inline-block; width: 18px; height: 0; border-top: 2px dashed var(--ink-3); vertical-align: middle; margin-right: 6px; }
 
   /* ---------- find me ---------- */
   .find { margin-top: 16px; padding: 16px; position: relative; }
@@ -419,7 +418,7 @@
       </div>
     </div>
     <div class="race-box"><canvas id="race-cv" role="img" aria-label="Line chart of the leaders' cumulative PnL over the competition window"></canvas></div>
-    <div class="race-legend"><span><i></i>Profit over time</span><span><i class="dash"></i>$0 line</span><span id="race-note"></span></div>
+    <div class="race-legend"><span><i class="dash"></i>$0 line</span></div>
   </section>
 
   <section class="card find" id="find">
@@ -984,9 +983,7 @@ function racePlay() {
 $("race-play").onclick = () => { if (race.playing) { racePlaying(false); raceKick(); } else racePlay(); };
 if (reduced) $("race-play").hidden = true;
 $("race-n").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; race.n = +b.dataset.n; [...$("race-n").children].forEach((x) => x.setAttribute("aria-pressed", String(x === b))); raceKick(); };
-$("race-scale").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; race.log = b.dataset.log === "1"; [...$("race-scale").children].forEach((x) => x.setAttribute("aria-pressed", String(x === b))); raceNote(); raceKick(); };
-const raceNote = () => ($("race-note").textContent = race.log ? "Log: small amounts are stretched so everyone is visible" : "Linear: true dollar distances");
-raceNote();
+$("race-scale").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; race.log = b.dataset.log === "1"; [...$("race-scale").children].forEach((x) => x.setAttribute("aria-pressed", String(x === b))); raceKick(); };
 {
   const cv = $("race-cv");
   const at = (e) => { const b = cv.getBoundingClientRect(); return { x: e.clientX - b.left, y: e.clientY - b.top, w: b.width }; };
