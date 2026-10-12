@@ -348,7 +348,7 @@
         <span class="chip down" id="phase">Warm-up</span>
       </div>
       <h1>Who's <em>up</em> on Pulse?</h1>
-      <p class="lede">Every trader in XO Market's five-minute BTC rounds, ranked by net profit / loss. See who won each day, watch the race, and find your own rank.</p>
+      <p class="lede">Today's trading in XO Market's five-minute BTC rounds: who's in profit, who's racing ahead, and where you stand. Past days are in the leaderboard.</p>
       <p class="note" id="phase-note" hidden></p>
       <div class="facts">
         <div class="fact"><small id="f-dates-label">Dates</small><b id="f-dates" class="tba">TBA</b></div>
@@ -394,8 +394,8 @@
   <section class="card race" id="race">
     <div class="race-head">
       <div>
-        <h2>The race</h2>
-        <p>Every leader's PnL, round by round. Drag across the chart to rewind.</p>
+        <h2>Today's race</h2>
+        <p>Today's PnL of the leaders, round by round. Drag across the chart to rewind.</p>
       </div>
       <div class="race-ctl">
         <div class="seg" id="race-n" role="group" aria-label="Traders shown">
@@ -443,7 +443,7 @@
     <ul>
       <li>PnL is the sum of your settled BTC Up or Down 5m rounds, taken from your public XO portfolio (the same per-round numbers the app shows).</li>
       <li>Day results use UTC days (00:00 to 24:00 UTC); today's keeps updating until the day ends.</li>
-      <li id="how-window">While the competition dates are TBA, the race chart and "Find yourself" cover the last 7 days.</li>
+      <li id="how-window">Everything on this page is today's trading, unless you pick another day in the leaderboard.</li>
       <li>Private profiles aren't ranked<span id="how-hidden"></span>. Make your profile public in XO settings to appear.</li>
       <li>The Win rate tab needs at least 5 decided rounds that day.</li>
       <li>This is a community page. XO Market's own results decide any prizes.</li>
@@ -466,7 +466,6 @@
 // ---------- config ----------
 const REF = "https://beta.xo.market/?r=andriy_shkinder";
 const PRIZES = null; // e.g. "$5,000 USDC" once announced
-const PRIZE_SPOTS = 10; // places the "gap to the prize zone" line aims at
 const XO_API = "https://api-mainnet.xo.market/api";
 const XO_BOOK = "https://orderbooks.xo.market"; // public order book: live Up / Down prices
 // the indexer publishes to the repo's `data` branch; the copy next to the page is the fallback
@@ -526,7 +525,8 @@ function dayRows(k) {
   const d = days.days.find((x) => x.d === k);
   const out = (d ? d.rows : []).map(([u, pnl, vol, rounds, wins, losses, bestStreak, best], i) => {
     const [a, v, c] = days.users[u] || ["", 0, ""];
-    return { u, a, v, c, pnl, vol, rounds, wins, losses, bestStreak, best: best > 0 ? [best, 0] : null, d24: 0, prev: null, spark: null, last: 0, rank: i + 1 };
+    const line = k === days.today ? (days.todaySpark || {})[u] : null;
+    return { u, a, v, c, pnl, vol, rounds, wins, losses, bestStreak, best: best > 0 ? [best, 0] : null, spark: line || null, rank: i + 1 };
   });
   dayCache.set(k, out);
   return out;
@@ -541,7 +541,6 @@ const TABS = [
   { id: "vol", label: "Volume", head: "Volume", val: (r) => r.vol, show: (r) => money(r.vol, false), hint: "Total stake across settled rounds." },
   { id: "rekt", label: "Rekt", head: "PnL", val: (r) => -r.pnl, keep: (r) => r.pnl < -0.004, show: (r) => `<span class="neg">${money(r.pnl)}</span>`, hint: "The other end of the board. Respect for showing up." },
 ];
-const lookName = () => (board && board.look < 864e5 ? `${Math.round(board.look / 36e5)}h` : "24h");
 const sorted = (t) => dayRows(period).filter(t.keep || (() => true)).sort((a, b) => t.val(b) - t.val(a) || b.vol - a.vol);
 
 // ---------- render ----------
@@ -557,8 +556,8 @@ function render() {
   $("f-prizes").textContent = PRIZES || "TBA";
   $("f-prizes").classList.toggle("tba", !PRIZES);
   $("phase-note").hidden = !w.tba;
-  $("phase-note").textContent = `Dates and prizes are still to be announced. Until then this is a warm-up: each day's ranking, plus the last ${w.previewDays} days in the race chart.`;
-  $("how-window").textContent = w.tba ? `While the competition dates are TBA, the race chart and "Find yourself" cover the last ${w.previewDays} days.` : `Only rounds that open and settle between ${dayUTC(w.start)} and ${w.end ? dayUTC(w.end) : "the end date"}, 00:00 UTC, count.`;
+  $("phase-note").textContent = "Dates and prizes are still to be announced. Until then this is a warm-up: today's Pulse trading, with past days one tap away.";
+  $("how-window").textContent = w.tba ? "Everything on this page is today's trading, unless you pick another day in the leaderboard." : `Only rounds that open and settle between ${dayUTC(w.start)} and ${w.end ? dayUTC(w.end) : "the end date"}, 00:00 UTC, count.`;
   $("how-hidden").textContent = t.hidden ? ` (${t.hidden} right now)` : "";
   if (live && w.end) { $("f-left-label").textContent = "Time left"; tickLeft(); }
 
@@ -572,10 +571,8 @@ function render() {
   $("upd").textContent = `Updated ${ago(board.updatedAt)}`;
 
   // podium: today's top three (UTC day). Without the day record it falls back to the whole period and says so.
-  const todayTop = days ? dayRows(days.today).slice(0, 3) : null;
-  const top3 = todayTop || rows.slice(0, 3);
-  $("podium-title").textContent = todayTop ? "Today's top 3" : "Top 3";
-  $("podium-note").textContent = todayTop ? "UTC day · live" : w.tba ? `Last ${w.previewDays} days` : "Whole competition";
+  const top3 = rows.slice(0, 3);
+  $("podium-note").textContent = "UTC day · live";
   $("podium").innerHTML = top3.length ? top3.map((r, i) => `
     <div class="card pod p${i + 1}" data-u="${esc(r.u)}" tabindex="0" role="button" aria-label="${esc(r.u)}, rank ${i + 1}">
       <div class="top"><span class="place">${i + 1}</span>${avatar(r, "md")}<span class="name"><span>${esc(r.u)}</span>${r.v ? VER : ""}</span></div>
@@ -649,23 +646,22 @@ function render() {
 function renderYou() {
   const q = $("q").value.trim().replace(/^@/, "");
   if (me) {
-    const above = rows[me.rank - 2], edge = rows[PRIZE_SPOTS - 1];
-    const gap = me.rank === 1 ? `You're leading by <b>${money((rows[1] ? me.pnl - rows[1].pnl : 0), false)}</b>.`
-      : `<b class="num">${money(above.pnl - me.pnl + 0.01, false)}</b> more to pass <b>${esc(above.u)}</b> for #${me.rank - 1}` +
-        (me.rank > PRIZE_SPOTS && edge ? ` · <b class="num">${money(edge.pnl - me.pnl + 0.01, false)}</b> to the top ${PRIZE_SPOTS}` : "") + ".";
+    const above = rows[me.rank - 2];
+    const gap = me.rank === 1 ? (rows[1] ? `Leading today by <b>${money(me.pnl - rows[1].pnl, false)}</b>.` : "The only trader on today's board so far.")
+      : `<b class="num">${money(above.pnl - me.pnl + 0.01, false)}</b> more to pass <b>${esc(above.u)}</b> for #${me.rank - 1} today.`;
     $("you").innerHTML = `<div class="you">
-      <div class="rank num">#${me.rank}<small>OF ${rows.length}</small></div>
+      <div class="rank num">#${me.rank}<small>OF ${rows.length} TODAY</small></div>
       <div style="min-width:0">
         <div class="who">${avatar(me, "md")}<b>${esc(me.u)}</b>${me.v ? VER : ""}<span class="num ${cls(me.pnl)}" style="font-weight:700;font-size:17px;margin-left:auto">${money(me.pnl)}</span></div>
-        <div class="stats num"><span><b>${me.rounds.toLocaleString("en-US")}</b> ${plural(me.rounds)}</span><span><b>${(winRate(me) * 100).toFixed(0)}%</b> won</span><span><b>${money(me.vol, false)}</b> volume</span><span>${lookName()} <b class="${cls(me.d24)}">${money(me.d24)}</b></span>${me.best ? `<span>best round <b class="pos">${money(me.best[0])}</b></span>` : ""}</div>
+        <div class="stats num"><span><b>${me.rounds.toLocaleString("en-US")}</b> ${plural(me.rounds)}</span><span><b>${(winRate(me) * 100).toFixed(0)}%</b> won</span><span><b>${money(me.vol, false)}</b> volume</span>${me.best ? `<span>best round <b class="pos">${money(me.best[0])}</b></span>` : ""}</div>
         <div class="gap">${gap}</div>
       </div>
       <div class="acts"><button class="btn pink" id="open-share">Share my rank</button><a class="btn ref" href="${REF}" target="_blank" rel="noopener">Trade Pulse ↗</a></div>
     </div>`;
   } else if (q && searched) {
     $("you").innerHTML = `<div class="miss">
-      <div><b>${esc(q)} isn't on the board yet</b>
-      <p>Either no settled Pulse round in this window, or the profile is private (private profiles aren't ranked). One settled round is enough to get on.</p></div>
+      <div><b>${esc(q)} isn't on today's board</b>
+      <p>Either no settled Pulse round yet today (the day starts at 00:00 UTC), or the profile is private (private profiles aren't ranked). One settled round is enough to get on.</p></div>
       <a class="cta ref" href="${REF}" target="_blank" rel="noopener">Trade a round ↗</a>
     </div>`;
   } else $("you").innerHTML = "";
@@ -830,12 +826,13 @@ function drawRace() {
   const set = raceSet();
   for (const x of set) if (!x.color) x.color = ink;
   race.hits = [];
-  if (!set.length) { c.fillStyle = ink2; c.font = F(500, 14); c.textAlign = "center"; c.fillText("The first settled round starts the race.", W / 2, H / 2); return; }
+  if (!set.length) { c.fillStyle = ink2; c.font = F(500, 14); c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("Today's race starts with the first settled round.", W / 2, H / 2); return; }
 
   const narrow = W < 560;
   const L = 8, R = W - (narrow ? 112 : 190), T = 26, B = H - 26, pw = R - L, ph = B - T;
   const P = race.hover != null ? race.hover : race.playing ? race.p : 1;
-  const w = board.window, t0 = w.start, t1 = Math.min(board.updatedAt, w.end || Infinity);
+  // today: from 00:00 UTC to the last update
+  const t0 = days ? Date.parse(days.today + "T00:00:00Z") : board.window.start, t1 = days ? days.updatedAt : board.updatedAt;
 
   // scale: signed log by default, because one whale would flatten everyone else on a linear axis
   let lo = 0, hi = 0;
@@ -1007,13 +1004,13 @@ async function drawCard(r) {
   c.beginPath(); [[93, 114], [103, 114], [107, 101], [115, 124], [120, 108], [123, 114], [131, 114]].forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y))); c.stroke();
   c.fillStyle = "#101114"; c.font = `700 30px ${F}`; c.textBaseline = "middle"; c.fillText("Pulse Board", 156, 113);
   c.font = `600 20px ${F}`; c.fillStyle = "#6e6e6e"; c.textAlign = "right";
-  c.fillText(board.window.tba ? `XO Pulse · last ${board.window.previewDays} days` : "XO Pulse PnL competition", W - 92, 113);
+  c.fillText(`XO Pulse · ${dayUTC(Date.parse(days.today + "T12:00:00Z"))}`, W - 92, 113);
   c.textAlign = "left";
   // rank
   c.fillStyle = "#101114"; c.font = `700 190px ${F}`; c.textBaseline = "alphabetic";
   c.fillText(`#${r.rank}`, 80, 372);
   const rw = c.measureText(`#${r.rank}`).width;
-  c.font = `600 26px ${F}`; c.fillStyle = "#8a8f98"; c.fillText(`of ${rows.length} traders`, 92 + rw + 14, 372);
+  c.font = `600 26px ${F}`; c.fillStyle = "#8a8f98"; c.fillText(`of ${rows.length} today`, 92 + rw + 14, 372);
   // who
   const img = r.a && (await loadImg(avatarUrl(r.a, "400x400")));
   c.save(); c.beginPath(); c.arc(124, 458, 40, 0, Math.PI * 2); c.closePath(); c.clip();
@@ -1055,7 +1052,7 @@ $("share").addEventListener("click", (e) => { if (e.target === $("share")) $("sh
 $("s-dl").onclick = () => $("cv").toBlob((b) => { const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `pulse-board-${me.u}.png`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1e4); }, "image/png");
 $("s-copy").onclick = async () => { try { await navigator.clipboard.writeText(shareUrl()); $("s-copy").textContent = "Copied"; } catch { $("s-copy").textContent = "Copy failed"; } setTimeout(() => ($("s-copy").textContent = "Copy link"), 1500); };
 $("s-x").onclick = () => {
-  const text = `I'm #${me.rank} of ${rows.length} on the @xomarket Pulse leaderboard with ${money(me.pnl)} net PnL.\n\nWhere are you?`;
+  const text = `I'm #${me.rank} of ${rows.length} on the @xomarket Pulse leaderboard today with ${money(me.pnl)} net PnL.\n\nWhere are you?`;
   window.open(`https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl())}`, "_blank", "noopener");
 };
 
@@ -1078,12 +1075,14 @@ async function load() {
   if (dl && (!dd || dl.updatedAt > dd.updatedAt)) dd = dl;
   if (dd) {
     days = dd; dayCache.clear();
+    // the page is about today (UTC day): the race, the podium, the totals and "Find yourself" all read today's ranking
+    rows = dayRows(days.today); byName = new Map(rows.map((r) => [r.u.toLowerCase(), r]));
     if (period !== "all" && !days.days.some((x) => x.d === period)) period = "all";
     // the page opens on today's ranking (or the latest day, if nobody has traded yet today); after that the choice is the visitor's
     if (!periodSet && days.days.length) { period = days.days.some((x) => x.d === days.today) ? days.today : days.days[0].d; periodSet = true; }
   }
   // a shared link (?u=name) picks that trader once; the address is then cleaned, so a reload starts with nobody picked
-  const u = me ? me.u : new URLSearchParams(location.search).get("u");
+  const u = me ? me.u : searched && $("q").value.trim() ? $("q").value.trim() : new URLSearchParams(location.search).get("u");
   if (location.search) history.replaceState(null, "", location.pathname);
   if (u) { me = byName.get(u.toLowerCase().replace(/^@/, "")) || null; searched = true; if (!$("q").value) $("q").value = me ? me.u : u; }
   render();

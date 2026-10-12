@@ -279,6 +279,8 @@ const board = {
 // fully inside the window and then stays as it was.
 const dayKey = (ms) => new Date(ms).toISOString().slice(0, 10);
 const perDay = new Map(); // day -> Map(username -> totals)
+const todayKey = dayKey(now), todayStart = Date.parse(todayKey + "T00:00:00Z"), todaySpan = Math.max(now - todayStart, 1);
+const todaySpark = {}; // username -> running PnL through today, SPARK points from 00:00 UTC to now (the race chart)
 for (const s of Object.values(state.users)) {
   if (s.p) continue;
   state.meta[s.u] = [s.a, s.v, s.c];
@@ -294,7 +296,16 @@ for (const s of Object.values(state.users)) {
     if (x.pnl > 0.005) { a.wins++; a.streak++; a.bestStreak = Math.max(a.bestStreak, a.streak); }
     else if (x.pnl < -0.005) { a.losses++; a.streak = 0; }
     a.best = Math.max(a.best, x.pnl);
+    if (k === todayKey) {
+      const line = (todaySpark[s.u] ??= new Array(SPARK).fill(null));
+      line[Math.min(SPARK - 1, Math.floor(((x.t - todayStart) / todaySpan) * SPARK))] = a.pnl;
+    }
   }
+}
+// carry the running total across the gaps between a trader's rounds
+for (const line of Object.values(todaySpark)) {
+  let run = 0;
+  for (let i = 0; i < SPARK; i++) { if (line[i] == null) line[i] = run; else run = line[i]; line[i] = r2(line[i]); }
 }
 for (const [k, users] of perDay) {
   if (Date.parse(k + "T00:00:00Z") < start) continue; // the window only covers part of this day
@@ -330,6 +341,7 @@ const days = {
   days: shownDays.map((k) => ({ d: k, rounds: (state.dayTotals[k] || [0, 0])[0], volume: (state.dayTotals[k] || [0, 0])[1], rows: state.days[k] })),
   // today's totals even when nobody ranked has traded yet
   todayTotals: state.dayTotals[dayKey(now)] || [0, 0],
+  todaySpark: Object.fromEntries(Object.entries(todaySpark).filter(([u]) => !EXCLUDE.has(u.toLowerCase()))),
 };
 
 await save(board, days);
