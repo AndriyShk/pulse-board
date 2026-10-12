@@ -207,7 +207,9 @@
   .board-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px 0; flex-wrap: wrap; }
   .board-head h2 { font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
   .upd { font-size: 12px; color: var(--ink-3); margin-left: auto; white-space: nowrap; }
-  .board-head small { font-size: 13px; color: var(--ink-2); font-weight: 500; }
+  .board-head small { font-size: 13px; color: var(--ink-2); font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+  .board-head .clear { width: 20px; height: 20px; border: 0; border-radius: 50%; background: var(--control); color: var(--ink-2); font-size: 10px; line-height: 1; cursor: pointer; display: grid; place-items: center; padding: 0; }
+  .board-head .clear:hover { background: var(--control-hover); color: var(--ink); }
   .days { display: flex; gap: 8px; padding: 12px 16px 2px; overflow-x: auto; scrollbar-width: none; }
   .days::-webkit-scrollbar { display: none; }
   .day { flex: none; min-width: 138px; max-width: 170px; text-align: left; border: 1px solid var(--line); background: var(--card); border-radius: 12px; padding: 9px 12px 10px; cursor: pointer; display: flex; flex-direction: column; gap: 5px; }
@@ -574,20 +576,19 @@ function render() {
 
   // tabs + table
   const txt = (v) => (typeof v === "function" ? v() : v || "");
-  // period strip: the whole window first, then each day with its winner
+  // period strip: each day with its winner. No day picked = the whole window; picking the same day again goes back to it.
   const allDay = period === "all";
-  const allLabel = w.tba ? `Last ${w.previewDays} days` : "Whole competition";
   if (days && days.days.length) {
     const chip = (k, title, top, live) => `<button class="day" data-day="${k}" aria-pressed="${period === k}">
       <span class="dt">${title}${live ? "<em>live</em>" : ""}</span>
       ${top ? `<span class="dw">${avatar(top, "sm")}<span>${esc(top.u)}</span></span><b class="num ${cls(top.pnl)}">${money(top.pnl)}</b>` : `<span class="dw muted">No trades</span>`}
     </button>`;
     const at = $("days").scrollLeft; // re-rendering must not jump the strip back to the start
-    $("days").innerHTML = chip("all", allLabel, rows[0], false) + days.days.map((d) => chip(d.d, dayTitle(d.d), dayRows(d.d)[0], d.d === days.today)).join("");
+    $("days").innerHTML = days.days.map((d) => chip(d.d, dayTitle(d.d), dayRows(d.d)[0], d.d === days.today)).join("");
     $("days").hidden = false;
     $("days").scrollLeft = at;
   } else $("days").hidden = true;
-  $("board-period").textContent = allDay ? "" : `${dayTitle(period)} · UTC day`;
+  $("board-period").innerHTML = allDay ? "" : `${dayTitle(period)} · UTC day <button class="clear" data-day="all" aria-label="Back to the whole period">✕</button>`;
   $("tabs").innerHTML = TABS.filter((x) => allDay || !x.allOnly).map((x) => `<button class="tab" role="tab" aria-selected="${x.id === tab}" data-tab="${x.id}">${txt(x.label)}</button>`).join("");
   const T = TABS.find((x) => x.id === tab), list = sorted(T);
   const dayHint = allDay ? "" : period === days.today ? "Today so far, 00:00 UTC to now." : "A finished day, 00:00 to 24:00 UTC.";
@@ -695,7 +696,7 @@ document.addEventListener("click", (e) => {
   if (e.target.closest("#open-share")) return openShare();
   if (e.target.closest("#more")) { shown += PAGE; return render(); }
   const dy = e.target.closest("[data-day]");
-  if (dy) { period = dy.dataset.day; shown = PAGE; if (period !== "all" && tab === "d24") tab = "pnl"; return render(); }
+  if (dy) { period = dy.dataset.day === period ? "all" : dy.dataset.day; shown = PAGE; if (period !== "all" && tab === "d24") tab = "pnl"; return render(); }
   if (t) { tab = t.dataset.tab; shown = PAGE; return render(); }
   if (u) return pick(u.dataset.u, !u.closest(".sugg"));
   if (!e.target.closest(".field")) $("sugg").hidden = true;
