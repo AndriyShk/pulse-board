@@ -75,6 +75,7 @@
   .cta:active, .btn:active { transform: scale(.98); }
   .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 38px; padding: 0 14px; border-radius: 10px; background: var(--control-hover); border: 0; font-weight: 600; font-size: 13px; cursor: pointer; text-decoration: none; white-space: nowrap; transition: filter .12s, transform .08s; }
   .btn.pink { background: var(--up); color: var(--up-ink); }
+  .btn[disabled] { opacity: .55; pointer-events: none; }
 
   /* ---------- hero ---------- */
   .hero { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(0,1fr); gap: 16px; margin-top: 20px; }
@@ -299,6 +300,8 @@
   dialog canvas { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); display: block; }
   dialog .acts { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
   dialog .acts .sp { flex: 1; }
+  dialog .seg { margin-bottom: 12px; }
+  dialog .note { font-size: 13px; font-weight: 500; color: var(--ink-2); margin-top: 12px; }
 
   /* ---------- motion: the page moves with the rounds ---------- */
   :root { --beat: 1.8s; }
@@ -547,10 +550,12 @@
 <div id="wave" aria-hidden="true"></div>
 
 <dialog id="share">
+  <div class="seg" id="s-mode" role="group" aria-label="What to share"><button data-mode="image" aria-pressed="true">Image</button><button data-mode="video" aria-pressed="false">Video</button></div>
   <canvas id="cv" width="1200" height="675"></canvas>
+  <p class="note" id="s-note" hidden></p>
   <div class="acts">
-    <button class="btn pink" id="s-x">Post on X</button>
-    <button class="btn" id="s-dl">Download PNG</button>
+    <button class="btn pink" id="s-x" autofocus>Post on X</button>
+    <button class="btn" id="s-dl">Download</button>
     <button class="btn" id="s-copy">Copy link</button>
     <span class="sp"></span>
     <button class="btn" id="s-close">Close</button>
@@ -1337,63 +1342,77 @@ $("race-scale").onclick = (e) => { const b = e.target.closest("button"); if (!b)
   addEventListener("resize", placePills);
 }
 
-// ---------- share card ----------
-// The picked trader's day as a 1200x675 image, laid out like their card on the page and in the page's current theme.
-// It carries the date instead of "today", because the picture outlives the day.
+// ---------- share: an image or a short video of the picked trader's day ----------
+// Both are drawn on one 1200x675 canvas, in the page's current theme. They carry the date instead of "today",
+// because they outlive the day. The video is the day's PnL line being drawn, recorded straight from the canvas.
 const SITE = "xo-pulse-board.vercel.app";
 const MEDALS = [["#C7B583", "#867852", "#3A331F"], ["#B7BABE", "#75787C", "#2C2E30"], ["#B4967D", "#6E5A49", "#3A2E22"]]; // fill, ring, ink: the podium's gold, silver, bronze
+const CLIP = { lead: 500, draw: 5200, hold: 1800 }; // ms: before the line starts, while it is drawn, the final frame
+// X takes MP4; browsers that can only record WebM still get a file to keep
+const CLIP_TYPE = window.MediaRecorder ? ["video/mp4;codecs=avc1.42E01E", "video/mp4", "video/webm;codecs=vp9", "video/webm"].find((t) => MediaRecorder.isTypeSupported(t)) : null;
+const share = { mode: "image", face: null, png: null, video: null, rec: null, run: 0 }; // run: bumped to stop a clip that is no longer wanted
 const loadImg = async (url) => { try { const r = await fetch(url, { referrerPolicy: "no-referrer" }); if (!r.ok) return null; return await createImageBitmap(await r.blob()); } catch { return null; } };
-async function drawCard(r) {
-  const cv = $("cv"), c = cv.getContext("2d"), W = 1200, H = 675, F = '"Open Runde", system-ui, sans-serif';
-  await document.fonts.load(`700 40px "Open Runde"`);
-  const css = getComputedStyle(root), V = (k) => css.getPropertyValue(k).trim();
-  const ink = V("--ink"), ink2 = V("--ink-2"), ink3 = V("--ink-3");
-  const tone = { pos: "pos", neg: "neg" }[cls(r.pnl)]; // undefined at break-even
+const toneOf = (v) => ({ pos: "pos", neg: "neg" }[cls(v)]); // undefined at break-even
+
+// what the image and the video share: page, card, header, site address. Returns the context and the palette.
+function cardBase() {
+  const c = $("cv").getContext("2d"), W = 1200, H = 675, F = '"Open Runde", system-ui, sans-serif';
+  const css = getComputedStyle(root), V = (k) => css.getPropertyValue(k).trim(), ink = V("--ink"), ink2 = V("--ink-2"), ink3 = V("--ink-3");
   const rr = (x, y, w, h, rad) => { c.beginPath(); c.roundRect(x, y, w, h, rad); };
+  c.globalAlpha = 1; c.setLineDash([]); c.textAlign = "left"; c.textBaseline = "middle"; c.lineCap = "round"; c.lineJoin = "round";
   c.fillStyle = V("--page"); c.fillRect(0, 0, W, H);
-  // card
   c.fillStyle = V("--card"); rr(40, 40, W - 80, H - 80, 36); c.fill();
   c.strokeStyle = V("--line"); c.lineWidth = 2; rr(40, 40, W - 80, H - 80, 36); c.stroke();
-  // header: logo and name, what and when
   c.fillStyle = "#ff87a6"; rr(84, 84, 56, 56, 14); c.fill();
-  c.strokeStyle = "#7a1230"; c.lineWidth = 5; c.lineCap = "round"; c.lineJoin = "round";
+  c.strokeStyle = "#7a1230"; c.lineWidth = 5;
   c.beginPath(); [[93, 114], [103, 114], [107, 101], [115, 124], [120, 108], [123, 114], [131, 114]].forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y))); c.stroke();
-  c.fillStyle = ink; c.font = `700 30px ${F}`; c.textBaseline = "middle"; c.fillText("Pulse Board", 156, 113);
-  c.font = `600 20px ${F}`; c.fillStyle = ink2; c.textAlign = "right";
-  c.fillText(`XO Pulse · BTC 5m · ${dayUTC(Date.parse(days.today + "T12:00:00Z"))}`, W - 92, 113);
+  c.fillStyle = ink; c.font = `700 30px ${F}`; c.fillText("Pulse Board", 156, 113);
+  c.textAlign = "right"; c.textBaseline = "alphabetic";
+  c.font = `600 20px ${F}`; c.fillStyle = ink2; c.fillText(`XO Pulse · BTC 5m · ${dayUTC(Date.parse(days.today + "T12:00:00Z"))}`, W - 92, 120);
+  c.fillStyle = ink3; c.fillText(SITE, W - 92, 606);
   c.textAlign = "left";
-  // rank, with a medal for the top three
-  c.fillStyle = ink; c.font = `700 190px ${F}`; c.textBaseline = "alphabetic";
-  c.fillText(`#${r.rank}`, 80, 372);
-  const sx = 106 + c.measureText(`#${r.rank}`).width;
-  c.font = `600 26px ${F}`; c.fillStyle = ink3; c.fillText(`of ${rows.length} ${rows.length === 1 ? "trader" : "traders"}`, sx, 372);
-  if (MEDALS[r.rank - 1]) {
-    const [fill, ring, text] = MEDALS[r.rank - 1], label = ["1st place", "2nd place", "3rd place"][r.rank - 1];
-    c.font = `700 22px ${F}`;
-    const w = c.measureText(label).width + 32;
-    c.fillStyle = fill; rr(sx, 286, w, 44, 12); c.fill();
-    c.strokeStyle = ring; c.lineWidth = 2; rr(sx + 1, 287, w - 2, 42, 11); c.stroke();
-    c.fillStyle = text; c.textBaseline = "middle"; c.fillText(label, sx + 16, 309); c.textBaseline = "alphabetic";
-  }
-  // who
-  const img = r.a && (await loadImg(avatarUrl(r.a, "400x400")));
-  c.save(); c.beginPath(); c.arc(124, 458, 40, 0, Math.PI * 2); c.closePath(); c.clip();
-  c.fillStyle = /^#[0-9a-f]{6}$/i.test(r.c) ? r.c : "#a293ff"; c.fillRect(84, 418, 80, 80);
-  if (img) c.drawImage(img, 84, 418, 80, 80);
-  else { c.fillStyle = "#fff"; c.font = `700 38px ${F}`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText((r.u[0] || "?").toUpperCase(), 124, 460); }
+  return { c, W, F, V, rr, ink, ink2, ink3 };
+}
+// the trader's picture (or initial) in a circle, and their name cut to fit
+function cardWho({ c, F, ink }, r, cx, cy, rad, x, y, px, max) {
+  c.save(); c.beginPath(); c.arc(cx, cy, rad, 0, 6.2832); c.clip();
+  c.fillStyle = /^#[0-9a-f]{6}$/i.test(r.c) ? r.c : "#a293ff"; c.fillRect(cx - rad, cy - rad, rad * 2, rad * 2);
+  if (share.face) c.drawImage(share.face, cx - rad, cy - rad, rad * 2, rad * 2);
+  else { c.fillStyle = "#fff"; c.font = `700 ${rad}px ${F}`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText((r.u[0] || "?").toUpperCase(), cx, cy + 2); }
   c.restore(); c.textAlign = "left"; c.textBaseline = "alphabetic";
-  c.fillStyle = ink; c.font = `700 40px ${F}`;
-  let name = r.u; while (c.measureText(name).width > 420 && name.length > 4) name = name.slice(0, -2) + "…";
-  c.fillText(name, 184, 472);
-  // stats
+  c.fillStyle = ink; c.font = `700 ${px}px ${F}`;
+  let name = r.u; while (c.measureText(name).width > max && name.length > 4) name = name.slice(0, -2) + "…";
+  c.fillText(name, x, y);
+}
+// a gold, silver or bronze label; returns its width
+function cardMedal({ c, F, rr }, rank, text, x, y, h, px) {
+  const [fill, ring, inkOn] = MEDALS[rank - 1];
+  c.font = `700 ${px}px ${F}`;
+  const w = c.measureText(text).width + h * 0.7;
+  c.fillStyle = fill; rr(x, y, w, h, h * 0.28); c.fill();
+  c.strokeStyle = ring; c.lineWidth = 2; rr(x + 1, y + 1, w - 2, h - 2, h * 0.28 - 1); c.stroke();
+  c.fillStyle = inkOn; c.textBaseline = "middle"; c.fillText(text, x + h * 0.35, y + h / 2 + 1); c.textBaseline = "alphabetic";
+  return w;
+}
+const ofTraders = () => `of ${rows.length} ${rows.length === 1 ? "trader" : "traders"}`;
+
+// the image: laid out like the trader's card on the page
+function drawCard(r) {
+  const k = cardBase(), { c, F, V, rr, ink, ink2, ink3 } = k;
+  // rank, with a medal for the top three
+  c.fillStyle = ink; c.font = `700 190px ${F}`; c.fillText(`#${r.rank}`, 80, 372);
+  const sx = 106 + c.measureText(`#${r.rank}`).width;
+  c.font = `600 26px ${F}`; c.fillStyle = ink3; c.fillText(ofTraders(), sx, 372);
+  if (r.rank <= 3) cardMedal(k, r.rank, ["1st place", "2nd place", "3rd place"][r.rank - 1], sx, 286, 44, 22);
+  cardWho(k, r, 124, 458, 40, 184, 472, 40, 420);
   const stats = [["Rounds", r.rounds.toLocaleString("en-US")], ["Won", (winRate(r) * 100).toFixed(0) + "%"], ["Volume", money(r.vol, false)], ["Best round", r.best ? money(r.best) : "–"]];
-  stats.forEach(([k, v], i) => {
+  stats.forEach(([label, v], i) => {
     const x = 84 + i * 150;
-    c.font = `500 19px ${F}`; c.fillStyle = ink3; c.fillText(k, x, 548);
+    c.font = `500 19px ${F}`; c.fillStyle = ink3; c.fillText(label, x, 548);
     c.font = `700 28px ${F}`; c.fillStyle = ink; c.fillText(v, x, 584);
   });
   // PnL panel with the day's line
-  const px = 700, py = 190, pw = 416, ph = 370, color = tone ? V(`--${tone}`) : ink3;
+  const px = 700, py = 190, pw = 416, ph = 370, tone = toneOf(r.pnl), color = tone ? V(`--${tone}`) : ink3;
   c.fillStyle = tone ? V(`--${tone}-soft`) : V("--control"); rr(px, py, pw, ph, 28); c.fill();
   c.font = `600 22px ${F}`; c.fillStyle = ink2; c.fillText("Net profit / loss", px + 32, py + 54);
   c.fillStyle = color;
@@ -1404,23 +1423,142 @@ async function drawCard(r) {
   const X = (i) => gx + (i / (p.length - 1)) * gw, Y = (v) => gy + gh - ((v - mn) / sp) * gh;
   c.strokeStyle = ink3; c.globalAlpha = 0.4; c.lineWidth = 2; c.setLineDash([4, 6]); c.beginPath(); c.moveTo(gx, Y(0)); c.lineTo(gx + gw, Y(0)); c.stroke(); c.setLineDash([]); c.globalAlpha = 1;
   c.strokeStyle = color; c.lineWidth = 5; c.beginPath(); p.forEach((v, i) => (i ? c.lineTo(X(i), Y(v)) : c.moveTo(X(i), Y(v)))); c.stroke();
-  c.fillStyle = color; c.beginPath(); c.arc(X(p.length - 1), Y(p[p.length - 1]), 8, 0, Math.PI * 2); c.fill();
-  // where to find it
-  c.font = `600 20px ${F}`; c.fillStyle = ink3; c.textAlign = "right"; c.fillText(SITE, W - 92, 606); c.textAlign = "left";
+  c.fillStyle = color; c.beginPath(); c.arc(X(p.length - 1), Y(p[p.length - 1]), 8, 0, 6.2832); c.fill();
 }
-const shareUrl = () => `${location.origin}${location.pathname}?u=${encodeURIComponent(me.u)}`;
+
+// one frame of the video, `ms` into it: the day's line is drawn left to right and the PnL counts along with it
+function drawClip(r, ms) {
+  const k = cardBase(), { c, W, F, V, rr, ink, ink2, ink3 } = k;
+  const d = dense(r), M = d.length - 1, u = Math.min(1, Math.max(0, (ms - CLIP.lead) / CLIP.draw));
+  const p0 = d.from / M, p = p0 + (1 - p0) * (u < 0.5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u)); // starts at the trader's first round, not at the empty hours before it
+  const v = valueAt(d, p), tone = toneOf(v), color = tone ? V(`--${tone}`) : ink3;
+  // who and where they stand
+  cardWho(k, r, 124, 208, 40, 184, 206, 36, 440);
+  let x = 184;
+  if (r.rank <= 3) x += cardMedal(k, r.rank, `#${r.rank}`, x, 220, 34, 20) + 10;
+  else { c.font = `700 22px ${F}`; c.fillStyle = ink; c.fillText(`#${r.rank}`, x, 245); x += c.measureText(`#${r.rank}`).width + 8; }
+  c.font = `600 22px ${F}`; c.fillStyle = ink3; c.fillText(ofTraders(), x, 245);
+  // the number the line has reached
+  c.textAlign = "right";
+  c.font = `600 20px ${F}`; c.fillStyle = ink2; c.fillText("Net profit / loss", W - 92, 186);
+  c.font = `700 64px ${F}`; c.fillStyle = color; c.fillText(money(v), W - 92, 248);
+  // chart: hours along the bottom, the $0 line, the day's line up to this moment
+  const gx = 84, gy = 296, gw = W - 176, gh = 224, t0 = Date.parse(days.today + "T00:00:00Z"), span = days.updatedAt - t0;
+  let mn = 0, mx = 0; for (const y of d) { if (y < mn) mn = y; if (y > mx) mx = y; }
+  const X = (i) => gx + (i / M) * gw, Y = (y) => gy + gh - ((y - mn) / (mx - mn || 1)) * gh, y0 = Y(0), K = p * M, hx = gx + p * gw, hy = Y(v);
+  c.textAlign = "center"; c.font = `500 18px ${F}`; c.lineWidth = 1;
+  const step = ([1, 2, 3, 6].find((h) => span / (h * 36e5) <= 7) || 12) * 36e5, first = new Date(t0); first.setHours(0, 0, 0, 0);
+  for (let t = +first; t < t0 + span; t += step) {
+    const tx = gx + ((t - t0) / span) * gw;
+    if (tx < gx + 40 || tx > gx + gw - 40) continue;
+    c.strokeStyle = V("--line"); c.beginPath(); c.moveTo(tx, gy - 8); c.lineTo(tx, gy + gh + 8); c.stroke();
+    c.fillStyle = ink3; c.fillText(hm(t), tx, gy + gh + 34);
+  }
+  c.strokeStyle = ink3; c.globalAlpha = 0.5; c.lineWidth = 2; c.setLineDash([5, 7]); c.beginPath(); c.moveTo(gx, y0); c.lineTo(gx + gw, y0); c.stroke(); c.setLineDash([]); c.globalAlpha = 1;
+  const trace = () => { c.moveTo(X(0), Y(d[0])); for (let i = 1; i <= Math.floor(K); i++) c.lineTo(X(i), Y(d[i])); c.lineTo(hx, hy); };
+  c.fillStyle = color; c.globalAlpha = 0.12; c.beginPath(); trace(); c.lineTo(hx, y0); c.lineTo(gx, y0); c.closePath(); c.fill(); c.globalAlpha = 1;
+  c.strokeStyle = color; c.lineWidth = 5; c.beginPath(); trace(); c.stroke();
+  // the head of the line; once the line is whole it pulses
+  const held = ms - CLIP.lead - CLIP.draw;
+  if (held > 0) { const ph = (held % 1200) / 1200; c.globalAlpha = 0.5 * (1 - ph); c.lineWidth = 3; c.beginPath(); c.arc(hx, hy, 10 + ph * 18, 0, 6.2832); c.stroke(); c.globalAlpha = 1; }
+  c.fillStyle = V("--card"); c.beginPath(); c.arc(hx, hy, 12, 0, 6.2832); c.fill();
+  c.fillStyle = color; c.beginPath(); c.arc(hx, hy, 8, 0, 6.2832); c.fill();
+  // the time the line has reached, above the chart
+  const clock = hm(t0 + p * span); c.font = `600 18px ${F}`;
+  const tw = c.measureText(clock).width + 22, tx = Math.max(gx, Math.min(gx + gw - tw, hx - tw / 2));
+  c.fillStyle = V("--control"); rr(tx, gy - 34, tw, 28, 14); c.fill();
+  c.fillStyle = ink2; c.textAlign = "left"; c.textBaseline = "middle"; c.fillText(clock, tx + 11, gy - 19);
+}
+
+// plays the video on the canvas in a loop; `onEnd` fires when the first pass is complete
+function playClip(r, onEnd) {
+  const my = ++share.run, total = CLIP.lead + CLIP.draw + CLIP.hold, t0 = performance.now();
+  const frame = (now) => {
+    if (share.run !== my) return;
+    const ms = now - t0;
+    if (onEnd && ms >= total) { drawClip(r, total); onEnd(); onEnd = null; }
+    else drawClip(r, onEnd ? ms : ms % total);
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+  return my;
+}
+function stopClip() {
+  share.run++;
+  if (share.rec && share.rec.state !== "inactive") share.rec.stop();
+  share.rec = null;
+}
+// the buttons wait while the video is being recorded
+function shareReady(ready) {
+  $("s-x").disabled = $("s-dl").disabled = !ready;
+  $("s-dl").textContent = !ready ? "Recording…" : share.mode === "video" ? "Download video" : "Download PNG";
+}
+const shareNote = (text) => { $("s-note").textContent = text; $("s-note").hidden = !text; };
+function setShareMode(mode) {
+  stopClip();
+  share.mode = mode;
+  shareNote("");
+  for (const b of $("s-mode").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.mode === mode));
+  movePill($("s-mode"), '[aria-pressed="true"]');
+  if (mode === "image") {
+    drawCard(me);
+    shareReady(false);
+    return $("cv").toBlob((b) => { share.png = new File([b], `pulse-board-${me.u}.png`, { type: "image/png" }); shareReady(true); }, "image/png");
+  }
+  // the first pass of the loop is recorded straight from the canvas
+  share.video = null;
+  shareReady(false);
+  const rec = (share.rec = new MediaRecorder($("cv").captureStream(30), { mimeType: CLIP_TYPE, videoBitsPerSecond: 8e6 })), parts = [], who = me.u;
+  rec.ondataavailable = (e) => parts.push(e.data);
+  rec.onstop = () => {
+    if (share.run !== my) return; // switched away or closed before it finished
+    const mp4 = CLIP_TYPE.includes("mp4");
+    share.video = new File(parts, `pulse-board-${who}.${mp4 ? "mp4" : "webm"}`, { type: CLIP_TYPE.split(";")[0] });
+    shareReady(true);
+    if (!mp4) shareNote("This browser records WebM, which X doesn't accept. Open the page in Chrome or Safari to get an MP4.");
+  };
+  rec.start();
+  const my = playClip(me, () => rec.stop());
+}
 async function openShare() {
   if (!me) return;
   $("share").showModal();
-  await drawCard(me);
+  $("s-mode").hidden = !CLIP_TYPE || noMotion();
+  share.face = null;
+  setShareMode("image");
+  const who = me.u, [face] = await Promise.all([me.a ? loadImg(avatarUrl(me.a, "400x400")) : null, document.fonts.load(`700 40px "Open Runde"`)]);
+  if (!me || me.u !== who || !$("share").open) return;
+  share.face = face;
+  if (share.mode === "image") setShareMode("image"); // again, now with the picture and the font in
 }
+$("s-mode").onclick = (e) => { const b = e.target.closest("button"); if (b && me && b.dataset.mode !== share.mode) setShareMode(b.dataset.mode); };
 $("s-close").onclick = () => $("share").close();
 $("share").addEventListener("click", (e) => { if (e.target === $("share")) $("share").close(); });
-$("s-dl").onclick = () => $("cv").toBlob((b) => { const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `pulse-board-${me.u}.png`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1e4); }, "image/png");
+$("share").addEventListener("close", stopClip);
+
+const shareUrl = () => `${location.origin}${location.pathname}?u=${encodeURIComponent(me.u)}`;
+const shareFile = () => (share.mode === "video" ? share.video : share.png);
+const saveFile = (f) => { const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1e4); };
+$("s-dl").onclick = () => { if (shareFile()) saveFile(shareFile()); };
 $("s-copy").onclick = async () => { try { await navigator.clipboard.writeText(shareUrl()); $("s-copy").textContent = "Copied"; } catch { $("s-copy").textContent = "Copy failed"; } setTimeout(() => ($("s-copy").textContent = "Copy link"), 1500); };
-$("s-x").onclick = () => {
-  const text = `I'm #${me.rank} of ${rows.length} on the @xomarket Pulse leaderboard today with ${money(me.pnl)} net PnL.\n\nWhere are you?`;
-  window.open(`https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl())}`, "_blank", "noopener");
+// X's post window can't be handed a file. On a phone the system share sheet can (pick X there); on a computer the image
+// goes to the clipboard and the video to the downloads, one step from the post that opens.
+$("s-x").onclick = async () => {
+  const file = shareFile(), url = shareUrl(), medal = ["🥇", "🥈", "🥉"][me.rank - 1], what = share.mode === "video" ? "Video" : "Image";
+  if (!file) return;
+  const text = `#${me.rank} of ${rows.length} on @xomarket Pulse today${medal ? " " + medal : ""}\n${money(me.pnl)} on BTC Up or Down 5m · ${me.rounds} ${plural(me.rounds)} · ${(winRate(me) * 100).toFixed(0)}% won\n\nWhere do you rank? 👇`;
+  if (matchMedia("(pointer: coarse)").matches && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], text: `${text}\n${url}` }); } catch {} // the sheet was closed
+    return;
+  }
+  // copy first, while this page still has the focus the clipboard asks for; then open the post
+  const copied = share.mode === "image" && navigator.clipboard && window.ClipboardItem && (await navigator.clipboard.write([new ClipboardItem({ "image/png": file })]).then(() => true, () => false));
+  const tab = window.open(`https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank");
+  if (!tab) return shareNote("Your browser blocked the new tab. Allow pop-ups for this page and press Post on X again.");
+  tab.opener = null;
+  if (copied) return shareNote("Image copied. Paste it into the post: ⌘V or Ctrl+V.");
+  saveFile(file);
+  shareNote(`${what} saved to your downloads. Drag it into the post.`);
 };
 
 // ---------- data ----------
