@@ -1,5 +1,5 @@
 // Local preview: serves the site on http://localhost:8772 and re-runs the indexer every 5 minutes,
-// so the board stays fresh the way the GitHub workflow keeps it in production.
+// so the data stays fresh the way the GitHub workflow keeps it in production.
 // Usage: node dev.mjs        (NO_REFRESH=1 to serve only)
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
@@ -18,7 +18,7 @@ createServer(async (req, res) => {
   if (!file.startsWith(ROOT)) { res.writeHead(403).end(); return; }
   try {
     const body = await readFile(file);
-    // never cached, so an edit or a fresh board shows on the next reload
+    // never cached, so an edit or fresh data shows on the next reload
     res.writeHead(200, { "Content-Type": TYPES[extname(file)] || "application/octet-stream", "Cache-Control": "no-store" }).end(body);
   } catch { res.writeHead(404).end("Not found"); }
 }).listen(PORT, () => console.log(`Pulse Board on http://localhost:${PORT}`));

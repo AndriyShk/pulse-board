@@ -1,4 +1,4 @@
-// GitHub often delays or skips the board workflow's */10 schedule. The page calls this when its data looks old;
+// GitHub often delays or skips the board workflow's schedule. The page calls this when its data looks old;
 // with a GH_TOKEN env var (fine-grained, Actions: write on this repo) it starts the workflow again,
 // at most once every 4 minutes. Without the token it does nothing.
 // GET /api/nudge → { started }   (edge-cached 60 s, so visitors can't spam GitHub)

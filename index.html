@@ -29,7 +29,7 @@
     --page: #f5f5f5; --card: #fff; --control: #f4f4f5; --control-hover: #ebebeb;
     --line: #e6e8ea; --line-soft: rgba(0,0,0,.06);
     --ink: #101114; --ink-2: #6e6e6e; --ink-3: #6b7078;
-    --up: #ff87a6; --up-ink: #7a1230; --up-text: #c12c57; --up-soft: #fff0f4; --up-line: #e99bb2;
+    --up: #ff87a6; --up-ink: #7a1230; --up-text: #c12c57; --up-soft: #fff0f4;
     --down: #a293ff; --down-ink: #2a1a6e; --down-text: #6941c6; --down-soft: #f1edff; --down-line: #b9a5e9;
     --pos: #0f7a42; --pos-soft: #eaf7f0; --neg: #c0403d; --neg-soft: #fff0f0;
     --cta: #2fc04a; --cta-ink: #000;
@@ -40,7 +40,7 @@
     --page: #121213; --card: #1b1b1d; --control: #222224; --control-hover: #2b2b2e;
     --line: #323235; --line-soft: #262629;
     --ink: #f2f2f3; --ink-2: #bcbcc2; --ink-3: #a2a2ab;
-    --up-text: #ffabc4; --up-soft: #302127; --up-line: #5c3442;
+    --up-text: #ffabc4; --up-soft: #302127;
     --down-text: #c4b6ff; --down-soft: #292533; --down-line: #463c6e;
     --pos: #74dba4; --pos-soft: #1d2a23; --neg: #ff8f8a; --neg-soft: #2e2020;
     --shadow: 0 1px 3px rgba(0,0,0,.16);
@@ -73,10 +73,8 @@
   .cta { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 16px; border-radius: 12px; background: var(--cta); color: var(--cta-ink); border: 0; font-weight: 600; text-decoration: none; white-space: nowrap; cursor: pointer; transition: filter .12s, transform .08s; }
   .cta:hover, .btn:hover { filter: brightness(.95); }
   .cta:active, .btn:active { transform: scale(.98); }
-  .cta.big { height: 48px; border-radius: 14px; font-size: 15px; padding: 0 22px; }
   .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 38px; padding: 0 14px; border-radius: 10px; background: var(--control-hover); border: 0; font-weight: 600; font-size: 13px; cursor: pointer; text-decoration: none; white-space: nowrap; transition: filter .12s, transform .08s; }
   .btn.pink { background: var(--up); color: var(--up-ink); }
-  .btn[disabled] { opacity: .55; pointer-events: none; }
 
   /* ---------- hero ---------- */
   .hero { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(0,1fr); gap: 16px; margin-top: 20px; }
@@ -90,7 +88,6 @@
   h1 { font-size: clamp(28px, 4.2vw, 40px); line-height: 1.08; font-weight: 700; letter-spacing: -.02em; text-wrap: balance; }
   h1 em { font-style: normal; color: var(--up-text); }
   .facts { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); border: 1px solid var(--line); border-radius: 12px; }
-  .facts[hidden] { display: none; }
   .today { display: flex; flex-direction: column; gap: 8px; }
   .today-head { display: flex; align-items: baseline; gap: 8px; }
   .today-head b { font-size: 14px; font-weight: 600; }
@@ -101,7 +98,7 @@
   .fact b { display: block; font-size: 16px; font-weight: 600; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .fact b.tba { color: var(--ink-3); }
 
-  .live { padding: 24px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; }
+  .live { padding: 24px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; position: relative; overflow: hidden; } /* clips the result panel */
   .live-head { display: flex; align-items: center; gap: 10px; }
   .live-head .btc-lg { width: 40px; height: 40px; border-radius: 10px; background: #f7931a; color: #fff; display: grid; place-items: center; font-size: 22px; font-weight: 700; flex: none; }
   .live-head small { display: block; font-size: 12px; color: var(--ink-2); }
@@ -187,7 +184,6 @@
   /* ---------- avatars ---------- */
   .av { width: 32px; height: 32px; border-radius: 50%; flex: none; background: var(--control); display: grid; place-items: center; font-weight: 700; font-size: 13px; color: #fff; overflow: hidden; position: relative; }
   .av img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .av.lg { width: 52px; height: 52px; font-size: 20px; }
   .av.md { width: 40px; height: 40px; font-size: 16px; }
   .ver { width: 14px; height: 14px; flex: none; color: var(--down-text); }
 
@@ -197,11 +193,10 @@
   .sec-title small { font-size: 13px; color: var(--ink-2); font-weight: 500; }
   .podium { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; margin-top: 10px; }
   .pod-empty { grid-column: 1 / -1; padding: 20px; color: var(--ink-2); text-align: center; }
-  .pod { padding: 16px; display: flex; flex-direction: column; gap: 12px; cursor: pointer; position: relative; overflow: hidden; }
-  .pod:hover { border-color: var(--line-hover, #cfd2d6); }
+  .pod { padding: 16px; display: flex; flex-direction: column; gap: 12px; cursor: pointer; position: relative; overflow: hidden; transition: transform .18s ease-out, border-color .15s; will-change: transform; }
+  .pod:hover { border-color: #cfd2d6; }
   .pod .top { display: flex; align-items: center; gap: 10px; min-width: 0; }
   .pod .place { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-weight: 700; font-size: 14px; flex: none; }
-  .pod { transition: transform .18s ease-out, border-color .15s; will-change: transform; }
   .pod.p1::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,.5) 50%, transparent 58%); transform: translateX(-130%); animation: sheen 7s ease-in-out infinite; }
   :root[data-theme="dark"] .pod.p1::after { background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,.09) 50%, transparent 58%); }
   @keyframes sheen { 0%, 72% { transform: translateX(-130%); } 100% { transform: translateX(130%); } }
@@ -237,7 +232,6 @@
   .day .dw > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .day b { font-size: 15px; font-weight: 700; }
   .av.sm { width: 20px; height: 20px; font-size: 10px; }
-  .tabs[hidden] { display: none; }
   .tabs { display: flex; gap: 4px; padding: 12px 16px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--line); }
   .tabs::-webkit-scrollbar { display: none; }
   .tab { height: 32px; padding: 0 12px; border-radius: 9px; border: 0; background: none; font-weight: 600; font-size: 13px; color: var(--ink-2); cursor: pointer; white-space: nowrap; }
@@ -277,7 +271,6 @@
   .wr { display: inline-flex; align-items: center; gap: 8px; }
   .wr i { width: 44px; height: 5px; border-radius: 9px; background: var(--down-soft); overflow: hidden; display: block; }
   .wr i u { display: block; height: 100%; background: var(--down); border-radius: 9px; }
-  td svg.spark { width: 88px; height: 26px; display: block; margin-left: auto; }
   .more { display: flex; justify-content: center; padding: 14px; border-top: 1px solid var(--line-soft); }
   .pickday { padding: 14px 16px 16px; font-size: 13px; color: var(--ink-3); }
   .empty { padding: 48px 16px; text-align: center; color: var(--ink-2); }
@@ -311,7 +304,6 @@
   .live.settling .meter i { animation: blink 1s ease-in-out infinite; }
   .live.settling .live-dot { color: var(--ink-2); }
   /* a round just settled: the result sweeps over the card, a soft band runs down the page */
-  .live { position: relative; overflow: hidden; }
   .result { position: absolute; inset: 0; z-index: 3; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; pointer-events: none; }
   .result.u { background: var(--up); color: var(--up-ink); } .result.d { background: var(--down); color: var(--down-ink); }
   .result small { font-size: 13px; font-weight: 600; opacity: .75; }
@@ -330,8 +322,8 @@
   .past .r.pop { animation: pop .55s cubic-bezier(.2,1.5,.4,1); }
   @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
   /* a number changed: the row (or tile) flashes and the difference floats up beside it */
-  tr.flash-up td, .mrow.flash-up, .pod.flash-up, .total.flash-up, .side.flash-up { animation: flashUp 1.6s ease-out; }
-  tr.flash-down td, .mrow.flash-down, .pod.flash-down, .total.flash-down, .side.flash-down { animation: flashDown 1.6s ease-out; }
+  tr.flash-up td, .mrow.flash-up, .pod.flash-up, .total.flash-up { animation: flashUp 1.6s ease-out; }
+  tr.flash-down td, .mrow.flash-down, .pod.flash-down, .total.flash-down { animation: flashDown 1.6s ease-out; }
   @keyframes flashUp { 0% { box-shadow: inset 0 0 0 999px var(--pos-soft); } 100% { box-shadow: inset 0 0 0 999px transparent; } }
   @keyframes flashDown { 0% { box-shadow: inset 0 0 0 999px var(--neg-soft); } 100% { box-shadow: inset 0 0 0 999px transparent; } }
   .mainv { position: relative; display: inline-block; }
@@ -339,7 +331,7 @@
   @keyframes floatUp { 0% { opacity: 0; transform: translateY(8px); } 15%, 70% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-10px); } }
 
   /* ---------- polish: nothing appears or changes in a jump ---------- */
-  /* 1. the page arrives: cards rise one after another; until the data is in, placeholders shimmer where numbers will be */
+  /* the page arrives: cards rise one after another; until the data is in, placeholders shimmer where numbers will be */
   .hero > *, main > .race, main > .find, main > .sec-title, main > .podium, main > .board, main > .how { animation: enter .55s cubic-bezier(.2,.8,.2,1) both; }
   .hero > :nth-child(2) { animation-delay: .07s; }
   main > .race { animation-delay: .14s; } main > .find { animation-delay: .2s; } main > .sec-title { animation-delay: .24s; }
@@ -351,12 +343,12 @@
   .sk-row { height: 44px; margin: 10px 16px; border-radius: 10px; }
   .race-box.sk-box { border-radius: 12px; }
   @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
-  /* 2. the highlight of the active tab or switch slides to its new place */
+  /* the highlight of the active tab or switch slides to its new place */
   .tabs, .seg { position: relative; }
   .tab, .seg button { position: relative; z-index: 1; transition: color .2s; }
   .pill { position: absolute; left: 0; top: 0; z-index: 0; pointer-events: none; border-radius: 9px; background: var(--ink); transition: transform .3s cubic-bezier(.3,.8,.2,1), width .3s cubic-bezier(.3,.8,.2,1); }
   .seg .pill { border-radius: 8px; background: var(--card); box-shadow: 0 1px 2px rgba(16,17,20,.12); }
-  /* 4. light and dark cross-fade (only used where the browser can't snapshot the page) */
+  /* light and dark cross-fade (only used where the browser can't snapshot the page) */
   .theming, .theming * { transition: background-color .3s ease, color .3s ease, border-color .3s ease !important; }
 
   @media (max-width: 860px) {
@@ -447,7 +439,7 @@
       </div>
     </div>
 
-    <div class="card live" aria-live="off">
+    <div class="card live">
       <div class="result" id="l-result"></div>
       <div class="live-head">
         <span class="btc-lg">₿</span>
@@ -476,7 +468,7 @@
     </div>
   </section>
 
-  <section class="card race" id="race">
+  <section class="card race">
     <div class="race-head">
       <div>
         <h2>Today's race</h2>
@@ -508,7 +500,7 @@
     <div id="you"></div>
   </section>
 
-  <div class="sec-title"><h2 id="podium-title">Today's top 3</h2><small id="podium-note"></small></div>
+  <div class="sec-title"><h2>Today's top 3</h2><small id="podium-note"></small></div>
   <section class="podium" id="podium" aria-label="Top three"><div class="sk-card"></div><div class="sk-card"></div><div class="sk-card"></div></section>
 
   <section class="card board">
@@ -554,8 +546,8 @@
 const REF = "https://beta.xo.market/?r=andriy_shkinder";
 const XO_API = "https://api-mainnet.xo.market/api";
 const XO_BOOK = "https://orderbooks.xo.market"; // public order book: live Up / Down prices
-// the indexer publishes to the repo's `data` branch; the copy next to the page is the fallback
-const REMOTE_DAYS = "https://raw.githubusercontent.com/AndriyShk/pulse-board/data/days.json", LOCAL_DAYS = "data/days.json";
+// the one data file. The indexer publishes it to the repo's `data` branch; the copy next to the page is the fallback
+const DATA_RAW = "https://raw.githubusercontent.com/AndriyShk/pulse-board/data/days.json", DATA_LOCAL = "data/days.json";
 const PAGE = 50;
 const MIN_DECIDED = 5; // decided rounds in a day needed for the win-rate tab
 const ROUND = 5 * 6e4;
@@ -614,7 +606,8 @@ function spark(points, w, h) {
 
 // ---------- motion ----------
 // Numbers roll from the old value to the new one; whatever holds them flashes green or red; rows glide to their new places.
-const noMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+const lessMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const noMotion = () => lessMotion.matches;
 const fmt = {
   money: (v) => money(v), usd: (v) => money(v, false), int: (v) => Math.round(v).toLocaleString("en-US"),
   pct1: (v) => v.toFixed(1) + "%", wins: (v) => Math.round(v) + " wins",
@@ -649,7 +642,7 @@ function setNum(el, key, v, f, intro) {
   if (prev == null) return intro ? tweenNum(el, 0, v, f, 900) : (el.textContent = fmt[f](v));
   if (Math.abs(prev - v) < 1e-9) return (el.textContent = fmt[f](v));
   tweenNum(el, prev, v, f);
-  flash(el.closest(".total, .side"), v > prev);
+  flash(el.closest(".total"), v > prev);
 }
 // freshly rendered markup: every [data-k] element rolls from the value it had in the previous render
 function animateNums(scope) {
@@ -714,67 +707,64 @@ function moveRows(before, view) {
 }
 
 // ---------- state ----------
-let board = null, rows = [], byName = new Map(), tab = "pnl", shown = PAGE, me = null;
-let days = null, period = "all", periodSet = false; // period: a UTC day "YYYY-MM-DD", or "all" when no day is open
+let days = null; // the data file: today's ranking and lines, the past days, the event settings
+let rows = [], byName = new Map(), me = null; // today's ranking, the same by lowercase username, the picked trader
+let tab = "pnl", shown = PAGE, period = null, periodSet = false; // period: the day open in the leaderboard ("YYYY-MM-DD", UTC), or null
 
-// one day's ranking in the same shape as the main rows (no trend line or rank movement for a single day)
+// one day's ranking as objects; only today's rows carry a PnL line (`spark`)
 const dayCache = new Map();
 function dayRows(k) {
   if (dayCache.has(k)) return dayCache.get(k);
   const d = days.days.find((x) => x.d === k);
   const out = (d ? d.rows : []).map(([u, pnl, vol, rounds, wins, losses, bestStreak, best], i) => {
     const [a, v, c] = days.users[u] || ["", 0, ""];
-    const line = k === days.today ? (days.todaySpark || {})[u] : null;
-    return { u, a, v, c, pnl, vol, rounds, wins, losses, bestStreak, best: best > 0 ? [best, 0] : null, spark: line || null, rank: i + 1 };
+    return { u, a, v, c, pnl, vol, rounds, wins, losses, bestStreak, best, spark: k === days.today ? days.todaySpark[u] : null, rank: i + 1 };
   });
   dayCache.set(k, out);
   return out;
 }
 // when a board day starts on the visitor's clock (the day itself runs 00:00-24:00 UTC), e.g. "3:00 AM"
-const dayStartLocal = (k) => hm(Date.parse((k || (days ? days.today : new Date().toISOString().slice(0, 10))) + "T00:00:00Z"));
+const dayStartLocal = () => hm(Date.parse(days.today + "T00:00:00Z"));
 const dayTitle = (k) => (k === days.today ? "Today" : new Date(k + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" }));
 
+// num: the value a tab ranks by (highest first, unless `asc`); f: how it is written; keep: who qualifies
 const TABS = [
-  { id: "pnl", label: "Top PnL", head: "PnL", val: (r) => r.pnl, num: (r) => r.pnl, f: "money" },
-  { id: "win", label: "Win rate", head: "Win rate", val: (r) => winRate(r), num: (r) => winRate(r) * 100, f: "pct1", keep: (r) => r.wins + r.losses >= MIN_DECIDED, hint: `Share of decided rounds won. Needs at least ${MIN_DECIDED} decided rounds.` },
-  { id: "best", label: "Biggest round", head: "Best round", val: (r) => (r.best ? r.best[0] : -Infinity), num: (r) => r.best[0], f: "money", keep: (r) => r.best, hint: "The most profit taken from a single five-minute round." },
-  { id: "streak", label: "Hot streak", head: "Best streak", val: (r) => r.bestStreak, num: (r) => r.bestStreak, f: "wins", keep: (r) => r.bestStreak > 1, hint: "Longest run of winning rounds in a row." },
-  { id: "vol", label: "Volume", head: "Volume", val: (r) => r.vol, num: (r) => r.vol, f: "usd", hint: "Total stake across settled rounds." },
-  { id: "rekt", label: "Rekt", head: "PnL", val: (r) => -r.pnl, num: (r) => r.pnl, f: "money", keep: (r) => r.pnl < -0.004, hint: "The other end of the board. Respect for showing up." },
+  { id: "pnl", label: "Top PnL", head: "PnL", num: (r) => r.pnl, f: "money" },
+  { id: "win", label: "Win rate", head: "Win rate", num: (r) => winRate(r) * 100, f: "pct1", keep: (r) => r.wins + r.losses >= MIN_DECIDED, hint: `Share of decided rounds won. Needs at least ${MIN_DECIDED} decided rounds.` },
+  { id: "best", label: "Biggest round", head: "Best round", num: (r) => r.best, f: "money", keep: (r) => r.best > 0, hint: "The most profit taken from a single five-minute round." },
+  { id: "streak", label: "Hot streak", head: "Best streak", num: (r) => r.bestStreak, f: "wins", keep: (r) => r.bestStreak > 1, hint: "Longest run of winning rounds in a row." },
+  { id: "vol", label: "Volume", head: "Volume", num: (r) => r.vol, f: "usd", hint: "Total stake across settled rounds." },
+  { id: "rekt", label: "Rekt", head: "PnL", num: (r) => r.pnl, asc: true, f: "money", keep: (r) => r.pnl < -0.004, hint: "The other end of the board. Respect for showing up." },
 ];
-const sorted = (t) => dayRows(period).filter(t.keep || (() => true)).sort((a, b) => t.val(b) - t.val(a) || b.vol - a.vol);
+const sorted = (t) => dayRows(period).filter(t.keep || (() => true)).sort((a, b) => (t.asc ? -1 : 1) * (t.num(b) - t.num(a)) || b.vol - a.vol);
 
 // ---------- render ----------
 function render() {
-  if (!board) return;
-  const w = board.window, t = board.totals;
+  if (!days) return;
   // plain Pulse statistics by default; the competition chips, facts and wording appear only while an event is switched on
-  const ev = board.event;
+  const ev = days.event;
   document.querySelectorAll(".ev").forEach((el) => (el.hidden = !ev));
   if (ev) {
-    const live = Date.now() >= w.start && (!w.end || Date.now() <= w.end), over = w.end && Date.now() > w.end;
+    const live = Date.now() >= ev.start && (!ev.end || Date.now() <= ev.end), over = ev.end && Date.now() > ev.end;
     $("ev-name").textContent = ev.name;
     $("phase").textContent = over ? "Final" : live ? "Live" : "Starts soon";
-    $("f-dates").textContent = `${dayUTC(w.start)} – ${w.end ? dayUTC(w.end) : "TBA"}`;
+    $("f-dates").textContent = `${dayUTC(ev.start)} – ${ev.end ? dayUTC(ev.end) : "TBA"}`;
     $("f-prizes").textContent = ev.prizes || "TBA";
     $("f-prizes").classList.toggle("tba", !ev.prizes);
-    if (live && w.end) { $("f-left-label").textContent = "Time left"; tickLeft(); }
+    if (live && ev.end) { $("f-left-label").textContent = "Time left"; tickLeft(); }
   }
-  $("how-window").textContent = ev ? `Only rounds that open and settle between ${dayUTC(w.start)} and ${w.end ? dayUTC(w.end) : "the end date"}, 00:00 UTC, count.` : "Everything on this page is today's trading, unless you pick another day in the leaderboard.";
+  $("how-window").textContent = ev ? `Only rounds that open and settle between ${dayUTC(ev.start)} and ${ev.end ? dayUTC(ev.end) : "the end date"}, 00:00 UTC, count.` : "Everything on this page is today's trading, unless you pick another day in the leaderboard.";
   $("how-day").textContent = `A day on this board runs from ${dayStartLocal()} to ${dayStartLocal()} your time (00:00 to 24:00 UTC); today's numbers keep updating until it ends.`;
-  $("how-hidden").textContent = t.hidden ? ` (${t.hidden} right now)` : "";
+  $("how-hidden").textContent = days.hidden ? ` (${days.hidden} right now)` : "";
 
-  // the strip is about today (UTC day), like the podium below it
-  if (days) {
-    const [dRounds, dVolume] = days.todayTotals || [0, 0];
-    for (const el of document.querySelectorAll(".totals .sk, .race-box.sk-box")) el.classList.remove("sk", "sk-box");
-    setNum($("t-traders"), "t-traders", dayRows(days.today).length, "int", true);
-    setNum($("t-rounds"), "t-rounds", dRounds, "int", true);
-    setNum($("t-volume"), "t-volume", dVolume, "usd", true);
-  }
+  // today's totals
+  for (const el of document.querySelectorAll(".totals .sk, .race-box.sk-box")) el.classList.remove("sk", "sk-box");
+  setNum($("t-traders"), "t-traders", rows.length, "int", true);
+  setNum($("t-rounds"), "t-rounds", days.todayTotals[0], "int", true);
+  setNum($("t-volume"), "t-volume", days.todayTotals[1], "usd", true);
   showUpdated();
 
-  // podium: today's top three (UTC day). Without the day record it falls back to the whole period and says so.
+  // podium: today's top three
   const top3 = rows.slice(0, 3);
   $("podium-note").textContent = `since ${dayStartLocal()} · live`;
   $("totals-note").textContent = `since ${dayStartLocal()} · live`;
@@ -783,7 +773,7 @@ function render() {
     <div class="card pod p${i + 1}" data-u="${esc(r.u)}" tabindex="0" role="button" aria-label="${esc(r.u)}, rank ${i + 1}">
       <div class="top"><span class="place">${i + 1}</span>${avatar(r, "md")}<span class="name"><span>${esc(r.u)}</span>${r.v ? VER : ""}</span></div>
       <div class="pnl num ${cls(r.pnl)}" data-k="pod|${esc(r.u)}" data-v="${r.pnl}" data-f="money" data-intro="1">${money(r.pnl)}</div>
-      ${r.spark ? spark(r.spark, 300, 44) : ""}
+      ${spark(r.spark, 300, 44)}
       <div class="sub"><span><b class="num">${r.rounds.toLocaleString("en-US")}</b> ${plural(r.rounds)}</span><span><b class="num">${(winRate(r) * 100).toFixed(0)}%</b> won</span><span><b class="num">${money(r.vol, false)}</b> vol</span></div>
     </div>`).join("") : `<div class="card pod-empty">No settled rounds yet today. The day started at ${dayStartLocal()} your time.</div>`;
   animateNums($("podium"));
@@ -793,11 +783,8 @@ function render() {
     else if (Math.abs(was.left - now.left) > 1 || Math.abs(was.top - now.top) > 1) play(el, [{ transform: `translate(${was.left - now.left}px, ${was.top - now.top}px)` }, { transform: "none" }], { duration: 700, easing: "cubic-bezier(.2,.8,.2,1)" });
   }
 
-  // tabs + table
-  const txt = (v) => (typeof v === "function" ? v() : v || "");
-  // period strip: each day with its winner. No day picked = the whole window; picking the same day again goes back to it.
-  const allDay = period === "all";
-  if (days && days.days.length) {
+  // day strip: each day with its winner. Clicking a day opens its ranking; clicking it again closes it.
+  if (days.days.length) {
     const chip = (k, title, top, live) => `<button class="day" data-day="${k}" aria-pressed="${period === k}">
       <span class="dt">${title}${live ? "<em>live</em>" : ""}</span>
       ${top ? `<span class="dw">${avatar(top, "sm")}<span>${esc(top.u)}</span></span><b class="num ${cls(top.pnl)}">${money(top.pnl)}</b>` : `<span class="dw muted">No trades</span>`}
@@ -807,28 +794,28 @@ function render() {
     $("days").hidden = false;
     $("days").scrollLeft = at;
   } else $("days").hidden = true;
-  $("board-period").innerHTML = allDay ? "" : `${dayTitle(period)}${period === days.today ? ` · since ${dayStartLocal()}` : ""} <button class="clear" data-day="all" aria-label="Close this day">✕</button>`;
-  // the ranking is always one day's. Until a day is picked there is nothing to rank, so only the strip shows.
-  $("tabs").hidden = allDay;
-  if (allDay) {
+  $("board-period").innerHTML = period ? `${dayTitle(period)}${period === days.today ? ` · since ${dayStartLocal()}` : ""} <button class="clear" data-day="" aria-label="Close this day">✕</button>` : "";
+  // the ranking is always one day's. With no day open there is nothing to rank, so only the strip shows.
+  $("tabs").hidden = !period;
+  if (!period) {
     $("hint").hidden = true;
-    $("table").innerHTML = days && days.days.length ? `<div class="pickday">Pick a day to see its ranking.</div>` : `<div class="empty"><b>No day results yet</b>The first settled round starts the record.</div>`;
+    $("table").innerHTML = days.days.length ? `<div class="pickday">Pick a day to see its ranking.</div>` : `<div class="empty"><b>No day results yet</b>The first settled round starts the record.</div>`;
   } else {
-    if ($("tabs").querySelectorAll(".tab").length !== TABS.length) $("tabs").innerHTML = TABS.map((x) => `<button class="tab" role="tab" data-tab="${x.id}">${txt(x.label)}</button>`).join("");
+    if (!$("tabs").querySelector(".tab")) $("tabs").innerHTML = TABS.map((x) => `<button class="tab" role="tab" data-tab="${x.id}">${x.label}</button>`).join("");
     for (const b of $("tabs").querySelectorAll(".tab")) b.setAttribute("aria-selected", String(b.dataset.tab === tab));
     movePill($("tabs"), '.tab[aria-selected="true"]');
     const T = TABS.find((x) => x.id === tab), list = sorted(T);
     const from = Date.parse(period + "T00:00:00Z");
     const dayHint = period === days.today ? `Today's rounds so far. The day started at ${dayStartLocal()} your time.` : `A finished day: ${day(from)}, ${hm(from)} to ${day(from + 864e5)}, ${hm(from + 864e5)}, your time.`;
     $("hint").hidden = false;
-    $("hint").textContent = [dayHint, txt(T.hint)].filter(Boolean).join(" ");
+    $("hint").textContent = T.hint ? `${dayHint} ${T.hint}` : dayHint;
     if (!list.length) {
       $("table").innerHTML = `<div class="empty"><b>Nobody qualifies</b>Try another tab or another day.</div>`;
     } else {
       const name = (r) => `<span style="overflow:hidden;text-overflow:ellipsis">${esc(r.u)}</span>${r.v ? VER : ""}`;
       // the number next to the main one: the day's best round, or PnL when the tab ranks by something else
       const side = tab === "pnl" || tab === "rekt"
-        ? { head: "Best round", short: "Best", val: (r) => (r.best ? `<span class="pos">${money(r.best[0])}</span>` : "–") }
+        ? { head: "Best round", short: "Best", val: (r) => (r.best ? `<span class="pos">${money(r.best)}</span>` : "–") }
         : { head: "PnL", short: "PnL", val: (r) => `<span class="${cls(r.pnl)}">${money(r.pnl)}</span>` };
       const off = (r) => (byName.has(r.u.toLowerCase()) ? "" : " off"); // not on today's board: the row is not clickable
       // the ranked number, tagged so the next render can roll it from this value (and float the PnL difference beside it)
@@ -852,7 +839,7 @@ function render() {
           </div>
         </div>`).join("");
       $("table").innerHTML = `<div class="tscroll"><table>
-        <thead><tr><th>#</th><th>Trader</th><th>${txt(T.head)}</th><th>${side.head}</th><th>Rounds</th><th>Won</th><th>Volume</th></tr></thead>
+        <thead><tr><th>#</th><th>Trader</th><th>${T.head}</th><th>${side.head}</th><th>Rounds</th><th>Won</th><th>Volume</th></tr></thead>
         <tbody>${body}</tbody></table></div>
         <div class="mlist">${cards}</div>
         ${list.length > shown ? `<div class="more"><button class="btn" id="more">Show ${Math.min(PAGE, list.length - shown)} more of ${list.length - shown}</button></div>` : ""}`;
@@ -875,7 +862,7 @@ function renderYou() {
       <div class="rank num">#${me.rank}<small>OF ${rows.length} TODAY</small></div>
       <div style="min-width:0">
         <div class="who">${avatar(me, "md")}<b>${esc(me.u)}</b>${me.v ? VER : ""}<span class="num ${cls(me.pnl)}" style="font-weight:700;font-size:17px;margin-left:auto">${money(me.pnl)}</span></div>
-        <div class="stats num"><span><b>${me.rounds.toLocaleString("en-US")}</b> ${plural(me.rounds)}</span><span><b>${(winRate(me) * 100).toFixed(0)}%</b> won</span><span><b>${money(me.vol, false)}</b> volume</span>${me.best ? `<span>best round <b class="pos">${money(me.best[0])}</b></span>` : ""}</div>
+        <div class="stats num"><span><b>${me.rounds.toLocaleString("en-US")}</b> ${plural(me.rounds)}</span><span><b>${(winRate(me) * 100).toFixed(0)}%</b> won</span><span><b>${money(me.vol, false)}</b> volume</span>${me.best ? `<span>best round <b class="pos">${money(me.best)}</b></span>` : ""}</div>
         <div class="gap">${gap}</div>
       </div>
       <div class="acts"><button class="btn pink" id="open-share">Share my rank</button><a class="btn ref" href="${REF}" target="_blank" rel="noopener">Trade Pulse ↗</a></div>
@@ -937,8 +924,8 @@ document.addEventListener("click", (e) => {
   if (e.target.closest("#more")) { shown += PAGE; return render(); }
   const dy = e.target.closest("[data-day]");
   if (dy) {
-    const next = dy.dataset.day === period ? "all" : dy.dataset.day, order = (k) => days.days.findIndex((d) => d.d === k);
-    slide = next === "all" || period === "all" ? 0 : order(next) > order(period) ? 1 : -1; // later in the strip = further right
+    const next = dy.dataset.day === period ? null : dy.dataset.day || null, order = (k) => days.days.findIndex((d) => d.d === k);
+    slide = !next || !period ? 0 : order(next) > order(period) ? 1 : -1; // later in the strip = further right
     const go = () => { period = next; shown = PAGE; render(); };
     if (noMotion() || document.hidden || !$("table").firstElementChild) return go();
     const out = $("table").animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: `translateX(${-slide * 28}px)` }], { duration: 130, easing: "ease-in", fill: "forwards" });
@@ -1001,8 +988,7 @@ async function loadRound(startT) {
     if (late) settle(late); else renderPast();
   } catch { liveFor = 0; }
 }
-let retry = 0;
-setInterval(() => { tickRound(); if (!liveFor && ++retry % 10 === 0) liveFor = 0; }, 1000);
+setInterval(tickRound, 1000);
 
 // ---------- the moment a round settles ----------
 // XO publishes the winner about ten seconds after a round ends. Until then its chip says "…"; when it lands the result
@@ -1066,7 +1052,6 @@ tickRound();
 // What it costs right now to buy each side of the live round: the best ask for Up and the best ask for Down,
 // read from the public order book every few seconds. The split bar is the two asks relative to each other.
 const odds = { start: 0, up: null, down: null, a: null, b: null }; // token ids, last Up ask, last Down ask
-const cents = (p) => (p * 100).toFixed(1).replace(/\.0$/, "") + "¢";
 const ask = (token) => fetch(`${XO_BOOK}/price?token_id=${token}&side=SELL`).then((r) => r.json()).then((j) => Number(j.price)); // SELL side of the book = asks
 async function pollOdds() {
   if (!odds.up || !odds.down || document.hidden) return;
@@ -1080,7 +1065,7 @@ function setOdds(a, b) {
   const ok = (p) => p > 0 && p < 1; // "0.000" means nobody is selling that side right now: keep its last price
   for (const [el, key, p] of [[$("o-up"), "a", a], [$("o-down"), "b", b]]) {
     if (!ok(p)) continue;
-    if (odds[key] == null) el.textContent = cents(p);
+    if (odds[key] == null) el.textContent = fmt.cents(p);
     else if (Math.abs(odds[key] - p) > 1e-9) tweenNum(el, odds[key], p, "cents", 500);
     odds[key] = p;
   }
@@ -1092,10 +1077,11 @@ function setOdds(a, b) {
 setInterval(pollOdds, 3000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) pollOdds(); });
 
+// the event's countdown
 function tickLeft() {
-  const w = board.window;
-  if (!w.end) return;
-  const left = Math.max(0, w.end - Date.now()), d = Math.floor(left / 864e5), h = Math.floor(left / 36e5) % 24, m = Math.floor(left / 6e4) % 60;
+  const end = days.event.end;
+  if (!end) return;
+  const left = Math.max(0, end - Date.now()), d = Math.floor(left / 864e5), h = Math.floor(left / 36e5) % 24, m = Math.floor(left / 6e4) % 60;
   $("f-left").textContent = d ? `${d}d ${h}h` : `${h}h ${m}m`;
 }
 
@@ -1104,7 +1090,6 @@ function tickLeft() {
 // its price to beat, and each trader's avatar riding the head of their line.
 const RACE_COLORS = ["#ff5c8a", "#7c5cff", "#2fc04a", "#f7931a", "#18b6d9", "#d9a400", "#e5484d", "#3b82f6", "#c026d3", "#14b8a6"];
 const RACE_MS = 8000, SUB = 6;
-const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const race = { n: 10, log: true, p: 1, hover: null, playing: false, t0: 0, visible: false, looping: false, played: false, morph: 0, hits: [], imgs: new Map() };
 
 // monotone cubic through [0, ...spark], sampled SUB times per step: smooth like the Pulse line, never overshoots
@@ -1151,7 +1136,7 @@ function raceSet() {
 
 function drawRace() {
   const cv = $("race-cv"), box = cv.parentElement, W = box.clientWidth, H = box.clientHeight;
-  if (!board || !W) return;
+  if (!days || !W) return;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
   const c = cv.getContext("2d"), css = getComputedStyle(root), V = (k) => css.getPropertyValue(k).trim();
@@ -1191,27 +1176,20 @@ function drawRace() {
     c.strokeStyle = line; c.globalAlpha = 0.7; c.beginPath(); c.moveTo(L, Math.round(y) + 0.5); c.lineTo(R, Math.round(y) + 0.5); c.stroke(); c.globalAlpha = 1;
     c.fillStyle = ink3; c.fillText(money(v).replace(/\.00$/, ""), L + 2, y - 3);
   }
-  // days along the bottom
+  // hours along the bottom, on the visitor's clock
   c.textBaseline = "top"; c.textAlign = "center";
-  // a day per label, or hours when the window is short
-  const span = t1 - t0, want = narrow ? 4 : 8, hourly = span < 3 * 864e5;
-  const step = hourly ? [1, 2, 3, 6, 12].map((h) => h * 36e5).find((h) => span / h <= want) || 864e5 : Math.ceil(span / 864e5 / want) * 864e5;
+  const span = t1 - t0, step = [1, 2, 3, 6, 12].map((h) => h * 36e5).find((h) => span / h <= (narrow ? 4 : 8));
   const d0 = new Date(t0); d0.setHours(0, 0, 0, 0);
   for (let t = +d0; t < t1; t += step) {
     if (t <= t0) continue;
     const x = X((t - t0) / span);
     if (x < L + 18 || x > R - 18) continue;
-    c.fillStyle = ink3; c.fillText(hourly ? hm(t) : day(t), x, B + 8);
+    c.fillStyle = ink3; c.fillText(hm(t), x, B + 8);
     c.strokeStyle = line; c.globalAlpha = 0.5; c.beginPath(); c.moveTo(Math.round(x) + 0.5, T); c.lineTo(Math.round(x) + 0.5, B); c.stroke(); c.globalAlpha = 1;
   }
   // break-even, drawn like Pulse's price to beat
   const y0 = Math.round(Y(0)) + 0.5;
   c.strokeStyle = ink3; c.setLineDash([5, 5]); c.beginPath(); c.moveTo(L, y0); c.lineTo(R, y0); c.stroke(); c.setLineDash([]);
-  const pill = (text, x, y, align) => {
-    c.font = F(600, 11); const tw = c.measureText(text).width + 14, px = align === "right" ? x - tw : x;
-    c.fillStyle = control; c.beginPath(); c.roundRect(px, y - 10, tw, 20, 10); c.fill();
-    c.fillStyle = ink2; c.textAlign = "left"; c.textBaseline = "middle"; c.fillText(text, px + 7, y + 0.5);
-  };
   c.font = F(600, 11); c.fillStyle = ink2; c.textAlign = "left"; c.textBaseline = "bottom"; c.fillText("$0", L + 2, y0 - 3);
 
   // lines: leader last so it sits on top, the picked trader above everyone
@@ -1242,15 +1220,15 @@ function drawRace() {
   const heads = set.filter((s) => P * (lines.get(s.r).length - 1) >= lines.get(s.r).from)
     .map((s) => { const v = valueAt(lines.get(s.r), P); return { ...s, v, y: Y(v), ly: Y(v) }; }).sort((p, q) => p.ly - q.ly);
   if (heads.length) {
-  for (let i = 1; i < heads.length; i++) heads[i].ly = Math.max(heads[i].ly, heads[i - 1].ly + gap);
-  const over = heads[heads.length - 1].ly - (B - 2);
-  if (over > 0) { heads[heads.length - 1].ly -= over; for (let i = heads.length - 2; i >= 0; i--) heads[i].ly = Math.min(heads[i].ly, heads[i + 1].ly - gap); }
+    for (let i = 1; i < heads.length; i++) heads[i].ly = Math.max(heads[i].ly, heads[i - 1].ly + gap);
+    const over = heads[heads.length - 1].ly - (B - 2);
+    if (over > 0) { heads[heads.length - 1].ly -= over; for (let i = heads.length - 2; i >= 0; i--) heads[i].ly = Math.min(heads[i].ly, heads[i + 1].ly - gap); }
   }
   const phase = (performance.now() % 1800) / 1800;
   for (const h of heads) {
     const isMe = h.r === me, lead = h.r === set[0].r, lx = hx + 14;
     if (Math.abs(h.ly - h.y) > 2) { c.strokeStyle = h.color; c.globalAlpha = 0.45; c.lineWidth = 1; c.beginPath(); c.moveTo(hx, h.y); c.lineTo(lx - 2, h.ly); c.stroke(); c.globalAlpha = 1; }
-    if ((lead || isMe) && P === 1 && !reduced) { c.strokeStyle = h.color; c.globalAlpha = 0.5 * (1 - phase); c.lineWidth = 2; c.beginPath(); c.arc(hx, h.y, 5 + phase * 9, 0, 6.2832); c.stroke(); c.globalAlpha = 1; }
+    if ((lead || isMe) && P === 1 && !noMotion()) { c.strokeStyle = h.color; c.globalAlpha = 0.5 * (1 - phase); c.lineWidth = 2; c.beginPath(); c.arc(hx, h.y, 5 + phase * 9, 0, 6.2832); c.stroke(); c.globalAlpha = 1; }
     c.fillStyle = card; c.beginPath(); c.arc(hx, h.y, 5.5, 0, 6.2832); c.fill();
     c.fillStyle = h.color; c.beginPath(); c.arc(hx, h.y, 3.8, 0, 6.2832); c.fill();
     // avatar
@@ -1277,9 +1255,10 @@ function drawRace() {
   // cursor: time under the pointer
   if (race.hover != null) {
     c.strokeStyle = ink3; c.lineWidth = 1; c.beginPath(); c.moveTo(Math.round(hx) + 0.5, T - 6); c.lineTo(Math.round(hx) + 0.5, B); c.stroke();
-    const t = t0 + P * (t1 - t0), text = `${day(t)}, ${hm(t)}`;
-    c.font = F(600, 11); const tw = c.measureText(text).width + 14;
-    pill(text, Math.max(L, Math.min(W - tw, hx - tw / 2)), T - 14, "left");
+    const text = hm(t0 + P * span);
+    c.font = F(600, 11); const tw = c.measureText(text).width + 14, px = Math.max(L, Math.min(W - tw, hx - tw / 2));
+    c.fillStyle = control; c.beginPath(); c.roundRect(px, T - 24, tw, 20, 10); c.fill();
+    c.fillStyle = ink2; c.textAlign = "left"; c.textBaseline = "middle"; c.fillText(text, px + 7, T - 13.5);
   }
 }
 
@@ -1288,18 +1267,18 @@ function raceFrame(now) {
   if (race.playing) { race.p = Math.min(1, (now - race.t0) / RACE_MS); if (race.p >= 1) racePlaying(false); }
   if (race.morph && now - race.morph > MORPH_MS) race.morph = 0;
   drawRace();
-  if (race.visible && !reduced) raceKick();
+  if (race.visible && !noMotion()) raceKick();
 }
 function racePlaying(on) { race.playing = on; $("race-ic").textContent = on ? "❚❚" : "▶"; $("race-tx").textContent = on ? "Racing" : "Replay"; }
 function raceKick() { if (race.looping) return; race.looping = true; requestAnimationFrame(raceFrame); }
 function racePlay() {
-  if (reduced) return;
+  if (noMotion()) return;
   race.hover = null; race.p = 0; race.t0 = performance.now(); race.played = true;
   racePlaying(true);
   raceKick();
 }
 $("race-play").onclick = () => { if (race.playing) { racePlaying(false); raceKick(); } else racePlay(); };
-if (reduced) $("race-play").hidden = true;
+if (noMotion()) $("race-play").hidden = true;
 $("race-n").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; race.n = +b.dataset.n; [...$("race-n").querySelectorAll("button")].forEach((x) => x.setAttribute("aria-pressed", String(x === b))); movePill($("race-n"), '[aria-pressed="true"]'); raceKick(); };
 $("race-scale").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; race.log = b.dataset.log === "1"; [...$("race-scale").querySelectorAll("button")].forEach((x) => x.setAttribute("aria-pressed", String(x === b))); movePill($("race-scale"), '[aria-pressed="true"]'); raceKick(); };
 {
@@ -1317,7 +1296,7 @@ $("race-scale").onclick = (e) => { const b = e.target.closest("button"); if (!b)
   cv.addEventListener("click", (e) => { const h = hit(at(e)); if (h) pick(h.u, false); });
   new IntersectionObserver(([en]) => {
     race.visible = en.isIntersecting;
-    if (race.visible && board && !race.played) racePlay(); else if (race.visible) raceKick();
+    if (race.visible && days && !race.played) racePlay(); else if (race.visible) raceKick();
   }, { threshold: 0.35 }).observe(cv);
   new ResizeObserver(raceKick).observe(cv.parentElement);
   document.fonts.ready.then(raceKick);
@@ -1365,7 +1344,7 @@ async function drawCard(r) {
   let name = r.u; while (c.measureText(name).width > 420 && name.length > 4) name = name.slice(0, -2) + "…";
   c.fillText(name, 184, 472);
   // stats
-  const stats = [["Rounds", r.rounds.toLocaleString("en-US")], ["Won", (winRate(r) * 100).toFixed(0) + "%"], ["Volume", money(r.vol, false)], ["Best round", r.best ? money(r.best[0]) : "–"]];
+  const stats = [["Rounds", r.rounds.toLocaleString("en-US")], ["Won", (winRate(r) * 100).toFixed(0) + "%"], ["Volume", money(r.vol, false)], ["Best round", r.best ? money(r.best) : "–"]];
   stats.forEach(([k, v], i) => {
     const x = 84 + i * 150;
     c.font = `500 19px ${F}`; c.fillStyle = "#8a8f98"; c.fillText(k, x, 548);
@@ -1404,24 +1383,21 @@ async function load() {
   const local = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
   const get = (u) => fetch(u, { cache: "no-store" }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
   // on the live site: through /api/data (fresh within seconds), else the raw file (GitHub caches it for 5 minutes)
-  const live = (f, raw) => get(`/api/data?f=${f}`).catch(() => get(raw)).catch(() => null);
-  // one file holds everything the page shows: today's ranking and lines, the past days, the event settings
-  const dr = local ? null : await live("days", REMOTE_DAYS);
-  const dl = await get(LOCAL_DAYS).catch(() => null);
-  const dd = dl && (!dr || dl.updatedAt > dr.updatedAt) ? dl : dr;
+  const remote = local ? null : await get("/api/data").catch(() => get(DATA_RAW)).catch(() => null);
+  const bundled = await get(DATA_LOCAL).catch(() => null);
+  const dd = bundled && (!remote || bundled.updatedAt > remote.updatedAt) ? bundled : remote;
   if (!dd) { if (!days) $("table").innerHTML = `<div class="empty"><b>The board didn't load</b>Refresh in a minute.</div>`; return; }
   // data older than 4 minutes: ask the server to start a refresh (GitHub's own schedule is unreliable)
   if (!local && Date.now() - dd.updatedAt > 4 * 6e4) fetch("/api/nudge").catch(() => {});
   if (days && dd.updatedAt <= days.updatedAt) { showUpdated(); return; }
   // the chart eases from the lines it was showing to the new ones, but only within the same day
-  const was = days && days.today === dd.today ? new Map(rows.filter((r) => r.spark).map((r) => [r.u, dense(r)])) : null;
+  const was = days && days.today === dd.today ? new Map(rows.map((r) => [r.u, dense(r)])) : null;
   days = dd; dayCache.clear();
-  board = { updatedAt: dd.updatedAt, window: dd.window || {}, event: dd.event || null, totals: { hidden: dd.hidden || 0 } };
-  // the page is about today (UTC day): the race, the podium, the totals and "Find yourself" all read today's ranking
+  // the page is about today: the race, the podium, the totals and "Find yourself" all read today's ranking
   rows = dayRows(days.today);
   byName = new Map(rows.map((r) => [r.u.toLowerCase(), r]));
   if (was && !noMotion() && !document.hidden) { for (const r of rows) r._from = was.get(r.u) || null; race.morph = performance.now(); }
-  if (period !== "all" && !days.days.some((x) => x.d === period)) period = "all";
+  if (period && !days.days.some((x) => x.d === period)) period = null;
   // the page opens on today's ranking (or the latest day, if nobody has traded yet today); after that the choice is the visitor's
   if (!periodSet && days.days.length) { period = days.days.some((x) => x.d === days.today) ? days.today : days.days[0].d; periodSet = true; }
   // a shared link (?u=name) picks that trader once; the address is then cleaned, so a reload starts with nobody picked
@@ -1433,7 +1409,7 @@ async function load() {
 }
 load();
 setInterval(load, 6e4);
-setInterval(() => { if (board) { showUpdated(); if (board.event) tickLeft(); } }, 3e4);
+setInterval(() => { if (days) { showUpdated(); if (days.event) tickLeft(); } }, 3e4);
 </script>
 </body>
 </html>

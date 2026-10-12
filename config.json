@@ -6,7 +6,7 @@
   },
   "start": null,
   "end": null,
-  "previewDays": 7,
+  "windowDays": 7,
   "metric": "pnl",
   "exclude": [
     "predictiontalk"

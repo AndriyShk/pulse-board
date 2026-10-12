@@ -1,6 +1,6 @@
 name: board
-# Refreshes the leaderboard every ~5 minutes and publishes it to the `data` branch (one commit, force-pushed,
-# so the history never grows). The page reads board.json from raw.githubusercontent.
+# Refreshes the data every ~5 minutes and publishes it to the `data` branch (one commit, force-pushed,
+# so the history never grows). The page reads days.json from there, so a data update never redeploys the site.
 # GitHub often delays or skips scheduled runs; api/nudge.js starts this workflow again when the data gets old.
 on:
   schedule: [{ cron: '*/5 * * * *' }]
@@ -23,7 +23,6 @@ jobs:
           mkdir -p data
           if git fetch --depth=1 origin data 2>/dev/null; then
             git show FETCH_HEAD:state.json > data/state.json
-            git show FETCH_HEAD:board.json > data/board.json
           fi
       - name: Build
         run: node scripts/build-board.mjs
@@ -37,6 +36,6 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           # Vercel reads vercel.json from the branch it is about to deploy; this one tells it not to deploy data pushes
           echo '{"git":{"deploymentEnabled":false}}' > vercel.json
-          git add board.json days.json state.json vercel.json
+          git add days.json state.json vercel.json
           git commit -q -m "data: board"
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data
