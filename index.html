@@ -618,9 +618,6 @@ function pick(name, scroll = true) {
   me = r || null;
   if (r) $("q").value = r.u;
   $("sugg").hidden = true;
-  const url = new URL(location.href);
-  if (r) url.searchParams.set("u", r.u); else url.searchParams.delete("u");
-  history.replaceState(null, "", url);
   if (r && r.rank > shown && tab === "pnl") shown = Math.ceil(r.rank / PAGE) * PAGE;
   render();
   if (scroll) $("find").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1004,7 +1001,9 @@ async function load() {
   if (!local && Date.now() - b.updatedAt > 12 * 6e4) fetch("/api/nudge").catch(() => {});
   if (board && b.updatedAt <= board.updatedAt) { $("upd").textContent = `Updated ${ago(board.updatedAt)}`; return; }
   board = b; rows = b.rows; byName = new Map(rows.map((r) => [r.u.toLowerCase(), r]));
+  // a shared link (?u=name) picks that trader once; the address is then cleaned, so a reload starts with nobody picked
   const u = me ? me.u : new URLSearchParams(location.search).get("u");
+  if (location.search) history.replaceState(null, "", location.pathname);
   if (u) { me = byName.get(u.toLowerCase().replace(/^@/, "")) || null; searched = true; if (!$("q").value) $("q").value = me ? me.u : u; if (me && me.rank > shown) shown = Math.ceil(me.rank / PAGE) * PAGE; }
   render();
   if (race.visible && !race.played) racePlay();
