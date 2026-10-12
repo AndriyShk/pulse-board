@@ -187,7 +187,11 @@
   .ver { width: 14px; height: 14px; flex: none; color: var(--down-text); }
 
   /* ---------- podium ---------- */
-  .podium { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; margin-top: 16px; }
+  .sec-title { display: flex; align-items: baseline; gap: 10px; margin: 24px 4px 0; }
+  .sec-title h2 { font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
+  .sec-title small { font-size: 13px; color: var(--ink-2); font-weight: 500; }
+  .podium { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; margin-top: 10px; }
+  .pod-empty { grid-column: 1 / -1; padding: 20px; color: var(--ink-2); text-align: center; }
   .pod { padding: 16px; display: flex; flex-direction: column; gap: 12px; cursor: pointer; position: relative; overflow: hidden; }
   .pod:hover { border-color: var(--line-hover, #cfd2d6); }
   .pod .top { display: flex; align-items: center; gap: 10px; min-width: 0; }
@@ -419,6 +423,7 @@
     <div id="you"></div>
   </section>
 
+  <div class="sec-title"><h2 id="podium-title">Today's top 3</h2><small id="podium-note"></small></div>
   <section class="podium" id="podium" aria-label="Top three"></section>
 
   <section class="card board">
@@ -565,14 +570,18 @@ function render() {
   $("t-volume").textContent = money(t.volume, false);
   $("upd").textContent = `Updated ${ago(board.updatedAt)}`;
 
-  // podium
-  $("podium").innerHTML = rows.slice(0, 3).map((r, i) => `
+  // podium: today's top three (UTC day). Without the day record it falls back to the whole period and says so.
+  const todayTop = days ? dayRows(days.today).slice(0, 3) : null;
+  const top3 = todayTop || rows.slice(0, 3);
+  $("podium-title").textContent = todayTop ? "Today's top 3" : "Top 3";
+  $("podium-note").textContent = todayTop ? "UTC day · live" : w.tba ? `Last ${w.previewDays} days` : "Whole competition";
+  $("podium").innerHTML = top3.length ? top3.map((r, i) => `
     <div class="card pod p${i + 1}" data-u="${esc(r.u)}" tabindex="0" role="button" aria-label="${esc(r.u)}, rank ${i + 1}">
       <div class="top"><span class="place">${i + 1}</span>${avatar(r, "md")}<span class="name"><span>${esc(r.u)}</span>${r.v ? VER : ""}</span></div>
       <div class="pnl num ${cls(r.pnl)}">${money(r.pnl)}</div>
-      ${spark(r.spark, 300, 44)}
+      ${r.spark ? spark(r.spark, 300, 44) : ""}
       <div class="sub"><span><b class="num">${r.rounds.toLocaleString("en-US")}</b> ${plural(r.rounds)}</span><span><b class="num">${(winRate(r) * 100).toFixed(0)}%</b> won</span><span><b class="num">${money(r.vol, false)}</b> vol</span></div>
-    </div>`).join("");
+    </div>`).join("") : `<div class="card pod-empty">No settled rounds yet today. The day starts at 00:00 UTC.</div>`;
 
   // tabs + table
   const txt = (v) => (typeof v === "function" ? v() : v || "");
