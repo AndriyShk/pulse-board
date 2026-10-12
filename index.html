@@ -757,11 +757,11 @@ function render() {
   $("how-day").textContent = `A day on this board runs from ${dayStartLocal()} to ${dayStartLocal()} your time (00:00 to 24:00 UTC); today's numbers keep updating until it ends.`;
   $("how-hidden").textContent = days.hidden ? ` (${days.hidden} right now)` : "";
 
-  // today's totals
+  // today's totals: traders and volume are the leaderboard's own (the volume column added up); rounds are every round traded
   for (const el of document.querySelectorAll(".totals .sk, .race-box.sk-box")) el.classList.remove("sk", "sk-box");
   setNum($("t-traders"), "t-traders", rows.length, "int", true);
-  setNum($("t-rounds"), "t-rounds", days.todayTotals[0], "int", true);
-  setNum($("t-volume"), "t-volume", days.todayTotals[1], "usd", true);
+  setNum($("t-rounds"), "t-rounds", days.todayRounds, "int", true);
+  setNum($("t-volume"), "t-volume", rows.reduce((sum, r) => sum + r.vol, 0), "usd", true);
   showUpdated();
 
   // podium: today's top three

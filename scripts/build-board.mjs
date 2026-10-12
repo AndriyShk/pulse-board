@@ -258,7 +258,7 @@ for (const u of Object.keys(state.meta)) if (!listed.has(u)) delete state.meta[u
 const shown = Object.keys(state.days).sort().reverse()
   .filter((k) => !event || (k >= dayKey(start) && k <= dayKey(Math.min(end, now) - 1))).slice(0, event ? KEEP_DAYS : SHOWN_DAYS);
 const names = new Set(shown.flatMap((k) => state.days[k].map(([u]) => u)));
-const todayRounds = Object.values(state.rounds).filter(([t]) => dayOf(t) === today);
+const todayRounds = Object.values(state.rounds).filter(([t]) => dayOf(t) === today).length;
 const out = {
   updatedAt: Date.now(), // when the run finished, not when it started: a run on GitHub can take minutes
   today,
@@ -267,11 +267,10 @@ const out = {
   hidden: Object.values(state.users).filter((s) => s.p && Object.keys(s.f).some((id) => state.rounds[id] && dayOf(state.rounds[id][0]) === today)).length,
   users: Object.fromEntries([...names].map((u) => [u, state.meta[u] || ["", 0, ""]])),
   days: shown.map((k) => ({ d: k, rows: state.days[k] })),
-  // every traded round today, private profiles included: [rounds, volumeUSD]
-  todayTotals: [todayRounds.length, r2(todayRounds.reduce((sum, [, vol]) => sum + vol, 0))],
+  todayRounds, // rounds anyone traded today, private profiles and the market maker included
   todaySpark,
 };
 
 await write(STATE, state);
 await write(OUT, out);
-console.log(`Done: ${(state.days[today] || []).length} ranked today (+${out.hidden} private), ${todayRounds.length} traded rounds today, ${shown.length} days listed, ${requests} requests`);
+console.log(`Done: ${(state.days[today] || []).length} ranked today (+${out.hidden} private), ${todayRounds} traded rounds today, ${shown.length} days listed, ${requests} requests`);
