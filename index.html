@@ -213,6 +213,7 @@
   .tab:hover { background: var(--control); }
   .tab[aria-selected="true"] { background: var(--ink); color: var(--card); }
   .hint { padding: 8px 16px; font-size: 12.5px; color: var(--ink-2); border-bottom: 1px solid var(--line-soft); background: var(--control); }
+  .tscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   table { width: 100%; border-collapse: collapse; }
   th { font-size: 12px; font-weight: 500; color: var(--ink-3); text-align: right; padding: 10px 12px; white-space: nowrap; border-bottom: 1px solid var(--line-soft); }
   th:nth-child(1), th:nth-child(2) { text-align: left; }
@@ -229,7 +230,6 @@
   .mv.up { color: var(--pos); } .mv.dn { color: var(--neg); } .mv.new { color: var(--down-text); background: var(--down-soft); border-radius: 5px; padding: 1px 5px; font-size: 10px; letter-spacing: .03em; }
   .trader { display: flex; align-items: center; gap: 10px; text-align: left; min-width: 0; }
   .trader .nm { font-weight: 600; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
-  .trader .sub { display: none; font-size: 12px; color: var(--ink-3); font-weight: 400; }
   td.main { font-weight: 700; font-size: 15px; }
   .wr { display: inline-flex; align-items: center; gap: 8px; }
   .wr i { width: 44px; height: 5px; border-radius: 9px; background: var(--down-soft); overflow: hidden; display: block; }
@@ -261,17 +261,22 @@
     .pod .sub, .pod svg.spark { display: none; }
     .total { padding: 12px; }
     .total b { font-size: 17px; }
-    .col-x { display: none; }
-    .trader .sub { display: block; }
-    /* fixed columns, so a long name shortens instead of pushing the PnL off the card */
-    table { table-layout: fixed; }
-    td:first-child, th:first-child { width: 72px; padding-left: 12px; }
-    td.main, th:nth-child(3) { width: 96px; }
-    .trader > span:last-child { overflow: hidden; }
-    .trader .nm { max-width: none; }
-    .trader .sub { overflow: hidden; text-overflow: ellipsis; }
+    /* phones: every column stays, the table scrolls sideways and the rank + name stay pinned */
+    .tscroll table { min-width: 680px; }
     td, th { padding: 10px 8px; }
+    th:first-child, td:first-child { position: sticky; left: 0; z-index: 1; width: 80px; min-width: 80px; max-width: 80px; padding-left: 12px; padding-right: 4px; background: var(--card); }
+    .rk { gap: 6px; }
+    th:nth-child(2), td:nth-child(2) { position: sticky; left: 80px; z-index: 1; background: var(--card); box-shadow: 8px 0 8px -8px rgba(0,0,0,.18); }
     td:last-child, th:last-child { padding-right: 12px; }
+    .trader .nm { max-width: 108px; }
+    tbody tr.me { background: var(--up-soft); }
+    tbody tr.me td:first-child, tbody tr.me td:nth-child(2) { background: var(--up-soft); }
+    tbody tr:hover td:first-child, tbody tr:hover td:nth-child(2) { background: var(--control); }
+    /* race controls on one line */
+    .race-ctl { flex-wrap: nowrap; gap: 6px; width: 100%; }
+    .seg button { padding: 0 8px; }
+    #race-n button + button .pre { display: none; }
+    .race-ctl .btn { padding: 0 12px; margin-left: auto; }
     .you { grid-template-columns: auto minmax(0,1fr); }
     .you .acts { grid-column: 1 / -1; flex-direction: row; }
     .you .acts > * { flex: 1; }
@@ -282,6 +287,7 @@
     .facts { grid-template-columns: 1fr 1fr; }
     .fact:nth-child(3) { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); }
   }
+  @media (max-width: 380px) { #race-tx { display: none; } }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 <script>
@@ -367,16 +373,16 @@
       </div>
       <div class="race-ctl">
         <div class="seg" id="race-n" role="group" aria-label="Traders shown">
-          <button data-n="5" aria-pressed="false">Top 5</button><button data-n="10" aria-pressed="true">Top 10</button><button data-n="20" aria-pressed="false">Top 20</button>
+          <button data-n="5" aria-pressed="false"><span class="pre">Top </span>5</button><button data-n="10" aria-pressed="true"><span class="pre">Top </span>10</button><button data-n="20" aria-pressed="false"><span class="pre">Top </span>20</button>
         </div>
         <div class="seg" id="race-scale" role="group" aria-label="Scale">
           <button data-log="1" aria-pressed="true">Log</button><button data-log="0" aria-pressed="false">Linear</button>
         </div>
-        <button class="btn" id="race-play">▶ Replay</button>
+        <button class="btn" id="race-play" aria-label="Replay the race"><span id="race-ic" aria-hidden="true">▶</span><span id="race-tx">Replay</span></button>
       </div>
     </div>
     <div class="race-box"><canvas id="race-cv" role="img" aria-label="Line chart of the leaders' cumulative PnL over the competition window"></canvas></div>
-    <div class="race-legend"><span><i></i>Cumulative PnL</span><span><i class="dash"></i>Break-even</span><span id="race-note"></span></div>
+    <div class="race-legend"><span><i></i>Profit over time</span><span><i class="dash"></i>$0 line</span><span id="race-note"></span></div>
   </section>
 
   <section class="card find" id="find">
@@ -539,7 +545,7 @@ function render() {
       const d = tab === "pnl" ? (r.prev == null ? `<span class="mv new">NEW</span>` : r.prev > r.rank ? `<span class="mv up">▲${r.prev - r.rank}</span>` : r.prev < r.rank ? `<span class="mv dn">▼${r.rank - r.prev}</span>` : "") : "";
       return `<tr data-u="${esc(r.u)}" class="${me && me.u === r.u ? "me" : ""}">
         <td><span class="rk"><span class="n num">${i + 1}</span>${d}</span></td>
-        <td><span class="trader">${avatar(r)}<span style="min-width:0"><span class="nm" style="display:flex;align-items:center;gap:4px"><span style="overflow:hidden;text-overflow:ellipsis">${esc(r.u)}</span>${r.v ? VER : ""}</span><span class="sub num">${r.rounds} ${plural(r.rounds)} · ${(winRate(r) * 100).toFixed(0)}% won</span></span></span></td>
+        <td><span class="trader">${avatar(r)}<span style="min-width:0"><span class="nm" style="display:flex;align-items:center;gap:4px"><span style="overflow:hidden;text-overflow:ellipsis">${esc(r.u)}</span>${r.v ? VER : ""}</span></span></span></td>
         <td class="main num">${T.show(r)}</td>
         ${tab === "pnl" || tab === "rekt" ? `<td class="num col-x ${cls(r.d24)}">${Math.abs(r.d24) > 0.004 ? money(r.d24) : "–"}</td>` : `<td class="num col-x ${cls(r.pnl)}">${money(r.pnl)}</td>`}
         <td class="num col-x">${r.rounds.toLocaleString("en-US")}</td>
@@ -548,9 +554,9 @@ function render() {
         <td class="col-x">${spark(r.spark, 88, 26)}</td>
       </tr>`;
     }).join("");
-    $("table").innerHTML = `<table>
+    $("table").innerHTML = `<div class="tscroll"><table>
       <thead><tr><th>#</th><th>Trader</th><th>${txt(T.head)}</th><th class="col-x">${tab === "pnl" || tab === "rekt" ? lookName() : "PnL"}</th><th class="col-x">Rounds</th><th class="col-x">Won</th><th class="col-x">Volume</th><th class="col-x">Trend</th></tr></thead>
-      <tbody>${body}</tbody></table>
+      <tbody>${body}</tbody></table></div>
       ${list.length > shown ? `<div class="more"><button class="btn" id="more">Show ${Math.min(PAGE, list.length - shown)} more of ${list.length - shown}</button></div>` : ""}`;
   }
   renderYou();
@@ -791,7 +797,7 @@ function drawRace() {
     c.fillStyle = control; c.beginPath(); c.roundRect(px, y - 10, tw, 20, 10); c.fill();
     c.fillStyle = ink2; c.textAlign = "left"; c.textBaseline = "middle"; c.fillText(text, px + 7, y + 0.5);
   };
-  c.font = F(600, 11); c.fillStyle = ink2; c.textAlign = "left"; c.textBaseline = "bottom"; c.fillText("$0 · break-even", L + 2, y0 - 3);
+  c.font = F(600, 11); c.fillStyle = ink2; c.textAlign = "left"; c.textBaseline = "bottom"; c.fillText("$0", L + 2, y0 - 3);
 
   // lines: leader last so it sits on top, the picked trader above everyone
   const order = [...set].reverse().sort((p, q) => (p.r === me) - (q.r === me));
@@ -864,22 +870,23 @@ function drawRace() {
 
 function raceFrame(now) {
   race.looping = false;
-  if (race.playing) { race.p = Math.min(1, (now - race.t0) / RACE_MS); if (race.p >= 1) { race.playing = false; $("race-play").textContent = "▶ Replay"; } }
+  if (race.playing) { race.p = Math.min(1, (now - race.t0) / RACE_MS); if (race.p >= 1) racePlaying(false); }
   drawRace();
   if (race.visible && !reduced) raceKick();
 }
+function racePlaying(on) { race.playing = on; $("race-ic").textContent = on ? "❚❚" : "▶"; $("race-tx").textContent = on ? "Racing" : "Replay"; }
 function raceKick() { if (race.looping) return; race.looping = true; requestAnimationFrame(raceFrame); }
 function racePlay() {
   if (reduced) return;
-  race.hover = null; race.playing = true; race.p = 0; race.t0 = performance.now(); race.played = true;
-  $("race-play").textContent = "❚❚ Racing";
+  race.hover = null; race.p = 0; race.t0 = performance.now(); race.played = true;
+  racePlaying(true);
   raceKick();
 }
-$("race-play").onclick = () => { if (race.playing) { race.playing = false; $("race-play").textContent = "▶ Replay"; raceKick(); } else racePlay(); };
+$("race-play").onclick = () => { if (race.playing) { racePlaying(false); raceKick(); } else racePlay(); };
 if (reduced) $("race-play").hidden = true;
 $("race-n").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; race.n = +b.dataset.n; [...$("race-n").children].forEach((x) => x.setAttribute("aria-pressed", String(x === b))); raceKick(); };
 $("race-scale").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; race.log = b.dataset.log === "1"; [...$("race-scale").children].forEach((x) => x.setAttribute("aria-pressed", String(x === b))); raceNote(); raceKick(); };
-const raceNote = () => ($("race-note").textContent = race.log ? "Log scale: each gridline is 10× the one before" : "Linear scale");
+const raceNote = () => ($("race-note").textContent = race.log ? "Log: small amounts are stretched so everyone is visible" : "Linear: true dollar distances");
 raceNote();
 {
   const cv = $("race-cv");
@@ -888,7 +895,7 @@ raceNote();
   cv.addEventListener("pointermove", (e) => {
     const q = at(e), right = q.w - (q.w < 560 ? 112 : 190);
     cv.style.cursor = hit(q) ? "pointer" : "crosshair";
-    if (race.playing) { race.playing = false; $("race-play").textContent = "▶ Replay"; }
+    if (race.playing) racePlaying(false);
     race.hover = q.x > right ? null : Math.max(0, Math.min(1, (q.x - 8) / (right - 8)));
     raceKick();
   });
