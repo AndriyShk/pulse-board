@@ -298,8 +298,8 @@
   dialog { border: 1px solid var(--line); border-radius: 18px; padding: 16px; background: var(--card); color: var(--ink); width: min(680px, calc(100vw - 24px)); box-shadow: 0 16px 48px rgba(0,0,0,.3); }
   dialog::backdrop { background: rgba(0,0,0,.5); }
   dialog canvas { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); display: block; }
-  dialog .acts { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
-  dialog .acts .sp { flex: 1; }
+  dialog .acts { display: flex; gap: 10px; margin-top: 14px; }
+  dialog #s-close { margin-left: auto; }
   dialog .seg { margin-bottom: 12px; }
   dialog .note { font-size: 13px; font-weight: 500; color: var(--ink-2); margin-top: 12px; }
 
@@ -399,6 +399,11 @@
     .you .stats { justify-content: space-between; gap: 6px 12px; }
     .you .acts { flex-direction: row; }
     .you .acts > * { flex: 1; }
+    /* share buttons: the post button across the top, Download and Close side by side under it */
+    dialog .acts { display: grid; grid-template-columns: 1fr 1fr; }
+    dialog .acts .btn { height: 44px; font-size: 14px; }
+    dialog #s-x { grid-column: 1 / -1; }
+    dialog #s-close { margin-left: 0; }
     .find-row { flex-wrap: wrap; }
     .find label { width: 100%; }
     main.wrap { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
@@ -556,8 +561,6 @@
   <div class="acts">
     <button class="btn pink" id="s-x" autofocus>Post on X</button>
     <button class="btn" id="s-dl">Download</button>
-    <button class="btn" id="s-copy">Copy link</button>
-    <span class="sp"></span>
     <button class="btn" id="s-close">Close</button>
   </div>
 </dialog>
@@ -1540,7 +1543,6 @@ const shareUrl = () => `${location.origin}${location.pathname}?u=${encodeURIComp
 const shareFile = () => (share.mode === "video" ? share.video : share.png);
 const saveFile = (f) => { const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1e4); };
 $("s-dl").onclick = () => { if (shareFile()) saveFile(shareFile()); };
-$("s-copy").onclick = async () => { try { await navigator.clipboard.writeText(shareUrl()); $("s-copy").textContent = "Copied"; } catch { $("s-copy").textContent = "Copy failed"; } setTimeout(() => ($("s-copy").textContent = "Copy link"), 1500); };
 // X's post window can't be handed a file. On a phone the system share sheet can (pick X there); on a computer the image
 // goes to the clipboard and the video to the downloads, one step from the post that opens.
 $("s-x").onclick = async () => {
