@@ -942,7 +942,7 @@ document.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.
 
 // ---------- live round ----------
 // rounds sit on five-minute boundaries, so the clock needs no API; the price to beat and past results do
-let liveFor = 0, seenStart = 0, holding = 0, holdTimer = 0, beatFast = false;
+let liveFor = 0, liveRetry = 0, seenStart = 0, holding = 0, holdTimer = 0, beatFast = false; // liveRetry: no new attempt before this time
 const setBeat = (fast) => { if (fast !== beatFast) { beatFast = fast; root.style.setProperty("--beat", fast ? "0.7s" : "1.8s"); } };
 function tickRound() {
   const now = Date.now(), startT = Math.floor(now / ROUND) * ROUND, left = startT + ROUND - now, live = document.querySelector(".live");
@@ -966,7 +966,7 @@ function tickRound() {
   // the last 30 seconds: the clock turns red and the header's heartbeat quickens
   live.classList.toggle("urgent", left <= 30000);
   setBeat(left <= 30000);
-  if (liveFor !== startT && now - startT > 4000) { liveFor = startT; loadRound(startT); }
+  if (liveFor !== startT && now - startT > 4000 && now >= liveRetry) { liveFor = startT; liveRetry = now + 3000; loadRound(startT); }
 }
 async function loadRound(startT) {
   try {
@@ -980,7 +980,7 @@ async function loadRound(startT) {
     pollOdds();
     const cur = (act.data || []).find((m) => Date.parse(m.startsAt) === startT);
     if (cur && cur.openingPrice) { $("l-price").classList.remove("sk"); setNum($("l-price"), "l-price", Number(cur.openingPrice), "price"); }
-    else { $("l-price").textContent = "…"; liveFor = 0; } // not published yet: ask again on the next tick
+    else { $("l-price").textContent = "…"; liveFor = 0; } // not published yet: ask again in three seconds
     const done = (past.data || []).filter((m) => m.winningOutcome != null);
     // a result that arrived while its "settling" chip was still up gets its moment here too
     const late = pendingStart && done.find((m) => Date.parse(m.startsAt) === pendingStart);
