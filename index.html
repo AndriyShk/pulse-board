@@ -293,15 +293,12 @@
   dialog .acts .sp { flex: 1; }
 
   /* ---------- motion: the page moves with the rounds ---------- */
-  :root { --beat: 1.8s; --beat-color: var(--up); }
-  /* heartbeat: the logo line redraws on every beat and a blip runs along the header; both speed up as a round runs out */
+  :root { --beat: 1.8s; }
+  /* heartbeat: the logo line redraws on every beat, faster as a round runs out */
   .brand svg { animation: thump var(--beat) ease-in-out infinite; }
   .brand svg path.ecg { stroke-dasharray: 100; animation: ecg var(--beat) linear infinite; } /* drawn over a faint copy, so the logo is never blank */
   @keyframes thump { 0%, 24%, 100% { transform: scale(1); } 10% { transform: scale(1.09); } }
   @keyframes ecg { 0% { stroke-dashoffset: 100; } 42%, 100% { stroke-dashoffset: 0; } }
-  .bar { overflow: hidden; }
-  .bar::after { content: ""; position: absolute; left: 0; bottom: 0; width: 140px; height: 2px; background: linear-gradient(90deg, transparent, var(--beat-color), transparent); animation: blip calc(var(--beat) * 2.4) linear infinite; }
-  @keyframes blip { from { transform: translateX(-140px); } to { transform: translateX(100vw); } }
   /* the last 30 seconds of a round */
   .live.urgent #l-clock { color: var(--neg); animation: tick 1s ease-in-out infinite; transform-origin: right center; }
   @keyframes tick { 0%, 100% { transform: scale(1); } 12% { transform: scale(1.07); } }
@@ -973,7 +970,6 @@ function settle(m) {
   wave.className = up ? "u" : "d";
   void wave.offsetWidth;
   wave.classList.add("go");
-  root.style.setProperty("--beat-color", up ? "var(--up)" : "var(--down)");
 }
 tickRound();
 
