@@ -7,13 +7,17 @@ const REPO = 'AndriyShk/pulse-board';
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 's-maxage=60');
   const token = process.env.GH_TOKEN;
-  if (!token) return res.status(200).json({ started: false });
+  // why nothing started goes to the function log, never to the visitor
+  if (!token) { console.log('nudge: GH_TOKEN is not set in this deployment'); return res.status(200).json({ started: false }); }
   const gh = (path, opt = {}) => fetch(`https://api.github.com/repos/${REPO}${path}`, { ...opt, headers: { authorization: `Bearer ${token}`, accept: 'application/vnd.github+json', 'user-agent': 'pulse-board' }, signal: AbortSignal.timeout(4000) });
   try {
-    const runs = await (await gh('/actions/workflows/board.yml/runs?per_page=1')).json();
+    const list = await gh('/actions/workflows/board.yml/runs?per_page=1');
+    if (!list.ok) console.log(`nudge: listing runs answered ${list.status} (token needs Actions: read and write on ${REPO})`);
+    const runs = list.ok ? await list.json() : {};
     const last = runs.workflow_runs && runs.workflow_runs[0];
     if (last && Date.now() - Date.parse(last.created_at) < 10 * 6e4) return res.status(200).json({ started: false });
     const r = await gh('/actions/workflows/board.yml/dispatches', { method: 'POST', body: JSON.stringify({ ref: 'main' }) });
+    if (!r.ok) console.log(`nudge: starting the workflow answered ${r.status}`);
     res.status(200).json({ started: r.ok });
   } catch (e) {
     console.error('nudge failed', e);
