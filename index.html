@@ -168,15 +168,26 @@
   .sugg button { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; padding: 8px 10px; border-radius: 8px; cursor: pointer; text-align: left; }
   .sugg button:hover, .sugg button.on { background: var(--control); }
   .sugg .rk { margin-left: auto; font-size: 12px; color: var(--ink-3); font-weight: 600; }
-  .you { margin-top: 14px; border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 16px; align-items: center; background: linear-gradient(90deg, var(--up-soft), var(--down-soft)); }
-  .you .rank { font-size: 34px; font-weight: 700; letter-spacing: -.03em; line-height: 1; min-width: 64px; text-align: center; }
-  .you .rank small { display: block; font-size: 11px; font-weight: 600; letter-spacing: .04em; color: var(--ink-2); margin-top: 4px; }
+  /* the picked trader's day: rank tile, who and stats, a PnL panel with today's line (the share image is drawn the same way) */
+  .you { margin-top: 14px; border-radius: 14px; padding: 14px; display: grid; grid-template-columns: auto minmax(0,1fr) minmax(0,300px) auto; gap: 16px; background: var(--control); }
+  .you .rank { min-width: 88px; padding: 0 12px; border-radius: 12px; background: var(--card); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 34px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
+  .you .rank small { font-size: 11px; font-weight: 600; letter-spacing: .04em; color: var(--ink-2); white-space: nowrap; }
+  .you .rank[class*=" p"] small { color: inherit; opacity: .75; }
+  .you .info { display: flex; flex-direction: column; justify-content: center; gap: 10px; min-width: 0; }
   .you .who { display: flex; align-items: center; gap: 10px; min-width: 0; }
   .you .who b { font-size: 17px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .you .stats { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 8px; font-size: 13px; color: var(--ink-2); }
-  .you .stats b { color: var(--ink); font-weight: 600; }
-  .you .gap { margin-top: 8px; font-size: 13px; font-weight: 500; }
-  .you .acts { display: flex; flex-direction: column; gap: 8px; }
+  .you .stats { display: flex; flex-wrap: wrap; gap: 6px 24px; font-size: 12px; font-weight: 500; color: var(--ink-3); }
+  .you .stats b { display: block; font-size: 15px; font-weight: 600; color: var(--ink); }
+  .you .gap { font-size: 13px; font-weight: 500; color: var(--ink-2); }
+  .you .gap b { color: var(--ink); }
+  .you .pnl { border-radius: 12px; padding: 12px 14px 8px; background: var(--card); display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+  .you .pnl.gain { background: var(--pos-soft); }
+  .you .pnl.loss { background: var(--neg-soft); }
+  .you .pnl small { font-size: 12px; font-weight: 500; color: var(--ink-2); }
+  .you .pnl .v { position: relative; font-size: 28px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+  .you .pnl svg.spark { width: 100%; height: 38px; display: block; margin-top: 2px; }
+  .you .acts { display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+  .you .acts .btn:not(.pink) { background: var(--card); }
   .miss { margin-top: 14px; border: 1px dashed var(--line); border-radius: 14px; padding: 18px; display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
   .miss b { font-size: 16px; font-weight: 600; }
   .miss p { color: var(--ink-2); font-size: 13.5px; margin-top: 2px; max-width: 60ch; }
@@ -201,9 +212,9 @@
   :root[data-theme="dark"] .pod.p1::after { background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,.09) 50%, transparent 58%); }
   @keyframes sheen { 0%, 72% { transform: translateX(-130%); } 100% { transform: translateX(130%); } }
   /* gold, silver, bronze exactly as XO's referral tiers use them (base fill, ring, dark ink) */
-  .pod.p1 .place { background: #C7B583; color: #3A331F; box-shadow: inset 0 0 0 1.5px #867852; }
-  .pod.p2 .place { background: #B7BABE; color: #2C2E30; box-shadow: inset 0 0 0 1.5px #75787C; }
-  .pod.p3 .place { background: #B4967D; color: #3A2E22; box-shadow: inset 0 0 0 1.5px #6E5A49; }
+  .pod.p1 .place, .you .rank.p1 { background: #C7B583; color: #3A331F; box-shadow: inset 0 0 0 1.5px #867852; }
+  .pod.p2 .place, .you .rank.p2 { background: #B7BABE; color: #2C2E30; box-shadow: inset 0 0 0 1.5px #75787C; }
+  .pod.p3 .place, .you .rank.p3 { background: #B4967D; color: #3A2E22; box-shadow: inset 0 0 0 1.5px #6E5A49; }
   .pod .name { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 4px; min-width: 0; }
   .pod .name span { overflow: hidden; text-overflow: ellipsis; }
   .pod .pnl { font-size: 28px; font-weight: 700; letter-spacing: -.02em; line-height: 1; }
@@ -377,8 +388,13 @@
     .seg button { padding: 0 8px; }
     #race-n button + button .pre { display: none; }
     .race-ctl .btn { padding: 0 12px; margin-left: auto; }
-    .you { grid-template-columns: auto minmax(0,1fr); }
-    .you .acts { grid-column: 1 / -1; flex-direction: row; }
+    /* the picked trader's card: rank and name on the first line, everything else full width below */
+    .you { grid-template-columns: auto minmax(0,1fr); gap: 12px; align-items: center; }
+    .you .info { display: contents; }
+    .you .rank { min-width: 76px; padding: 10px 12px; font-size: 28px; }
+    .you .stats, .you .gap, .you .pnl, .you .acts { grid-column: 1 / -1; }
+    .you .stats { justify-content: space-between; gap: 6px 12px; }
+    .you .acts { flex-direction: row; }
     .you .acts > * { flex: 1; }
     .find-row { flex-wrap: wrap; }
     .find label { width: 100%; }
@@ -852,6 +868,7 @@ function render() {
   raceKick();
 }
 
+let youShown = null; // whose card is up, so it only animates in when the picked trader changes
 function renderYou() {
   const q = $("q").value.trim().replace(/^@/, "");
   if (me) {
@@ -859,15 +876,26 @@ function renderYou() {
     const gap = me.rank === 1 ? (rows[1] ? `Leading today by <b>${money(me.pnl - rows[1].pnl, false)}</b>.` : "The only trader on today's board so far.")
       : `<b class="num">${money(above.pnl - me.pnl + 0.01, false)}</b> more to pass <b>${esc(above.u)}</b> for #${me.rank - 1} today.`;
     $("you").innerHTML = `<div class="you">
-      <div class="rank num">#${me.rank}<small>OF ${rows.length} TODAY</small></div>
-      <div style="min-width:0">
-        <div class="who">${avatar(me, "md")}<b>${esc(me.u)}</b>${me.v ? VER : ""}<span class="num ${cls(me.pnl)}" style="font-weight:700;font-size:17px;margin-left:auto">${money(me.pnl)}</span></div>
-        <div class="stats num"><span><b>${me.rounds.toLocaleString("en-US")}</b> ${plural(me.rounds)}</span><span><b>${(winRate(me) * 100).toFixed(0)}%</b> won</span><span><b>${money(me.vol, false)}</b> volume</span>${me.best ? `<span>best round <b class="pos">${money(me.best)}</b></span>` : ""}</div>
+      <div class="rank num${me.rank <= 3 ? ` p${me.rank}` : ""}">#${me.rank}<small>OF ${rows.length} TODAY</small></div>
+      <div class="info">
+        <div class="who">${avatar(me, "md")}<b>${esc(me.u)}</b>${me.v ? VER : ""}</div>
+        <div class="stats num"><span>Rounds<b>${me.rounds.toLocaleString("en-US")}</b></span><span>Won<b>${(winRate(me) * 100).toFixed(0)}%</b></span><span>Volume<b>${money(me.vol, false)}</b></span><span>Best round<b${me.best ? ' class="pos"' : ""}>${me.best ? money(me.best) : "–"}</b></span></div>
         <div class="gap">${gap}</div>
+      </div>
+      <div class="pnl ${{ pos: "gain", neg: "loss" }[cls(me.pnl)] || ""}">
+        <small>Net profit / loss today</small>
+        <span class="v num ${cls(me.pnl)}" data-k="you|${esc(me.u)}" data-v="${me.pnl}" data-f="money" data-intro="1" data-delta="1">${money(me.pnl)}</span>
+        ${spark(me.spark, 300, 38)}
       </div>
       <div class="acts"><button class="btn pink" id="open-share">Share my rank</button><a class="btn ref" href="${REF}" target="_blank" rel="noopener">Trade Pulse ↗</a></div>
     </div>`;
-  } else if (q && searched) {
+    animateNums($("you"));
+    if (youShown !== me.u && !noMotion() && !document.hidden) play($("you").firstElementChild, [{ opacity: 0, transform: "translateY(8px) scale(.985)" }, { opacity: 1, transform: "none" }], { duration: 350, easing: "cubic-bezier(.2,.8,.2,1)" });
+    youShown = me.u;
+    return;
+  }
+  youShown = null;
+  if (q && searched) {
     $("you").innerHTML = `<div class="miss">
       <div><b>${esc(q)} isn't on today's board</b>
       <p>Either no settled Pulse round yet today (the day started at ${dayStartLocal()} your time), or the profile is private (private profiles aren't ranked). One settled round is enough to get on.</p></div>
@@ -1310,29 +1338,43 @@ $("race-scale").onclick = (e) => { const b = e.target.closest("button"); if (!b)
 }
 
 // ---------- share card ----------
+// The picked trader's day as a 1200x675 image, laid out like their card on the page and in the page's current theme.
+// It carries the date instead of "today", because the picture outlives the day.
+const SITE = "xo-pulse-board.vercel.app";
+const MEDALS = [["#C7B583", "#867852", "#3A331F"], ["#B7BABE", "#75787C", "#2C2E30"], ["#B4967D", "#6E5A49", "#3A2E22"]]; // fill, ring, ink: the podium's gold, silver, bronze
 const loadImg = async (url) => { try { const r = await fetch(url, { referrerPolicy: "no-referrer" }); if (!r.ok) return null; return await createImageBitmap(await r.blob()); } catch { return null; } };
 async function drawCard(r) {
   const cv = $("cv"), c = cv.getContext("2d"), W = 1200, H = 675, F = '"Open Runde", system-ui, sans-serif';
   await document.fonts.load(`700 40px "Open Runde"`);
-  const up = r.pnl >= 0;
-  c.fillStyle = "#f5f5f5"; c.fillRect(0, 0, W, H);
+  const css = getComputedStyle(root), V = (k) => css.getPropertyValue(k).trim();
+  const ink = V("--ink"), ink2 = V("--ink-2"), ink3 = V("--ink-3");
+  const tone = { pos: "pos", neg: "neg" }[cls(r.pnl)]; // undefined at break-even
   const rr = (x, y, w, h, rad) => { c.beginPath(); c.roundRect(x, y, w, h, rad); };
+  c.fillStyle = V("--page"); c.fillRect(0, 0, W, H);
   // card
-  c.fillStyle = "#fff"; rr(40, 40, W - 80, H - 80, 36); c.fill();
-  c.strokeStyle = "#e6e8ea"; c.lineWidth = 2; rr(40, 40, W - 80, H - 80, 36); c.stroke();
-  // header
+  c.fillStyle = V("--card"); rr(40, 40, W - 80, H - 80, 36); c.fill();
+  c.strokeStyle = V("--line"); c.lineWidth = 2; rr(40, 40, W - 80, H - 80, 36); c.stroke();
+  // header: logo and name, what and when
   c.fillStyle = "#ff87a6"; rr(84, 84, 56, 56, 14); c.fill();
   c.strokeStyle = "#7a1230"; c.lineWidth = 5; c.lineCap = "round"; c.lineJoin = "round";
   c.beginPath(); [[93, 114], [103, 114], [107, 101], [115, 124], [120, 108], [123, 114], [131, 114]].forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y))); c.stroke();
-  c.fillStyle = "#101114"; c.font = `700 30px ${F}`; c.textBaseline = "middle"; c.fillText("Pulse Board", 156, 113);
-  c.font = `600 20px ${F}`; c.fillStyle = "#6e6e6e"; c.textAlign = "right";
-  c.fillText(`XO Pulse · ${dayUTC(Date.parse(days.today + "T12:00:00Z"))}`, W - 92, 113);
+  c.fillStyle = ink; c.font = `700 30px ${F}`; c.textBaseline = "middle"; c.fillText("Pulse Board", 156, 113);
+  c.font = `600 20px ${F}`; c.fillStyle = ink2; c.textAlign = "right";
+  c.fillText(`XO Pulse · BTC 5m · ${dayUTC(Date.parse(days.today + "T12:00:00Z"))}`, W - 92, 113);
   c.textAlign = "left";
-  // rank
-  c.fillStyle = "#101114"; c.font = `700 190px ${F}`; c.textBaseline = "alphabetic";
+  // rank, with a medal for the top three
+  c.fillStyle = ink; c.font = `700 190px ${F}`; c.textBaseline = "alphabetic";
   c.fillText(`#${r.rank}`, 80, 372);
-  const rw = c.measureText(`#${r.rank}`).width;
-  c.font = `600 26px ${F}`; c.fillStyle = "#8a8f98"; c.fillText(`of ${rows.length} today`, 92 + rw + 14, 372);
+  const sx = 106 + c.measureText(`#${r.rank}`).width;
+  c.font = `600 26px ${F}`; c.fillStyle = ink3; c.fillText(`of ${rows.length} ${rows.length === 1 ? "trader" : "traders"}`, sx, 372);
+  if (MEDALS[r.rank - 1]) {
+    const [fill, ring, text] = MEDALS[r.rank - 1], label = ["1st place", "2nd place", "3rd place"][r.rank - 1];
+    c.font = `700 22px ${F}`;
+    const w = c.measureText(label).width + 32;
+    c.fillStyle = fill; rr(sx, 286, w, 44, 12); c.fill();
+    c.strokeStyle = ring; c.lineWidth = 2; rr(sx + 1, 287, w - 2, 42, 11); c.stroke();
+    c.fillStyle = text; c.textBaseline = "middle"; c.fillText(label, sx + 16, 309); c.textBaseline = "alphabetic";
+  }
   // who
   const img = r.a && (await loadImg(avatarUrl(r.a, "400x400")));
   c.save(); c.beginPath(); c.arc(124, 458, 40, 0, Math.PI * 2); c.closePath(); c.clip();
@@ -1340,28 +1382,31 @@ async function drawCard(r) {
   if (img) c.drawImage(img, 84, 418, 80, 80);
   else { c.fillStyle = "#fff"; c.font = `700 38px ${F}`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText((r.u[0] || "?").toUpperCase(), 124, 460); }
   c.restore(); c.textAlign = "left"; c.textBaseline = "alphabetic";
-  c.fillStyle = "#101114"; c.font = `700 40px ${F}`;
+  c.fillStyle = ink; c.font = `700 40px ${F}`;
   let name = r.u; while (c.measureText(name).width > 420 && name.length > 4) name = name.slice(0, -2) + "…";
   c.fillText(name, 184, 472);
   // stats
   const stats = [["Rounds", r.rounds.toLocaleString("en-US")], ["Won", (winRate(r) * 100).toFixed(0) + "%"], ["Volume", money(r.vol, false)], ["Best round", r.best ? money(r.best) : "–"]];
   stats.forEach(([k, v], i) => {
     const x = 84 + i * 150;
-    c.font = `500 19px ${F}`; c.fillStyle = "#8a8f98"; c.fillText(k, x, 548);
-    c.font = `700 28px ${F}`; c.fillStyle = "#101114"; c.fillText(v, x, 584);
+    c.font = `500 19px ${F}`; c.fillStyle = ink3; c.fillText(k, x, 548);
+    c.font = `700 28px ${F}`; c.fillStyle = ink; c.fillText(v, x, 584);
   });
-  // pnl panel
-  const px = 700, py = 190, pw = 416, ph = 394;
-  c.fillStyle = up ? "#eaf7f0" : "#fff0f0"; rr(px, py, pw, ph, 28); c.fill();
-  c.font = `600 22px ${F}`; c.fillStyle = "#6e6e6e"; c.fillText("Net profit / loss", px + 32, py + 54);
-  c.font = `700 76px ${F}`; c.fillStyle = up ? "#0f7a42" : "#c0403d";
-  let txt = money(r.pnl), size = 76; while (c.measureText(txt).width > pw - 64 && size > 40) { size -= 4; c.font = `700 ${size}px ${F}`; }
-  c.fillText(txt, px + 32, py + 136);
-  const p = r.spark, mn = Math.min(0, ...p), mx = Math.max(0, ...p), sp = mx - mn || 1, gx = px + 32, gy = py + 180, gw = pw - 64, gh = 170;
+  // PnL panel with the day's line
+  const px = 700, py = 190, pw = 416, ph = 370, color = tone ? V(`--${tone}`) : ink3;
+  c.fillStyle = tone ? V(`--${tone}-soft`) : V("--control"); rr(px, py, pw, ph, 28); c.fill();
+  c.font = `600 22px ${F}`; c.fillStyle = ink2; c.fillText("Net profit / loss", px + 32, py + 54);
+  c.fillStyle = color;
+  const pnl = money(r.pnl);
+  let size = 76; c.font = `700 ${size}px ${F}`; while (c.measureText(pnl).width > pw - 64 && size > 40) { size -= 4; c.font = `700 ${size}px ${F}`; }
+  c.fillText(pnl, px + 32, py + 136);
+  const p = r.spark, mn = Math.min(0, ...p), mx = Math.max(0, ...p), sp = mx - mn || 1, gx = px + 32, gy = py + 176, gw = pw - 64, gh = 154;
   const X = (i) => gx + (i / (p.length - 1)) * gw, Y = (v) => gy + gh - ((v - mn) / sp) * gh;
-  c.strokeStyle = "rgba(0,0,0,.14)"; c.lineWidth = 2; c.setLineDash([4, 6]); c.beginPath(); c.moveTo(gx, Y(0)); c.lineTo(gx + gw, Y(0)); c.stroke(); c.setLineDash([]);
-  c.strokeStyle = up ? "#0f7a42" : "#c0403d"; c.lineWidth = 5; c.beginPath(); p.forEach((v, i) => (i ? c.lineTo(X(i), Y(v)) : c.moveTo(X(i), Y(v)))); c.stroke();
-  c.fillStyle = c.strokeStyle; c.beginPath(); c.arc(X(p.length - 1), Y(p[p.length - 1]), 8, 0, Math.PI * 2); c.fill();
+  c.strokeStyle = ink3; c.globalAlpha = 0.4; c.lineWidth = 2; c.setLineDash([4, 6]); c.beginPath(); c.moveTo(gx, Y(0)); c.lineTo(gx + gw, Y(0)); c.stroke(); c.setLineDash([]); c.globalAlpha = 1;
+  c.strokeStyle = color; c.lineWidth = 5; c.beginPath(); p.forEach((v, i) => (i ? c.lineTo(X(i), Y(v)) : c.moveTo(X(i), Y(v)))); c.stroke();
+  c.fillStyle = color; c.beginPath(); c.arc(X(p.length - 1), Y(p[p.length - 1]), 8, 0, Math.PI * 2); c.fill();
+  // where to find it
+  c.font = `600 20px ${F}`; c.fillStyle = ink3; c.textAlign = "right"; c.fillText(SITE, W - 92, 606); c.textAlign = "left";
 }
 const shareUrl = () => `${location.origin}${location.pathname}?u=${encodeURIComponent(me.u)}`;
 async function openShare() {
