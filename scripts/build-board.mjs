@@ -13,6 +13,8 @@ const path = (p) => fileURLToPath(new URL(p, import.meta.url));
 const CONFIG = path("../config.json");
 const STATE = path("../data/state.json");
 const OUT = path("../data/board.json");
+const DAYS = path("../data/days.json");
+const KEEP_DAYS = 60; // finished days kept in the day-by-day record
 const DAY = 864e5;
 const ROUND = 5 * 6e4; // a Pulse round lasts five minutes
 const RECENT = 3 * DAY; // traders seen this recently are re-checked on every run (limit-order fills leave no public trade)
@@ -80,13 +82,17 @@ const inWindow = (exp) => exp - ROUND >= start && exp <= end;
 // users: lowercase username -> { u, a (avatar), v (verified), c (rooster colour), p (private),
 //                                r: { marketId: [expiresSec, pnl, stake] }, f: { marketId: takerFees } }
 // rounds: marketId -> [expiresSec, volumeUSD] for every traded round
-let state = { from: start, scanned: 0, users: {}, rounds: {} };
+// days: "YYYY-MM-DD" (UTC) -> that day's ranking, kept after the day has left the window
+// meta: username -> [avatar, verified, colour], so old days can still show who it was
+let state = { from: start, scanned: 0, users: {}, rounds: {}, days: {}, meta: {} };
 try { state = JSON.parse(await readFile(STATE, "utf8")); } catch (e) { if (e.code !== "ENOENT") throw e; }
 const FULL = !!process.env.FULL || start < state.from - ROUND; // the window now starts before what we have
-if (FULL) state = { from: start, scanned: 0, users: {}, rounds: {} };
+if (FULL) state = { from: start, scanned: 0, users: {}, rounds: {}, days: state.days, meta: state.meta }; // the day record survives a rebuild
+state.days ??= {};
+state.meta ??= {};
 const user = (name) => (state.users[name.toLowerCase()] ??= { u: name, a: "", v: 0, c: "", p: 0, r: {}, f: {} });
 
-async function save(board) {
+async function save(board, days) {
   await mkdir(path("../data"), { recursive: true });
   // write to a temp file and rename, so an interrupted write can't truncate the data
   await writeFile(STATE + ".tmp", JSON.stringify(state));
@@ -94,6 +100,8 @@ async function save(board) {
   if (!board) return;
   await writeFile(OUT + ".tmp", JSON.stringify(board));
   await rename(OUT + ".tmp", OUT);
+  await writeFile(DAYS + ".tmp", JSON.stringify(days));
+  await rename(DAYS + ".tmp", DAYS);
 }
 
 // ---------- 1. new rounds ----------
@@ -263,5 +271,52 @@ const board = {
   totals: { traders: rows.length, hidden, rounds: played.length, volume: r2(played.reduce((s, [, v]) => s + v, 0)) },
   rows,
 };
-await save(board);
+
+// ---------- 5. day by day ----------
+// Who traded best on each UTC day. Today is rebuilt on every run; a finished day keeps being rebuilt while it is
+// fully inside the window and then stays as it was.
+const dayKey = (ms) => new Date(ms).toISOString().slice(0, 10);
+const perDay = new Map(); // day -> Map(username -> totals)
+for (const s of Object.values(state.users)) {
+  if (s.p) continue;
+  state.meta[s.u] = [s.a, s.v, s.c];
+  const list = Object.entries(s.r).map(([id, [t, pnl, stake]]) => ({ t: t * 1000, pnl: NET ? pnl - (s.f[id] || 0) : pnl, stake }))
+    .filter((x) => inWindow(x.t)).sort((a, b) => a.t - b.t);
+  for (const x of list) {
+    const k = dayKey(x.t - ROUND); // a round belongs to the day it opened on
+    if (!perDay.has(k)) perDay.set(k, new Map());
+    const day = perDay.get(k);
+    if (!day.has(s.u)) day.set(s.u, { pnl: 0, vol: 0, rounds: 0, wins: 0, losses: 0, streak: 0, bestStreak: 0, best: 0 });
+    const a = day.get(s.u);
+    a.pnl += x.pnl; a.vol += x.stake; a.rounds++;
+    if (x.pnl > 0.005) { a.wins++; a.streak++; a.bestStreak = Math.max(a.bestStreak, a.streak); }
+    else if (x.pnl < -0.005) { a.losses++; a.streak = 0; }
+    a.best = Math.max(a.best, x.pnl);
+  }
+}
+for (const [k, users] of perDay) {
+  if (Date.parse(k + "T00:00:00Z") < start) continue; // the window only covers part of this day
+  // row: [username, pnl, volume, rounds, wins, losses, best streak, best round]
+  state.days[k] = [...users].map(([u, a]) => [u, r2(a.pnl), r2(a.vol), a.rounds, a.wins, a.losses, a.bestStreak, r2(a.best)])
+    .sort((a, b) => b[1] - a[1] || b[2] - a[2]);
+}
+// nobody who is excluded, or has since made their profile private, stays in the record
+for (const k of Object.keys(state.days)) {
+  state.days[k] = state.days[k].filter(([u]) => !EXCLUDE.has(u.toLowerCase()) && !(state.users[u.toLowerCase()] || {}).p);
+  if (!state.days[k].length) delete state.days[k];
+}
+for (const k of Object.keys(state.days).sort().slice(0, -KEEP_DAYS)) delete state.days[k];
+// with real dates only the competition's own days are shown; in the warm-up, the last 30
+const shownDays = Object.keys(state.days).sort().reverse()
+  .filter((k) => (tba ? true : k >= dayKey(start) && k <= dayKey(Math.min(end, now) - 1))).slice(0, tba ? 30 : KEEP_DAYS);
+const names = new Set(shownDays.flatMap((k) => state.days[k].map(([u]) => u)));
+for (const u of Object.keys(state.meta)) if (!Object.values(state.days).some((rows) => rows.some(([x]) => x === u))) delete state.meta[u];
+const days = {
+  updatedAt: Date.now(),
+  today: dayKey(now),
+  users: Object.fromEntries([...names].map((u) => [u, state.meta[u] || ["", 0, ""]])),
+  days: shownDays.map((k) => ({ d: k, rows: state.days[k] })),
+};
+
+await save(board, days);
 console.log(`Done: ${rows.length} ranked traders (+${hidden} private), ${played.length} traded rounds, ${requests} requests`);

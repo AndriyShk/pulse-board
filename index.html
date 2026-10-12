@@ -207,6 +207,18 @@
   .board-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px 0; flex-wrap: wrap; }
   .board-head h2 { font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
   .upd { font-size: 12px; color: var(--ink-3); margin-left: auto; white-space: nowrap; }
+  .board-head small { font-size: 13px; color: var(--ink-2); font-weight: 500; }
+  .days { display: flex; gap: 8px; padding: 12px 16px 2px; overflow-x: auto; scrollbar-width: none; }
+  .days::-webkit-scrollbar { display: none; }
+  .day { flex: none; min-width: 138px; max-width: 170px; text-align: left; border: 1px solid var(--line); background: var(--card); border-radius: 12px; padding: 9px 12px 10px; cursor: pointer; display: flex; flex-direction: column; gap: 5px; }
+  .day:hover { background: var(--control); }
+  .day[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+  .day .dt { font-size: 12px; font-weight: 600; color: var(--ink-2); display: flex; justify-content: space-between; gap: 8px; }
+  .day .dt em { font-style: normal; font-weight: 600; color: var(--up-text); }
+  .day .dw { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; min-width: 0; }
+  .day .dw > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .day b { font-size: 15px; font-weight: 700; }
+  .av.sm { width: 20px; height: 20px; font-size: 10px; }
   .tabs { display: flex; gap: 4px; padding: 12px 16px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--line); }
   .tabs::-webkit-scrollbar { display: none; }
   .tab { height: 32px; padding: 0 12px; border-radius: 9px; border: 0; background: none; font-weight: 600; font-size: 13px; color: var(--ink-2); cursor: pointer; white-space: nowrap; }
@@ -410,8 +422,10 @@
   <section class="card board">
     <div class="board-head">
       <h2>Leaderboard</h2>
+      <small id="board-period"></small>
       <span class="upd" id="upd"></span>
     </div>
+    <div class="days" id="days" role="group" aria-label="Period" hidden></div>
     <div class="tabs" role="tablist" id="tabs"></div>
     <div class="hint" id="hint" hidden></div>
     <div id="table"></div>
@@ -421,6 +435,7 @@
     <h2>How this is counted</h2>
     <ul>
       <li>PnL is the sum of your settled BTC Up or Down 5m rounds, taken from your public XO portfolio (the same per-round numbers the app shows).</li>
+      <li>Day results use UTC days (00:00 to 24:00 UTC); today's keeps updating until the day ends.</li>
       <li id="how-window">While the competition dates are TBA, the board covers the last 7 days.</li>
       <li>Private profiles aren't ranked<span id="how-hidden"></span>. Make your profile public in XO settings to appear.</li>
       <li><span id="how-look">Rank arrows compare with where you stood 24 hours ago.</span> Win rate needs at least 20 decided rounds.</li>
@@ -450,6 +465,7 @@ const XO_BOOK = "https://orderbooks.xo.market"; // public order book: live Up / 
 // the indexer publishes to the repo's `data` branch; the copy next to the page is the fallback
 const REMOTE = "https://raw.githubusercontent.com/AndriyShk/pulse-board/data/board.json";
 const LOCAL = "data/board.json";
+const REMOTE_DAYS = REMOTE.replace("board.json", "days.json"), LOCAL_DAYS = "data/days.json";
 const PAGE = 50;
 const MIN_DECIDED = 20; // rounds needed for the win-rate tab
 const ROUND = 5 * 6e4;
@@ -494,10 +510,26 @@ function spark(points, w, h) {
 
 // ---------- state ----------
 let board = null, rows = [], byName = new Map(), tab = "pnl", shown = PAGE, me = null;
+let days = null, period = "all"; // "all" = the whole window, otherwise a UTC day "YYYY-MM-DD"
+
+// one day's ranking in the same shape as the main rows (no trend line or rank movement for a single day)
+const dayCache = new Map();
+function dayRows(k) {
+  if (dayCache.has(k)) return dayCache.get(k);
+  const d = days.days.find((x) => x.d === k);
+  const out = (d ? d.rows : []).map(([u, pnl, vol, rounds, wins, losses, bestStreak, best], i) => {
+    const [a, v, c] = days.users[u] || ["", 0, ""];
+    return { u, a, v, c, pnl, vol, rounds, wins, losses, bestStreak, best: best > 0 ? [best, 0] : null, d24: 0, prev: null, spark: null, last: 0, rank: i + 1 };
+  });
+  dayCache.set(k, out);
+  return out;
+}
+const viewRows = () => (period === "all" || !days ? rows : dayRows(period));
+const dayTitle = (k) => (k === days.today ? "Today" : new Date(k + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" }));
 
 const TABS = [
   { id: "pnl", label: "Top PnL", head: "PnL", val: (r) => r.pnl, show: (r) => `<span class="${cls(r.pnl)}">${money(r.pnl)}</span>` },
-  { id: "d24", label: () => `Last ${lookName()}`, head: () => `${lookName()} PnL`, val: (r) => r.d24, keep: (r) => Math.abs(r.d24) > 0.004, show: (r) => `<span class="${cls(r.d24)}">${money(r.d24)}</span>`, hint: () => `PnL from rounds settled in the last ${lookName() === "1h" ? "hour" : lookName().replace("h", " hours")}.` },
+  { id: "d24", allOnly: true, label: () => `Last ${lookName()}`, head: () => `${lookName()} PnL`, val: (r) => r.d24, keep: (r) => Math.abs(r.d24) > 0.004, show: (r) => `<span class="${cls(r.d24)}">${money(r.d24)}</span>`, hint: () => `PnL from rounds settled in the last ${lookName() === "1h" ? "hour" : lookName().replace("h", " hours")}.` },
   { id: "win", label: "Win rate", head: "Win rate", val: (r) => winRate(r), keep: (r) => r.wins + r.losses >= MIN_DECIDED, show: (r) => `${(winRate(r) * 100).toFixed(1)}%`, hint: `Share of decided rounds won. Needs at least ${MIN_DECIDED} decided rounds.` },
   { id: "best", label: "Biggest round", head: "Best round", val: (r) => (r.best ? r.best[0] : -Infinity), keep: (r) => r.best, show: (r) => `<span class="pos">${money(r.best[0])}</span>`, hint: "The most profit taken from a single five-minute round." },
   { id: "streak", label: "Hot streak", head: "Best streak", val: (r) => r.bestStreak, keep: (r) => r.bestStreak > 1, show: (r) => `${r.bestStreak} wins`, hint: "Longest run of winning rounds in a row." },
@@ -505,7 +537,7 @@ const TABS = [
   { id: "rekt", label: "Rekt", head: "PnL", val: (r) => -r.pnl, keep: (r) => r.pnl < -0.004, show: (r) => `<span class="neg">${money(r.pnl)}</span>`, hint: "The other end of the board. Respect for showing up." },
 ];
 const lookName = () => (board && board.look < 864e5 ? `${Math.round(board.look / 36e5)}h` : "24h");
-const sorted = (t) => rows.filter(t.keep || (() => true)).sort((a, b) => t.val(b) - t.val(a) || b.vol - a.vol);
+const sorted = (t) => viewRows().filter(t.keep || (() => true)).sort((a, b) => t.val(b) - t.val(a) || b.vol - a.vol);
 
 // ---------- render ----------
 function render() {
@@ -542,36 +574,55 @@ function render() {
 
   // tabs + table
   const txt = (v) => (typeof v === "function" ? v() : v || "");
-  $("tabs").innerHTML = TABS.map((x) => `<button class="tab" role="tab" aria-selected="${x.id === tab}" data-tab="${x.id}">${txt(x.label)}</button>`).join("");
+  // period strip: the whole window first, then each day with its winner
+  const allDay = period === "all";
+  const allLabel = w.tba ? `Last ${w.previewDays} days` : "Whole competition";
+  if (days && days.days.length) {
+    const chip = (k, title, top, live) => `<button class="day" data-day="${k}" aria-pressed="${period === k}">
+      <span class="dt">${title}${live ? "<em>live</em>" : ""}</span>
+      ${top ? `<span class="dw">${avatar(top, "sm")}<span>${esc(top.u)}</span></span><b class="num ${cls(top.pnl)}">${money(top.pnl)}</b>` : `<span class="dw muted">No trades</span>`}
+    </button>`;
+    const at = $("days").scrollLeft; // re-rendering must not jump the strip back to the start
+    $("days").innerHTML = chip("all", allLabel, rows[0], false) + days.days.map((d) => chip(d.d, dayTitle(d.d), dayRows(d.d)[0], d.d === days.today)).join("");
+    $("days").hidden = false;
+    $("days").scrollLeft = at;
+  } else $("days").hidden = true;
+  $("board-period").textContent = allDay ? "" : `${dayTitle(period)} · UTC day`;
+  $("tabs").innerHTML = TABS.filter((x) => allDay || !x.allOnly).map((x) => `<button class="tab" role="tab" aria-selected="${x.id === tab}" data-tab="${x.id}">${txt(x.label)}</button>`).join("");
   const T = TABS.find((x) => x.id === tab), list = sorted(T);
-  $("hint").hidden = !T.hint;
-  $("hint").textContent = txt(T.hint);
+  const dayHint = allDay ? "" : period === days.today ? "Today so far, 00:00 UTC to now." : "A finished day, 00:00 to 24:00 UTC.";
+  $("hint").hidden = !T.hint && !dayHint;
+  $("hint").textContent = [dayHint, txt(T.hint)].filter(Boolean).join(" ");
   if (!list.length) {
     $("table").innerHTML = `<div class="empty"><b>Nobody here yet</b>The first settled round fills this in.</div>`;
   } else {
-    const move = (r) => (tab !== "pnl" ? "" : r.prev == null ? `<span class="mv new">NEW</span>` : r.prev > r.rank ? `<span class="mv up">▲${r.prev - r.rank}</span>` : r.prev < r.rank ? `<span class="mv dn">▼${r.rank - r.prev}</span>` : "");
+    const move = (r) => (tab !== "pnl" || !allDay ? "" : r.prev == null ? `<span class="mv new">NEW</span>` : r.prev > r.rank ? `<span class="mv up">▲${r.prev - r.rank}</span>` : r.prev < r.rank ? `<span class="mv dn">▼${r.rank - r.prev}</span>` : "");
     const name = (r) => `<span style="overflow:hidden;text-overflow:ellipsis">${esc(r.u)}</span>${r.v ? VER : ""}`;
-    const recent = tab === "pnl" || tab === "rekt"; // which number sits next to the main one
+    // the number next to the main one: recent PnL for the whole window, best round for a single day, PnL on the other tabs
+    const side = tab === "pnl" || tab === "rekt"
+      ? allDay ? { head: lookName(), short: lookName(), val: (r) => `<span class="${cls(r.d24)}">${Math.abs(r.d24) > 0.004 ? money(r.d24) : "–"}</span>` }
+               : { head: "Best round", short: "Best", val: (r) => (r.best ? `<span class="pos">${money(r.best[0])}</span>` : "–") }
+      : { head: "PnL", short: "PnL", val: (r) => `<span class="${cls(r.pnl)}">${money(r.pnl)}</span>` };
     const body = list.slice(0, shown).map((r, i) => `<tr data-u="${esc(r.u)}" class="${me && me.u === r.u ? "me" : ""}">
         <td><span class="rk"><span class="n num">${i + 1}</span>${move(r)}</span></td>
         <td><span class="trader">${avatar(r)}<span style="min-width:0"><span class="nm" style="display:flex;align-items:center;gap:4px">${name(r)}</span></span></span></td>
         <td class="main num">${T.show(r)}</td>
-        ${recent ? `<td class="num ${cls(r.d24)}">${Math.abs(r.d24) > 0.004 ? money(r.d24) : "–"}</td>` : `<td class="num ${cls(r.pnl)}">${money(r.pnl)}</td>`}
+        <td class="num">${side.val(r)}</td>
         <td class="num">${r.rounds.toLocaleString("en-US")}</td>
         <td class="num"><span class="wr">${(winRate(r) * 100).toFixed(0)}%<i><u style="width:${(winRate(r) * 100).toFixed(0)}%"></u></i></span></td>
         <td class="num">${money(r.vol, false)}</td>
-        <td>${spark(r.spark, 88, 26)}</td>
+        ${allDay ? `<td>${spark(r.spark, 88, 26)}</td>` : ""}
       </tr>`).join("");
     // the same rows as cards, shown instead of the table on phones
     const cards = list.slice(0, shown).map((r, i) => `<div class="mrow ${me && me.u === r.u ? "me" : ""}" data-u="${esc(r.u)}">
         <div class="mtop"><span class="rk"><span class="n num">${i + 1}</span>${move(r)}</span>${avatar(r)}<span class="nm">${name(r)}</span><span class="mmain num">${T.show(r)}</span></div>
         <div class="mstats num">
-          ${recent ? `<span><i>${lookName()}</i><b class="${cls(r.d24)}">${Math.abs(r.d24) > 0.004 ? money(r.d24) : "–"}</b></span>` : `<span><i>PnL</i><b class="${cls(r.pnl)}">${money(r.pnl)}</b></span>`}
+          <span><i>${side.short}</i><b>${side.val(r)}</b></span>
           <span><i>Rounds</i>${r.rounds.toLocaleString("en-US")}</span><span><i>Won</i>${(winRate(r) * 100).toFixed(0)}%</span><span><i>Vol</i>${money(r.vol, false)}</span>
         </div>
       </div>`).join("");
     $("table").innerHTML = `<div class="tscroll"><table>
-      <thead><tr><th>#</th><th>Trader</th><th>${txt(T.head)}</th><th>${tab === "pnl" || tab === "rekt" ? lookName() : "PnL"}</th><th>Rounds</th><th>Won</th><th>Volume</th><th>Trend</th></tr></thead>
+      <thead><tr><th>#</th><th>Trader</th><th>${txt(T.head)}</th><th>${side.head}</th><th>Rounds</th><th>Won</th><th>Volume</th>${allDay ? "<th>Trend</th>" : ""}</tr></thead>
       <tbody>${body}</tbody></table></div>
       <div class="mlist">${cards}</div>
       ${list.length > shown ? `<div class="more"><button class="btn" id="more">Show ${Math.min(PAGE, list.length - shown)} more of ${list.length - shown}</button></div>` : ""}`;
@@ -643,6 +694,8 @@ document.addEventListener("click", (e) => {
   const u = e.target.closest("[data-u]"), t = e.target.closest("[data-tab]");
   if (e.target.closest("#open-share")) return openShare();
   if (e.target.closest("#more")) { shown += PAGE; return render(); }
+  const dy = e.target.closest("[data-day]");
+  if (dy) { period = dy.dataset.day; shown = PAGE; if (period !== "all" && tab === "d24") tab = "pnl"; return render(); }
   if (t) { tab = t.dataset.tab; shown = PAGE; return render(); }
   if (u) return pick(u.dataset.u, !u.closest(".sugg"));
   if (!e.target.closest(".field")) $("sugg").hidden = true;
@@ -1005,6 +1058,11 @@ async function load() {
   if (!local && Date.now() - b.updatedAt > 12 * 6e4) fetch("/api/nudge").catch(() => {});
   if (board && b.updatedAt <= board.updatedAt) { $("upd").textContent = `Updated ${ago(board.updatedAt)}`; return; }
   board = b; rows = b.rows; byName = new Map(rows.map((r) => [r.u.toLowerCase(), r]));
+  // the day-by-day record rides along; the board works without it
+  let dd = local ? null : await get(REMOTE_DAYS).catch(() => null);
+  const dl = await get(LOCAL_DAYS).catch(() => null);
+  if (dl && (!dd || dl.updatedAt > dd.updatedAt)) dd = dl;
+  if (dd) { days = dd; dayCache.clear(); if (period !== "all" && !days.days.some((x) => x.d === period)) period = "all"; }
   // a shared link (?u=name) picks that trader once; the address is then cleaned, so a reload starts with nobody picked
   const u = me ? me.u : new URLSearchParams(location.search).get("u");
   if (location.search) history.replaceState(null, "", location.pathname);

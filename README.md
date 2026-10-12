@@ -7,6 +7,7 @@ Community leaderboard for the [XO Market](https://beta.xo.market) Pulse PnL comp
 - `index.html`: the whole site (static, no build step). Referral link, prizes and the prize-zone size are constants at the top of its script.
 - `config.json`: competition window. `start` / `end` are ISO dates; while `start` is `null` the board is a rolling warm-up of the last `previewDays`. `metric` is `pnl` (XO's portfolio PnL, the default) or `net` (minus taker fees). `exclude` lists usernames kept off the board (XO's own market maker, `predictiontalk`).
 - `scripts/build-board.mjs`: the indexer. Walks the Pulse rounds in the window, finds who traded, sums each trader's per-round PnL from their public portfolio, writes `data/board.json` (what the page reads) and `data/state.json` (so the next run only fetches what is new).
+- `data/days.json`: the day-by-day record (who traded best on each UTC day), written by the same indexer run. Finished days are kept in `state.json` after they leave the window, for up to 60 days.
 - `.github/workflows/board.yml`: runs the indexer every ~10 min and force-pushes the result to the `data` branch. The page reads `board.json` from raw.githubusercontent, so data updates never redeploy the site.
 - Vercel Web Analytics: the snippet at the end of `<head>` in `index.html`; it also has to be switched on in the Vercel project (Analytics tab → Enable).
 - `api/nudge.js`: GitHub's schedule is unreliable; when the page sees old data it calls this, and with a `GH_TOKEN` env var (fine-grained, Actions: write on this repo) it starts the workflow again.

@@ -35,6 +35,6 @@ jobs:
           rm -rf .git && git init -q -b data
           git config user.name "xo-pulse-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add board.json state.json
+          git add board.json days.json state.json
           git commit -q -m "data: board"
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data
