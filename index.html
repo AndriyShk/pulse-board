@@ -201,9 +201,10 @@
   .pod:hover { border-color: var(--line-hover, #cfd2d6); }
   .pod .top { display: flex; align-items: center; gap: 10px; min-width: 0; }
   .pod .place { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-weight: 700; font-size: 14px; flex: none; }
-  .pod.p1 .place { background: var(--up); color: var(--up-ink); }
-  .pod.p2 .place { background: var(--down); color: var(--down-ink); }
-  .pod.p3 .place { background: var(--control); color: var(--ink-2); }
+  /* gold, silver, bronze exactly as XO's referral tiers use them (base fill, ring, dark ink) */
+  .pod.p1 .place { background: #C7B583; color: #3A331F; box-shadow: inset 0 0 0 1.5px #867852; }
+  .pod.p2 .place { background: #B7BABE; color: #2C2E30; box-shadow: inset 0 0 0 1.5px #75787C; }
+  .pod.p3 .place { background: #B4967D; color: #3A2E22; box-shadow: inset 0 0 0 1.5px #6E5A49; }
   .pod .name { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 4px; min-width: 0; }
   .pod .name span { overflow: hidden; text-overflow: ellipsis; }
   .pod .pnl { font-size: 28px; font-weight: 700; letter-spacing: -.02em; line-height: 1; }
