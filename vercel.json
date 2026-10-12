@@ -1,5 +1,4 @@
 {
-  "git": { "deploymentEnabled": { "data": false } },
   "headers": [
     {
       "source": "/(.*)",
