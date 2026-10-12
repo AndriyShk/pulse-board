@@ -1,0 +1,9 @@
+{
+  "start": null,
+  "end": null,
+  "previewDays": 7,
+  "metric": "pnl",
+  "exclude": [
+    "predictiontalk"
+  ]
+}

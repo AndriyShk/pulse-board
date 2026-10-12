@@ -1,0 +1,1009 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulse Board</title>
+<meta name="description" content="Community leaderboard for the XO Market Pulse PnL competition: every BTC Up or Down 5m trader, ranked by net profit / loss.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Pulse Board: who's up on XO Pulse?">
+<meta property="og:description" content="Every BTC Up or Down 5m trader on XO Market, ranked by net profit / loss. Find your rank.">
+<meta property="og:image" content="/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Pulse Board: who's up on XO Pulse?">
+<meta name="twitter:description" content="Every BTC Up or Down 5m trader on XO Market, ranked by net profit / loss. Find your rank.">
+<meta name="twitter:image" content="/og.png">
+<meta name="theme-color" content="#f5f5f5">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%23ff87a6'/><path d='M10 34h11l5-14 9 26 6-18 3 6h10' fill='none' stroke='%237a1230' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<link rel="preload" href="fonts/open-runde-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  @font-face { font-family: "Open Runde"; font-weight: 400; font-display: swap; src: url(fonts/open-runde-latin-400-normal.woff2) format("woff2"); }
+  @font-face { font-family: "Open Runde"; font-weight: 500; font-display: swap; src: url(fonts/open-runde-latin-500-normal.woff2) format("woff2"); }
+  @font-face { font-family: "Open Runde"; font-weight: 600; font-display: swap; src: url(fonts/open-runde-latin-600-normal.woff2) format("woff2"); }
+  @font-face { font-family: "Open Runde"; font-weight: 700; font-display: swap; src: url(fonts/open-runde-latin-700-normal.woff2) format("woff2"); }
+
+  /* tokens follow the XO app (beta.xo.market) */
+  :root {
+    color-scheme: light;
+    --page: #f5f5f5; --card: #fff; --control: #f4f4f5; --control-hover: #ebebeb;
+    --line: #e6e8ea; --line-soft: rgba(0,0,0,.06);
+    --ink: #101114; --ink-2: #6e6e6e; --ink-3: #8a8f98;
+    --up: #ff87a6; --up-ink: #7a1230; --up-text: #c12c57; --up-soft: #fff0f4; --up-line: #e99bb2;
+    --down: #a293ff; --down-ink: #2a1a6e; --down-text: #6941c6; --down-soft: #f1edff; --down-line: #b9a5e9;
+    --pos: #0f7a42; --pos-soft: #eaf7f0; --neg: #c0403d; --neg-soft: #fff0f0;
+    --cta: #2fc04a; --cta-ink: #000;
+    --shadow: 0 1px 2px rgba(16,17,20,.05);
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #121213; --card: #1b1b1d; --control: #222224; --control-hover: #2b2b2e;
+    --line: #323235; --line-soft: #262629;
+    --ink: #f2f2f3; --ink-2: #bcbcc2; --ink-3: #a2a2ab;
+    --up-text: #ffabc4; --up-soft: #302127; --up-line: #5c3442;
+    --down-text: #c4b6ff; --down-soft: #292533; --down-line: #463c6e;
+    --pos: #74dba4; --pos-soft: #1d2a23; --neg: #ff8f8a; --neg-soft: #2e2020;
+    --shadow: 0 1px 3px rgba(0,0,0,.16);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--page); color: var(--ink); font: 400 14px/1.45 "Open Runde", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  button, input { font: inherit; color: inherit; }
+  h1, h2, h3, p { margin: 0; }
+  .num { font-variant-numeric: tabular-nums; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+  section { scroll-margin-top: 72px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+  .pos { color: var(--pos); } .neg { color: var(--neg); } .muted { color: var(--ink-3); }
+  :focus-visible { outline: 2px solid var(--down-text); outline-offset: 2px; }
+
+  /* ---------- top bar ---------- */
+  .bar { position: sticky; top: 0; z-index: 20; background: var(--card); border-bottom: 1px solid var(--line); }
+  .bar .wrap { display: flex; align-items: center; gap: 12px; height: 56px; }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 17px; letter-spacing: -.01em; text-decoration: none; }
+  .brand svg { width: 26px; height: 26px; flex: none; }
+  .bar .sp { flex: 1; }
+  .icon-btn { width: 36px; height: 36px; border-radius: 10px; border: 0; background: var(--control); display: grid; place-items: center; cursor: pointer; }
+  .icon-btn:hover { background: var(--control-hover); }
+  .icon-btn svg { width: 17px; height: 17px; }
+  /* flat buttons, as in the current XO app: no outline, no offset shadow */
+  .cta { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 16px; border-radius: 12px; background: var(--cta); color: var(--cta-ink); border: 0; font-weight: 600; text-decoration: none; white-space: nowrap; cursor: pointer; transition: filter .12s, transform .08s; }
+  .cta:hover, .btn:hover { filter: brightness(.95); }
+  .cta:active, .btn:active { transform: scale(.98); }
+  .cta.updown { background: linear-gradient(105deg, var(--up) 0 50%, var(--down) 50% 100%); color: #1d0f2e; }
+  .cta.big { height: 48px; border-radius: 14px; font-size: 15px; padding: 0 22px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 38px; padding: 0 14px; border-radius: 10px; background: var(--control-hover); border: 0; font-weight: 600; font-size: 13px; cursor: pointer; text-decoration: none; white-space: nowrap; transition: filter .12s, transform .08s; }
+  .btn.pink { background: var(--up); color: var(--up-ink); }
+  .btn[disabled] { opacity: .55; pointer-events: none; }
+
+  /* ---------- hero ---------- */
+  .hero { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(0,1fr); gap: 16px; margin-top: 20px; }
+  .intro { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+  .eyebrow { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 8px; font-size: 12px; font-weight: 600; background: var(--control); color: var(--ink-2); white-space: nowrap; }
+  .chip.up { background: var(--up-soft); color: var(--up-text); }
+  .chip.down { background: var(--down-soft); color: var(--down-text); }
+  .chip .btc { width: 14px; height: 14px; border-radius: 4px; background: #f7931a; color: #fff; font-size: 10px; display: grid; place-items: center; font-weight: 700; }
+  h1 { font-size: clamp(28px, 4.2vw, 40px); line-height: 1.08; font-weight: 700; letter-spacing: -.02em; text-wrap: balance; }
+  h1 em { font-style: normal; color: var(--up-text); }
+  .lede { font-size: 15px; color: var(--ink-2); max-width: 52ch; }
+  .facts { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); border: 1px solid var(--line); border-radius: 12px; margin-top: auto; }
+  .fact { padding: 12px 14px; min-width: 0; }
+  .fact + .fact { border-left: 1px solid var(--line); }
+  .fact small { display: block; font-size: 12px; color: var(--ink-3); font-weight: 500; }
+  .fact b { display: block; font-size: 16px; font-weight: 600; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fact b.tba { color: var(--ink-3); }
+  .note { font-size: 12.5px; color: var(--ink-2); background: var(--control); border-radius: 10px; padding: 9px 12px; }
+
+  .live { padding: 24px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; }
+  .live-head { display: flex; align-items: center; gap: 10px; }
+  .live-head .btc-lg { width: 40px; height: 40px; border-radius: 10px; background: #f7931a; color: #fff; display: grid; place-items: center; font-size: 22px; font-weight: 700; flex: none; }
+  .live-head small { display: block; font-size: 12px; color: var(--ink-2); }
+  .live-head b { display: block; font-size: 16px; font-weight: 600; line-height: 1.2; }
+  .live-dot { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--up-text); }
+  .live-dot i { width: 8px; height: 8px; border-radius: 50%; background: var(--up); animation: blink 1.6s ease-in-out infinite; }
+  @keyframes blink { 50% { opacity: .35; } }
+  .live-now { display: flex; flex-direction: column; gap: 10px; }
+  .live-grid { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end; }
+  .live-grid small, .past-wrap > small { display: block; font-size: 12px; color: var(--ink-2); font-weight: 500; }
+  .live-grid .v { font-size: 30px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+  .live-grid .clock { text-align: right; }
+  .meter { height: 6px; border-radius: 99px; background: var(--control); overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 0; border-radius: 99px; background: var(--up); transition: width 1s linear; }
+  .past-wrap { display: flex; flex-direction: column; gap: 6px; }
+  .past { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 6px; min-height: 46px; }
+  .past .r { padding: 6px 4px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 1px; background: var(--control); color: var(--ink-2); line-height: 1.3; white-space: nowrap; }
+  .past .r i { font-style: normal; font-size: 9px; margin-right: 3px; }
+  .past .r em { font-style: normal; font-size: 11.5px; font-weight: 600; }
+  .past .r.u i, .past .r.u em { color: var(--up-text); } .past .r.d i, .past .r.d em { color: var(--down-text); }
+  .odds { display: flex; flex-direction: column; gap: 8px; }
+  .odds-head { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-2); font-weight: 500; }
+  .split { display: flex; gap: 3px; height: 8px; }
+  .split i { display: block; height: 100%; border-radius: 99px; background: var(--up); width: 50%; transition: width .6s ease; min-width: 8px; }
+  .split i + i { background: var(--down); flex: 1; width: auto; }
+  .sides { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .side { height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 16px; font-weight: 600; text-decoration: none; white-space: nowrap; transition: filter .12s, transform .08s; }
+  .side b { font-weight: 700; }
+  .side b:empty { display: none; }
+  .side.up { background: var(--up); color: var(--up-ink); }
+  .side.down { background: var(--down); color: var(--down-ink); }
+  .side:hover { filter: brightness(.95); }
+  .side:active { transform: scale(.98); }
+
+  /* ---------- totals ---------- */
+  .totals { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); margin-top: 16px; }
+  .total { padding: 14px 18px; min-width: 0; }
+  .total + .total { border-left: 1px solid var(--line); }
+  .total small { display: block; font-size: 12px; color: var(--ink-3); font-weight: 500; }
+  .total b { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+
+  /* ---------- race chart ---------- */
+  .race { margin-top: 16px; padding: 16px 16px 12px; }
+  .race-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+  .race-head h2 { font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
+  .race-head p { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
+  .race-ctl { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .seg { display: inline-flex; background: var(--control); border-radius: 10px; padding: 3px; }
+  .seg button { height: 28px; padding: 0 10px; border: 0; background: none; border-radius: 8px; font-weight: 600; font-size: 12.5px; color: var(--ink-2); cursor: pointer; white-space: nowrap; }
+  .seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(16,17,20,.12); }
+  .race-ctl .btn { height: 34px; }
+  .race-box { position: relative; height: 440px; margin-top: 12px; }
+  .race-box canvas { width: 100%; height: 100%; display: block; touch-action: pan-y; }
+  .race-legend { display: flex; gap: 6px 18px; flex-wrap: wrap; font-size: 12px; color: var(--ink-3); margin-top: 6px; }
+  .race-legend i { display: inline-block; width: 18px; height: 0; border-top: 2px solid var(--up); vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+  .race-legend i.dash { border-top: 2px dashed var(--ink-3); }
+
+  /* ---------- find me ---------- */
+  .find { margin-top: 16px; padding: 16px; position: relative; }
+  .find-row { display: flex; gap: 10px; align-items: center; }
+  .find label { font-weight: 600; font-size: 15px; white-space: nowrap; }
+  .field { flex: 1; position: relative; min-width: 0; }
+  .field input { width: 100%; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--control); padding: 0 14px 0 38px; font-size: 15px; font-weight: 500; outline: none; }
+  .field input:focus { border-color: var(--down-line); background: var(--card); box-shadow: 0 0 0 3px var(--down-soft); }
+  .field input::placeholder { color: var(--ink-3); font-weight: 400; }
+  .field > svg { position: absolute; left: 12px; top: 13px; width: 18px; height: 18px; color: var(--ink-3); pointer-events: none; }
+  .sugg { position: absolute; left: 0; right: 0; top: 50px; z-index: 10; background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,.14); padding: 4px; max-height: 300px; overflow: auto; }
+  .sugg button { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; padding: 8px 10px; border-radius: 8px; cursor: pointer; text-align: left; }
+  .sugg button:hover, .sugg button.on { background: var(--control); }
+  .sugg .rk { margin-left: auto; font-size: 12px; color: var(--ink-3); font-weight: 600; }
+  .you { margin-top: 14px; border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 16px; align-items: center; background: linear-gradient(90deg, var(--up-soft), var(--down-soft)); }
+  .you .rank { font-size: 34px; font-weight: 700; letter-spacing: -.03em; line-height: 1; min-width: 64px; text-align: center; }
+  .you .rank small { display: block; font-size: 11px; font-weight: 600; letter-spacing: .04em; color: var(--ink-2); margin-top: 4px; }
+  .you .who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .you .who b { font-size: 17px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .you .stats { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 8px; font-size: 13px; color: var(--ink-2); }
+  .you .stats b { color: var(--ink); font-weight: 600; }
+  .you .gap { margin-top: 8px; font-size: 13px; font-weight: 500; }
+  .you .acts { display: flex; flex-direction: column; gap: 8px; }
+  .miss { margin-top: 14px; border: 1px dashed var(--line); border-radius: 14px; padding: 18px; display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .miss b { font-size: 16px; font-weight: 600; }
+  .miss p { color: var(--ink-2); font-size: 13.5px; margin-top: 2px; max-width: 60ch; }
+
+  /* ---------- avatars ---------- */
+  .av { width: 32px; height: 32px; border-radius: 50%; flex: none; background: var(--control); display: grid; place-items: center; font-weight: 700; font-size: 13px; color: #fff; overflow: hidden; position: relative; }
+  .av img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .av.lg { width: 52px; height: 52px; font-size: 20px; }
+  .av.md { width: 40px; height: 40px; font-size: 16px; }
+  .ver { width: 14px; height: 14px; flex: none; color: var(--down-text); }
+
+  /* ---------- podium ---------- */
+  .podium { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; margin-top: 16px; }
+  .pod { padding: 16px; display: flex; flex-direction: column; gap: 12px; cursor: pointer; position: relative; overflow: hidden; }
+  .pod:hover { border-color: var(--line-hover, #cfd2d6); }
+  .pod .top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .pod .place { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-weight: 700; font-size: 14px; flex: none; }
+  .pod.p1 .place { background: var(--up); color: var(--up-ink); }
+  .pod.p2 .place { background: var(--down); color: var(--down-ink); }
+  .pod.p3 .place { background: var(--control); color: var(--ink-2); }
+  .pod .name { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 4px; min-width: 0; }
+  .pod .name span { overflow: hidden; text-overflow: ellipsis; }
+  .pod .pnl { font-size: 28px; font-weight: 700; letter-spacing: -.02em; line-height: 1; }
+  .pod .sub { display: flex; gap: 14px; font-size: 12.5px; color: var(--ink-2); }
+  .pod .sub b { color: var(--ink); font-weight: 600; }
+  .pod svg.spark { width: 100%; height: 44px; display: block; }
+
+  /* ---------- board ---------- */
+  .board { margin-top: 16px; overflow: hidden; }
+  .board-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px 0; flex-wrap: wrap; }
+  .board-head h2 { font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
+  .upd { font-size: 12px; color: var(--ink-3); margin-left: auto; white-space: nowrap; }
+  .tabs { display: flex; gap: 4px; padding: 12px 16px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--line); }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { height: 32px; padding: 0 12px; border-radius: 9px; border: 0; background: none; font-weight: 600; font-size: 13px; color: var(--ink-2); cursor: pointer; white-space: nowrap; }
+  .tab:hover { background: var(--control); }
+  .tab[aria-selected="true"] { background: var(--ink); color: var(--card); }
+  .hint { padding: 8px 16px; font-size: 12.5px; color: var(--ink-2); border-bottom: 1px solid var(--line-soft); background: var(--control); }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 12px; font-weight: 500; color: var(--ink-3); text-align: right; padding: 10px 12px; white-space: nowrap; border-bottom: 1px solid var(--line-soft); }
+  th:nth-child(1), th:nth-child(2) { text-align: left; }
+  td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child, th:first-child { padding-left: 16px; width: 76px; }
+  td:last-child, th:last-child { padding-right: 16px; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: var(--control); }
+  tbody tr.me { background: linear-gradient(90deg, var(--up-soft), var(--down-soft)); }
+  .rk { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+  .rk .n { min-width: 22px; }
+  .mv { font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 1px; }
+  .mv.up { color: var(--pos); } .mv.dn { color: var(--neg); } .mv.new { color: var(--down-text); background: var(--down-soft); border-radius: 5px; padding: 1px 5px; font-size: 10px; letter-spacing: .03em; }
+  .trader { display: flex; align-items: center; gap: 10px; text-align: left; min-width: 0; }
+  .trader .nm { font-weight: 600; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+  .trader .sub { display: none; font-size: 12px; color: var(--ink-3); font-weight: 400; }
+  td.main { font-weight: 700; font-size: 15px; }
+  .wr { display: inline-flex; align-items: center; gap: 8px; }
+  .wr i { width: 44px; height: 5px; border-radius: 9px; background: var(--down-soft); overflow: hidden; display: block; }
+  .wr i u { display: block; height: 100%; background: var(--down); border-radius: 9px; }
+  td svg.spark { width: 88px; height: 26px; display: block; margin-left: auto; }
+  .more { display: flex; justify-content: center; padding: 14px; border-top: 1px solid var(--line-soft); }
+  .empty { padding: 48px 16px; text-align: center; color: var(--ink-2); }
+  .empty b { display: block; color: var(--ink); font-size: 16px; margin-bottom: 4px; }
+
+  /* ---------- how it's counted ---------- */
+  .how { margin-top: 16px; padding: 20px 24px; }
+  .how h2 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+  .how ul { margin: 0; padding-left: 18px; color: var(--ink-2); display: grid; gap: 4px; font-size: 13.5px; }
+  main.wrap { padding-bottom: 16px; } /* same as the gap between cards; .wrap's own padding would win over a bare `main` */
+
+  /* mobile sticky CTA */
+  .dock { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--card); border-top: 1px solid var(--line); align-items: center; gap: 12px; }
+  .dock span { font-size: 13px; font-weight: 500; flex: 1; min-width: 0; }
+
+  /* share modal */
+  dialog { border: 1px solid var(--line); border-radius: 18px; padding: 16px; background: var(--card); color: var(--ink); width: min(680px, calc(100vw - 24px)); box-shadow: 0 16px 48px rgba(0,0,0,.3); }
+  dialog::backdrop { background: rgba(0,0,0,.5); }
+  dialog canvas { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); display: block; }
+  dialog .acts { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  dialog .acts .sp { flex: 1; }
+
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr; }
+    .podium { grid-template-columns: 1fr; gap: 10px; }
+    .pod { flex-direction: row; align-items: center; flex-wrap: wrap; }
+    .pod .top { flex: 1; }
+    .pod .pnl { font-size: 20px; }
+    .pod .sub, .pod svg.spark { display: none; }
+    .total { padding: 12px; }
+    .total b { font-size: 17px; }
+    .col-x { display: none; }
+    .trader .sub { display: block; }
+    /* fixed columns, so a long name shortens instead of pushing the PnL off the card */
+    table { table-layout: fixed; }
+    td:first-child, th:first-child { width: 72px; padding-left: 12px; }
+    td.main, th:nth-child(3) { width: 96px; }
+    .trader > span:last-child { overflow: hidden; }
+    .trader .nm { max-width: none; }
+    .trader .sub { overflow: hidden; text-overflow: ellipsis; }
+    td, th { padding: 10px 8px; }
+    td:last-child, th:last-child { padding-right: 12px; }
+    .you { grid-template-columns: auto minmax(0,1fr); }
+    .you .acts { grid-column: 1 / -1; flex-direction: row; }
+    .you .acts > * { flex: 1; }
+    .find-row { flex-wrap: wrap; }
+    .find label { width: 100%; }
+    .dock { display: flex; }
+    main.wrap { padding-bottom: calc(78px + env(safe-area-inset-bottom)); } /* the 16px gap plus the dock that covers the bottom */
+    .race-box { height: 380px; }
+    .facts { grid-template-columns: 1fr 1fr; }
+    .fact:nth-child(3) { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+<script>
+  // Vercel Web Analytics: page views only, no cookies. Skipped on localhost, where /_vercel/insights doesn't exist.
+  if (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    const s = document.createElement("script"); s.defer = true; s.src = "/_vercel/insights/script.js"; document.head.appendChild(s);
+  }
+</script>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="Pulse Board home">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#ff87a6"/><path d="M10 34h11l5-14 9 26 6-18 3 6h10" fill="none" stroke="#7a1230" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Pulse Board
+    </a>
+    <span class="sp"></span>
+    <button class="icon-btn" id="theme" aria-label="Switch light / dark theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="card intro">
+      <div class="eyebrow">
+        <span class="chip"><span class="btc">₿</span> BTC Up or Down 5m</span>
+        <span class="chip up">PnL competition</span>
+        <span class="chip down" id="phase">Warm-up</span>
+      </div>
+      <h1>Who's <em>up</em> on Pulse?</h1>
+      <p class="lede">Every trader in XO Market's five-minute BTC rounds, ranked by net profit / loss. Find your rank, see who's climbing, and take a spot on the board.</p>
+      <p class="note" id="phase-note" hidden></p>
+      <div class="facts">
+        <div class="fact"><small id="f-dates-label">Dates</small><b id="f-dates" class="tba">TBA</b></div>
+        <div class="fact"><small>Prizes</small><b id="f-prizes" class="tba">TBA</b></div>
+        <div class="fact"><small id="f-left-label">Ranked by</small><b id="f-left">Net profit / loss</b></div>
+      </div>
+    </div>
+
+    <div class="card live" aria-live="off">
+      <div class="live-head">
+        <span class="btc-lg">₿</span>
+        <div><small id="l-window">Current round</small><b>BTC Up or Down 5m</b></div>
+        <span class="live-dot"><i></i>LIVE</span>
+      </div>
+      <div class="live-now">
+        <div class="live-grid">
+          <div><small>Price to beat</small><div class="v num" id="l-price">…</div></div>
+          <div class="clock"><small>Ends in</small><div class="v num" id="l-clock">0:00</div></div>
+        </div>
+        <div class="meter"><i id="l-meter"></i></div>
+      </div>
+      <div class="past-wrap">
+        <small>Last rounds · BTC move</small>
+        <div class="past" id="l-past"></div>
+      </div>
+      <div class="odds">
+        <div class="odds-head"><span>Crowd odds this round</span><span class="num" id="o-pct"></span></div>
+        <div class="split" aria-hidden="true"><i id="o-bar"></i><i></i></div>
+        <div class="sides">
+          <a class="side up ref" target="_blank" rel="noopener" aria-label="Trade Up on XO Market">Up<b class="num" id="o-up"></b></a>
+          <a class="side down ref" target="_blank" rel="noopener" aria-label="Trade Down on XO Market">Down<b class="num" id="o-down"></b></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card totals" aria-label="Competition totals">
+    <div class="total"><small>Ranked traders</small><b class="num" id="t-traders">–</b></div>
+    <div class="total"><small>Rounds traded</small><b class="num" id="t-rounds">–</b></div>
+    <div class="total"><small>Pulse volume</small><b class="num" id="t-volume">–</b></div>
+  </section>
+
+  <section class="card race" id="race">
+    <div class="race-head">
+      <div>
+        <h2>The race</h2>
+        <p>Every leader's PnL, round by round. Drag across the chart to rewind.</p>
+      </div>
+      <div class="race-ctl">
+        <div class="seg" id="race-n" role="group" aria-label="Traders shown">
+          <button data-n="5" aria-pressed="false">Top 5</button><button data-n="10" aria-pressed="true">Top 10</button><button data-n="20" aria-pressed="false">Top 20</button>
+        </div>
+        <div class="seg" id="race-scale" role="group" aria-label="Scale">
+          <button data-log="1" aria-pressed="true">Log</button><button data-log="0" aria-pressed="false">Linear</button>
+        </div>
+        <button class="btn" id="race-play">▶ Replay</button>
+      </div>
+    </div>
+    <div class="race-box"><canvas id="race-cv" role="img" aria-label="Line chart of the leaders' cumulative PnL over the competition window"></canvas></div>
+    <div class="race-legend"><span><i></i>Cumulative PnL</span><span><i class="dash"></i>Break-even</span><span id="race-note"></span></div>
+  </section>
+
+  <section class="card find" id="find">
+    <div class="find-row">
+      <label for="q">Find yourself</label>
+      <div class="field">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Your XO username" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" role="combobox" aria-expanded="false" aria-controls="sugg">
+        <div class="sugg" id="sugg" role="listbox" hidden></div>
+      </div>
+    </div>
+    <div id="you"></div>
+  </section>
+
+  <section class="podium" id="podium" aria-label="Top three"></section>
+
+  <section class="card board">
+    <div class="board-head">
+      <h2>Leaderboard</h2>
+      <span class="upd" id="upd"></span>
+    </div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="hint" id="hint" hidden></div>
+    <div id="table"></div>
+  </section>
+
+  <section class="card how">
+    <h2>How this is counted</h2>
+    <ul>
+      <li>PnL is the sum of your settled BTC Up or Down 5m rounds, taken from your public XO portfolio (the same per-round numbers the app shows).</li>
+      <li id="how-window">While the competition dates are TBA, the board covers the last 7 days.</li>
+      <li>Private profiles aren't ranked<span id="how-hidden"></span>. Make your profile public in XO settings to appear.</li>
+      <li><span id="how-look">Rank arrows compare with where you stood 24 hours ago.</span> Win rate needs at least 20 decided rounds.</li>
+      <li>This is a community page. XO Market's own results decide any prizes.</li>
+    </ul>
+  </section>
+</main>
+
+<div class="dock">
+  <span id="dock-text">A new BTC round every 5 minutes.</span>
+  <a class="cta updown ref" target="_blank" rel="noopener">Trade Pulse ↗</a>
+</div>
+
+<dialog id="share">
+  <canvas id="cv" width="1200" height="675"></canvas>
+  <div class="acts">
+    <button class="btn pink" id="s-x">Post on X</button>
+    <button class="btn" id="s-dl">Download PNG</button>
+    <button class="btn" id="s-copy">Copy link</button>
+    <span class="sp"></span>
+    <button class="btn" id="s-close">Close</button>
+  </div>
+</dialog>
+
+<script>
+// ---------- config ----------
+const REF = "https://beta.xo.market/?r=andriy_shkinder";
+const PRIZES = null; // e.g. "$5,000 USDC" once announced
+const PRIZE_SPOTS = 10; // places the "gap to the prize zone" line aims at
+const XO_API = "https://api-mainnet.xo.market/api";
+const XO_BOOK = "https://orderbooks.xo.market"; // public order book: live Up / Down prices
+// the indexer publishes to the repo's `data` branch; the copy next to the page is the fallback
+const REMOTE = "https://raw.githubusercontent.com/AndriyShk/pulse-board/data/board.json";
+const LOCAL = "data/board.json";
+const PAGE = 50;
+const MIN_DECIDED = 20; // rounds needed for the win-rate tab
+const ROUND = 5 * 6e4;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+document.querySelectorAll("a.ref").forEach((a) => (a.href = REF));
+
+// ---------- theme ----------
+const root = document.documentElement;
+const setTheme = (t) => { root.dataset.theme = t; document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#121213" : "#f5f5f5"; };
+let saved = null;
+try { saved = localStorage.getItem("theme"); } catch {}
+setTheme(saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+$("theme").onclick = () => { const t = root.dataset.theme === "dark" ? "light" : "dark"; setTheme(t); try { localStorage.setItem("theme", t); } catch {} render(); };
+
+// ---------- formatting ----------
+const money = (x, sign = true) => {
+  const a = Math.abs(x);
+  const s = a >= 1e6 ? (a / 1e6).toFixed(2) + "M" : a >= 1e4 ? (a / 1e3).toFixed(1) + "k" : a >= 100 ? a.toLocaleString("en-US", { maximumFractionDigits: 0 }) : a.toFixed(2);
+  return (x < -0.004 ? "−" : sign && x > 0.004 ? "+" : "") + "$" + s;
+};
+const cls = (x) => (x > 0.004 ? "pos" : x < -0.004 ? "neg" : "muted");
+const ago = (t) => { const m = Math.max(0, Math.round((Date.now() - t) / 6e4)); return m < 1 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`; };
+const day = (t) => new Date(t).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const dayUTC = (t) => new Date(t).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+const hm = (t) => new Date(t).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+const plural = (n) => (n === 1 ? "round" : "rounds");
+const winRate = (r) => (r.wins + r.losses ? r.wins / (r.wins + r.losses) : 0);
+
+const avatarUrl = (a, size = "bigger") => (!a ? "" : (a.startsWith("http") ? a : "https://pbs.twimg.com/profile_images/" + a).replace("_normal.", `_${size}.`));
+const avatar = (r, k = "") => `<span class="av ${k}" style="background:${/^#[0-9a-f]{6}$/i.test(r.c) ? r.c : "#a293ff"}">${esc((r.u[0] || "?").toUpperCase())}${r.a ? `<img src="${esc(avatarUrl(r.a))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}</span>`;
+const VER = '<svg class="ver" viewBox="0 0 24 24" aria-label="Verified"><path fill="currentColor" d="M12 2l2.4 2.1 3.2-.3.9 3.1 2.7 1.7-1.2 3 1.2 3-2.7 1.7-.9 3.1-3.2-.3L12 22l-2.4-2.1-3.2.3-.9-3.1-2.7-1.7 1.2-3-1.2-3 2.7-1.7.9-3.1 3.2.3z"/><path d="m8.5 12.2 2.4 2.4 4.6-4.9" fill="none" stroke="var(--card)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function spark(points, w, h) {
+  const min = Math.min(0, ...points), max = Math.max(0, ...points), span = max - min || 1;
+  const x = (i) => (i / (points.length - 1)) * (w - 2) + 1, y = (v) => h - 2 - ((v - min) / span) * (h - 4);
+  const d = points.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join("");
+  const c = points[points.length - 1] >= 0 ? "var(--pos)" : "var(--neg)";
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path d="M1 ${y(0).toFixed(1)}H${w - 1}" stroke="var(--line)" stroke-dasharray="2 3"/><path d="${d}" fill="none" stroke="${c}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>`;
+}
+
+// ---------- state ----------
+let board = null, rows = [], byName = new Map(), tab = "pnl", shown = PAGE, me = null;
+
+const TABS = [
+  { id: "pnl", label: "Top PnL", head: "PnL", val: (r) => r.pnl, show: (r) => `<span class="${cls(r.pnl)}">${money(r.pnl)}</span>` },
+  { id: "d24", label: () => `Last ${lookName()}`, head: () => `${lookName()} PnL`, val: (r) => r.d24, keep: (r) => Math.abs(r.d24) > 0.004, show: (r) => `<span class="${cls(r.d24)}">${money(r.d24)}</span>`, hint: () => `PnL from rounds settled in the last ${lookName() === "1h" ? "hour" : lookName().replace("h", " hours")}.` },
+  { id: "win", label: "Win rate", head: "Win rate", val: (r) => winRate(r), keep: (r) => r.wins + r.losses >= MIN_DECIDED, show: (r) => `${(winRate(r) * 100).toFixed(1)}%`, hint: `Share of decided rounds won. Needs at least ${MIN_DECIDED} decided rounds.` },
+  { id: "best", label: "Biggest round", head: "Best round", val: (r) => (r.best ? r.best[0] : -Infinity), keep: (r) => r.best, show: (r) => `<span class="pos">${money(r.best[0])}</span>`, hint: "The most profit taken from a single five-minute round." },
+  { id: "streak", label: "Hot streak", head: "Best streak", val: (r) => r.bestStreak, keep: (r) => r.bestStreak > 1, show: (r) => `${r.bestStreak} wins`, hint: "Longest run of winning rounds in a row." },
+  { id: "vol", label: "Volume", head: "Volume", val: (r) => r.vol, show: (r) => money(r.vol, false), hint: "Total stake across settled rounds." },
+  { id: "rekt", label: "Rekt", head: "PnL", val: (r) => -r.pnl, keep: (r) => r.pnl < -0.004, show: (r) => `<span class="neg">${money(r.pnl)}</span>`, hint: "The other end of the board. Respect for showing up." },
+];
+const lookName = () => (board && board.look < 864e5 ? `${Math.round(board.look / 36e5)}h` : "24h");
+const sorted = (t) => rows.filter(t.keep || (() => true)).sort((a, b) => t.val(b) - t.val(a) || b.vol - a.vol);
+
+// ---------- render ----------
+function render() {
+  if (!board) return;
+  const w = board.window, t = board.totals;
+  const live = !w.tba && Date.now() >= w.start && (!w.end || Date.now() <= w.end);
+  const over = !w.tba && w.end && Date.now() > w.end;
+  $("phase").textContent = w.tba ? "Warm-up" : over ? "Final" : live ? "Live" : "Starts soon";
+  $("f-dates").textContent = w.tba ? "TBA" : `${dayUTC(w.start)} – ${w.end ? dayUTC(w.end) : "TBA"}`;
+  $("f-dates-label").textContent = w.tba ? "Dates" : "Dates (UTC)";
+  $("f-dates").classList.toggle("tba", w.tba);
+  $("f-prizes").textContent = PRIZES || "TBA";
+  $("f-prizes").classList.toggle("tba", !PRIZES);
+  $("phase-note").hidden = !w.tba;
+  $("phase-note").textContent = `Dates and prizes are still to be announced. Until then the board shows the last ${w.previewDays} days of Pulse as a warm-up.`;
+  $("how-window").textContent = w.tba ? `While the competition dates are TBA, the board covers the last ${w.previewDays} days.` : `Only rounds that open and settle between ${dayUTC(w.start)} and ${w.end ? dayUTC(w.end) : "the end date"}, 00:00 UTC, count.`;
+  $("how-look").textContent = `Rank arrows compare with where you stood ${lookName() === "1h" ? "an hour" : lookName().replace("h", " hours")} ago.`;
+  $("how-hidden").textContent = t.hidden ? ` (${t.hidden} right now)` : "";
+  if (live && w.end) { $("f-left-label").textContent = "Time left"; tickLeft(); }
+
+  $("t-traders").textContent = t.traders.toLocaleString("en-US");
+  $("t-rounds").textContent = t.rounds.toLocaleString("en-US");
+  $("t-volume").textContent = money(t.volume, false);
+  $("upd").textContent = `Updated ${ago(board.updatedAt)}`;
+
+  // podium
+  $("podium").innerHTML = rows.slice(0, 3).map((r, i) => `
+    <div class="card pod p${i + 1}" data-u="${esc(r.u)}" tabindex="0" role="button" aria-label="${esc(r.u)}, rank ${i + 1}">
+      <div class="top"><span class="place">${i + 1}</span>${avatar(r, "md")}<span class="name"><span>${esc(r.u)}</span>${r.v ? VER : ""}</span></div>
+      <div class="pnl num ${cls(r.pnl)}">${money(r.pnl)}</div>
+      ${spark(r.spark, 300, 44)}
+      <div class="sub"><span><b class="num">${r.rounds.toLocaleString("en-US")}</b> ${plural(r.rounds)}</span><span><b class="num">${(winRate(r) * 100).toFixed(0)}%</b> won</span><span><b class="num">${money(r.vol, false)}</b> vol</span></div>
+    </div>`).join("");
+
+  // tabs + table
+  const txt = (v) => (typeof v === "function" ? v() : v || "");
+  $("tabs").innerHTML = TABS.map((x) => `<button class="tab" role="tab" aria-selected="${x.id === tab}" data-tab="${x.id}">${txt(x.label)}</button>`).join("");
+  const T = TABS.find((x) => x.id === tab), list = sorted(T);
+  $("hint").hidden = !T.hint;
+  $("hint").textContent = txt(T.hint);
+  if (!list.length) {
+    $("table").innerHTML = `<div class="empty"><b>Nobody here yet</b>The first settled round fills this in.</div>`;
+  } else {
+    const body = list.slice(0, shown).map((r, i) => {
+      const d = tab === "pnl" ? (r.prev == null ? `<span class="mv new">NEW</span>` : r.prev > r.rank ? `<span class="mv up">▲${r.prev - r.rank}</span>` : r.prev < r.rank ? `<span class="mv dn">▼${r.rank - r.prev}</span>` : "") : "";
+      return `<tr data-u="${esc(r.u)}" class="${me && me.u === r.u ? "me" : ""}">
+        <td><span class="rk"><span class="n num">${i + 1}</span>${d}</span></td>
+        <td><span class="trader">${avatar(r)}<span style="min-width:0"><span class="nm" style="display:flex;align-items:center;gap:4px"><span style="overflow:hidden;text-overflow:ellipsis">${esc(r.u)}</span>${r.v ? VER : ""}</span><span class="sub num">${r.rounds} ${plural(r.rounds)} · ${(winRate(r) * 100).toFixed(0)}% won</span></span></span></td>
+        <td class="main num">${T.show(r)}</td>
+        ${tab === "pnl" || tab === "rekt" ? `<td class="num col-x ${cls(r.d24)}">${Math.abs(r.d24) > 0.004 ? money(r.d24) : "–"}</td>` : `<td class="num col-x ${cls(r.pnl)}">${money(r.pnl)}</td>`}
+        <td class="num col-x">${r.rounds.toLocaleString("en-US")}</td>
+        <td class="num col-x"><span class="wr">${(winRate(r) * 100).toFixed(0)}%<i><u style="width:${(winRate(r) * 100).toFixed(0)}%"></u></i></span></td>
+        <td class="num col-x">${money(r.vol, false)}</td>
+        <td class="col-x">${spark(r.spark, 88, 26)}</td>
+      </tr>`;
+    }).join("");
+    $("table").innerHTML = `<table>
+      <thead><tr><th>#</th><th>Trader</th><th>${txt(T.head)}</th><th class="col-x">${tab === "pnl" || tab === "rekt" ? lookName() : "PnL"}</th><th class="col-x">Rounds</th><th class="col-x">Won</th><th class="col-x">Volume</th><th class="col-x">Trend</th></tr></thead>
+      <tbody>${body}</tbody></table>
+      ${list.length > shown ? `<div class="more"><button class="btn" id="more">Show ${Math.min(PAGE, list.length - shown)} more of ${list.length - shown}</button></div>` : ""}`;
+  }
+  renderYou();
+  raceKick();
+}
+
+function renderYou() {
+  const q = $("q").value.trim().replace(/^@/, "");
+  if (me) {
+    const above = rows[me.rank - 2], edge = rows[PRIZE_SPOTS - 1];
+    const gap = me.rank === 1 ? `You're leading by <b>${money((rows[1] ? me.pnl - rows[1].pnl : 0), false)}</b>.`
+      : `<b class="num">${money(above.pnl - me.pnl + 0.01, false)}</b> more to pass <b>${esc(above.u)}</b> for #${me.rank - 1}` +
+        (me.rank > PRIZE_SPOTS && edge ? ` · <b class="num">${money(edge.pnl - me.pnl + 0.01, false)}</b> to the top ${PRIZE_SPOTS}` : "") + ".";
+    $("you").innerHTML = `<div class="you">
+      <div class="rank num">#${me.rank}<small>OF ${rows.length}</small></div>
+      <div style="min-width:0">
+        <div class="who">${avatar(me, "md")}<b>${esc(me.u)}</b>${me.v ? VER : ""}<span class="num ${cls(me.pnl)}" style="font-weight:700;font-size:17px;margin-left:auto">${money(me.pnl)}</span></div>
+        <div class="stats num"><span><b>${me.rounds.toLocaleString("en-US")}</b> ${plural(me.rounds)}</span><span><b>${(winRate(me) * 100).toFixed(0)}%</b> won</span><span><b>${money(me.vol, false)}</b> volume</span><span>${lookName()} <b class="${cls(me.d24)}">${money(me.d24)}</b></span>${me.best ? `<span>best round <b class="pos">${money(me.best[0])}</b></span>` : ""}</div>
+        <div class="gap">${gap}</div>
+      </div>
+      <div class="acts"><button class="btn pink" id="open-share">Share my rank</button><a class="btn ref" href="${REF}" target="_blank" rel="noopener">Trade Pulse ↗</a></div>
+    </div>`;
+    $("dock-text").innerHTML = `You're <b>#${me.rank}</b> on Pulse Board.`;
+  } else if (q && searched) {
+    $("you").innerHTML = `<div class="miss">
+      <div><b>${esc(q)} isn't on the board yet</b>
+      <p>Either no settled Pulse round in this window, or the profile is private (private profiles aren't ranked). One settled round is enough to get on.</p></div>
+      <a class="cta ref" href="${REF}" target="_blank" rel="noopener">Trade a round ↗</a>
+    </div>`;
+  } else $("you").innerHTML = "";
+}
+
+// ---------- search ----------
+let searched = false, hot = -1;
+function suggest() {
+  const q = $("q").value.trim().replace(/^@/, "").toLowerCase(), box = $("sugg");
+  if (!q) { box.hidden = true; $("q").setAttribute("aria-expanded", "false"); return; }
+  const hits = rows.filter((r) => r.u.toLowerCase().includes(q)).sort((a, b) => (b.u.toLowerCase().startsWith(q) - a.u.toLowerCase().startsWith(q)) || a.rank - b.rank).slice(0, 8);
+  hot = -1;
+  box.innerHTML = hits.map((r) => `<button role="option" data-u="${esc(r.u)}">${avatar(r)}<span style="font-weight:600;overflow:hidden;text-overflow:ellipsis">${esc(r.u)}</span><span class="rk num">#${r.rank}</span></button>`).join("");
+  box.hidden = !hits.length;
+  $("q").setAttribute("aria-expanded", String(!!hits.length));
+}
+function pick(name, scroll = true) {
+  const r = byName.get(String(name).toLowerCase().replace(/^@/, ""));
+  searched = true;
+  me = r || null;
+  if (r) $("q").value = r.u;
+  $("sugg").hidden = true;
+  const url = new URL(location.href);
+  if (r) url.searchParams.set("u", r.u); else url.searchParams.delete("u");
+  history.replaceState(null, "", url);
+  if (r && r.rank > shown && tab === "pnl") shown = Math.ceil(r.rank / PAGE) * PAGE;
+  render();
+  if (scroll) $("find").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("q").addEventListener("input", () => { searched = false; if (me) { me = null; render(); } else renderYou(); suggest(); });
+$("q").addEventListener("keydown", (e) => {
+  const items = [...$("sugg").querySelectorAll("button")];
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    if (!items.length) return;
+    e.preventDefault();
+    hot = (hot + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+    items.forEach((b, i) => b.classList.toggle("on", i === hot));
+  } else if (e.key === "Enter") {
+    e.preventDefault();
+    pick(hot >= 0 && items[hot] ? items[hot].dataset.u : $("q").value.trim(), false);
+  } else if (e.key === "Escape") $("sugg").hidden = true;
+});
+document.addEventListener("click", (e) => {
+  const u = e.target.closest("[data-u]"), t = e.target.closest("[data-tab]");
+  if (e.target.closest("#open-share")) return openShare();
+  if (e.target.closest("#more")) { shown += PAGE; return render(); }
+  if (t) { tab = t.dataset.tab; shown = PAGE; return render(); }
+  if (u) return pick(u.dataset.u, !u.closest(".sugg"));
+  if (!e.target.closest(".field")) $("sugg").hidden = true;
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.classList.contains("pod")) pick(e.target.dataset.u); });
+
+// ---------- live round ----------
+// rounds sit on five-minute boundaries, so the clock needs no API; the price to beat and past results do
+let liveFor = 0;
+function tickRound() {
+  const now = Date.now(), startT = Math.floor(now / ROUND) * ROUND, left = startT + ROUND - now;
+  $("l-clock").textContent = `${Math.floor(left / 6e4)}:${String(Math.floor(left / 1000) % 60).padStart(2, "0")}`;
+  $("l-meter").style.width = `${((ROUND - left) / ROUND) * 100}%`;
+  $("l-window").textContent = `${day(startT)}, ${hm(startT)} – ${hm(startT + ROUND)}`;
+  if (liveFor !== startT && now - startT > 4000) { liveFor = startT; loadRound(startT); }
+}
+async function loadRound(startT) {
+  try {
+    const [act, past, mk] = await Promise.all([`pulse/markets?status=ACTIVE&limit=6`, `pulse/markets?limit=7`, `markets?marketScope=onlyClobPulse&statuses=ACTIVE&page=1&take=10`].map((q) => fetch(`${XO_API}/${q}`).then((r) => r.json())));
+    const market = (mk.data || []).find((m) => Date.parse(m.startsAt) === startT), up = market && (market.outcomes || []).find((o) => o.index === 0);
+    if (odds.start !== startT) { odds.start = startT; $("o-up").textContent = $("o-down").textContent = $("o-pct").textContent = ""; $("o-bar").style.width = "50%"; }
+    odds.token = up ? up.outcomeTokenId : null;
+    // start from XO's last known price, so the card isn't blank while the book has no two-sided quote (common in a round's last minute)
+    if (up && !$("o-up").textContent) setOdds(Number(up.currentPrice) / 1e6);
+    pollOdds();
+    const cur = (act.data || []).find((m) => Date.parse(m.startsAt) === startT);
+    $("l-price").textContent = cur && cur.openingPrice ? "$" + Number(cur.openingPrice).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "…";
+    if (!cur || !cur.openingPrice) liveFor = 0; // not published yet: ask again on the next tick window
+    const done = (past.data || []).filter((m) => m.winningOutcome != null).sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)).slice(-5);
+    $("l-past").innerHTML = done.map((m) => {
+      const d = Number(m.closingPrice) - Number(m.openingPrice), up = m.winningOutcome === 0;
+      const move = Number.isFinite(d) ? (d < 0 ? "−" : "+") + "$" + (Math.abs(d) >= 10 ? Math.abs(d).toFixed(0) : Math.abs(d).toFixed(2)) : "";
+      return `<span class="r ${up ? "u" : "d"}" title="${up ? "Up" : "Down"} won"><span><i>${up ? "▲" : "▼"}</i>${hm(Date.parse(m.startsAt)).replace(/ [AP]M/, "")}</span><em class="num">${move}</em></span>`;
+    }).join("");
+  } catch { liveFor = 0; }
+}
+let retry = 0;
+setInterval(() => { tickRound(); if (!liveFor && ++retry % 10 === 0) liveFor = 0; }, 1000);
+tickRound();
+
+// ---------- crowd odds ----------
+// The price of Up in the live round, read from the public order book every few seconds.
+const odds = { start: 0, token: null };
+const cents = (p) => (p * 100).toFixed(1).replace(/\.0$/, "") + "¢";
+async function pollOdds() {
+  if (!odds.token || document.hidden) return;
+  const token = odds.token;
+  try {
+    const j = await fetch(`${XO_BOOK}/midpoint?token_id=${token}`).then((r) => r.json());
+    if (token === odds.token) setOdds(Number(j.mid));
+  } catch {}
+}
+function setOdds(p) {
+  if (!(p > 0 && p < 1)) return; // "0.000" means one side of the book is empty: keep the last price
+  $("o-up").textContent = cents(p);
+  $("o-down").textContent = cents(1 - p);
+  $("o-bar").style.width = `${(p * 100).toFixed(1)}%`;
+  $("o-pct").textContent = `${Math.round(p * 100)}% Up · ${100 - Math.round(p * 100)}% Down`;
+}
+setInterval(pollOdds, 3000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) pollOdds(); });
+
+function tickLeft() {
+  const w = board.window;
+  if (!w.end) return;
+  const left = Math.max(0, w.end - Date.now()), d = Math.floor(left / 864e5), h = Math.floor(left / 36e5) % 24, m = Math.floor(left / 6e4) % 60;
+  $("f-left").textContent = d ? `${d}d ${h}h` : `${h}h ${m}m`;
+}
+
+// ---------- race chart ----------
+// Canvas line race in the spirit of the Pulse chart: one line per trader, a dashed break-even line where Pulse has
+// its price to beat, and each trader's avatar riding the head of their line.
+const RACE_COLORS = ["#ff5c8a", "#7c5cff", "#2fc04a", "#f7931a", "#18b6d9", "#d9a400", "#e5484d", "#3b82f6", "#c026d3", "#14b8a6"];
+const RACE_MS = 8000, SUB = 6;
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const race = { n: 10, log: true, p: 1, hover: null, playing: false, t0: 0, visible: false, looping: false, played: false, hits: [], imgs: new Map() };
+
+// monotone cubic through [0, ...spark], sampled SUB times per step: smooth like the Pulse line, never overshoots
+function dense(r) {
+  if (r._d) return r._d;
+  const v = [0, ...r.spark], n = v.length, m = new Array(n), out = [];
+  for (let i = 0; i < n; i++) {
+    const a = i ? v[i] - v[i - 1] : v[1] - v[0], b = i < n - 1 ? v[i + 1] - v[i] : a;
+    m[i] = a * b <= 0 ? 0 : (2 * a * b) / (a + b);
+  }
+  for (let i = 0; i < n - 1; i++) for (let k = 0; k < SUB; k++) {
+    const t = k / SUB, t2 = t * t, t3 = t2 * t;
+    out.push((2 * t3 - 3 * t2 + 1) * v[i] + (t3 - 2 * t2 + t) * m[i] + (-2 * t3 + 3 * t2) * v[i + 1] + (t3 - t2) * m[i + 1]);
+  }
+  out.push(v[n - 1]);
+  const first = out.findIndex((x) => Math.abs(x) > 0.004);
+  out.from = first < 0 ? out.length - 1 : Math.max(0, first - SUB); // where this trader's first round lands
+  return (r._d = out);
+}
+const valueAt = (d, p) => { const f = p * (d.length - 1), i = Math.min(d.length - 2, Math.floor(f)); return d[i] + (d[i + 1] - d[i]) * (f - i); };
+function raceImg(r) {
+  if (!r.a) return null;
+  let im = race.imgs.get(r.u);
+  if (!im) { im = new Image(); im.referrerPolicy = "no-referrer"; im.onload = raceKick; im.src = avatarUrl(r.a); race.imgs.set(r.u, im); }
+  return im.complete && im.naturalWidth ? im : null;
+}
+function raceSet() {
+  const set = rows.slice(0, race.n).map((r, i) => ({ r, color: RACE_COLORS[i % RACE_COLORS.length] }));
+  if (me && !set.some((x) => x.r === me)) set.push({ r: me, color: null }); // drawn in the ink colour
+  return set;
+}
+
+function drawRace() {
+  const cv = $("race-cv"), box = cv.parentElement, W = box.clientWidth, H = box.clientHeight;
+  if (!board || !W) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+  const c = cv.getContext("2d"), css = getComputedStyle(root), V = (k) => css.getPropertyValue(k).trim();
+  const ink = V("--ink"), ink2 = V("--ink-2"), ink3 = V("--ink-3"), line = V("--line"), card = V("--card"), control = V("--control");
+  const F = (w, px) => `${w} ${px}px "Open Runde", system-ui, sans-serif`;
+  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  c.clearRect(0, 0, W, H);
+  const set = raceSet();
+  for (const x of set) if (!x.color) x.color = ink;
+  race.hits = [];
+  if (!set.length) { c.fillStyle = ink2; c.font = F(500, 14); c.textAlign = "center"; c.fillText("The first settled round starts the race.", W / 2, H / 2); return; }
+
+  const narrow = W < 560;
+  const L = 8, R = W - (narrow ? 112 : 190), T = 26, B = H - 26, pw = R - L, ph = B - T;
+  const P = race.hover != null ? race.hover : race.playing ? race.p : 1;
+  const w = board.window, t0 = w.start, t1 = Math.min(board.updatedAt, w.end || Infinity);
+
+  // scale: signed log by default, because one whale would flatten everyone else on a linear axis
+  let lo = 0, hi = 0;
+  for (const { r } of set) for (const v of dense(r)) { if (v < lo) lo = v; if (v > hi) hi = v; }
+  const tr = race.log ? (v) => Math.sign(v) * Math.log10(1 + Math.abs(v)) : (v) => v;
+  let a = tr(lo), b = tr(hi);
+  const pad = Math.max((b - a) * 0.08, race.log ? 0.15 : 1);
+  a -= pad; b += pad;
+  const X = (p) => L + p * pw, Y = (v) => T + ((b - tr(v)) / (b - a)) * ph;
+
+  // grid
+  let ticks = [];
+  if (race.log) { for (let e = 1; e <= 7; e++) ticks.push(10 ** e, -(10 ** e)); }
+  else { const raw = (hi - lo || 1) / 5, mag = 10 ** Math.floor(Math.log10(raw)), step = [1, 2, 5, 10].map((k) => k * mag).find((k) => k >= raw); for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) if (Math.abs(v) > step / 2) ticks.push(v); }
+  c.lineWidth = 1; c.font = F(500, 11); c.textAlign = "left"; c.textBaseline = "bottom";
+  for (const v of ticks) {
+    const y = Y(v);
+    if (y < T + 4 || y > B - 4) continue;
+    c.strokeStyle = line; c.globalAlpha = 0.7; c.beginPath(); c.moveTo(L, Math.round(y) + 0.5); c.lineTo(R, Math.round(y) + 0.5); c.stroke(); c.globalAlpha = 1;
+    c.fillStyle = ink3; c.fillText(money(v).replace(/\.00$/, ""), L + 2, y - 3);
+  }
+  // days along the bottom
+  c.textBaseline = "top"; c.textAlign = "center";
+  // a day per label, or hours when the window is short
+  const span = t1 - t0, want = narrow ? 4 : 8, hourly = span < 3 * 864e5;
+  const step = hourly ? [1, 2, 3, 6, 12].map((h) => h * 36e5).find((h) => span / h <= want) || 864e5 : Math.ceil(span / 864e5 / want) * 864e5;
+  const d0 = new Date(t0); d0.setHours(0, 0, 0, 0);
+  for (let t = +d0; t < t1; t += step) {
+    if (t <= t0) continue;
+    const x = X((t - t0) / span);
+    if (x < L + 18 || x > R - 18) continue;
+    c.fillStyle = ink3; c.fillText(hourly ? hm(t) : day(t), x, B + 8);
+    c.strokeStyle = line; c.globalAlpha = 0.5; c.beginPath(); c.moveTo(Math.round(x) + 0.5, T); c.lineTo(Math.round(x) + 0.5, B); c.stroke(); c.globalAlpha = 1;
+  }
+  // break-even, drawn like Pulse's price to beat
+  const y0 = Math.round(Y(0)) + 0.5;
+  c.strokeStyle = ink3; c.setLineDash([5, 5]); c.beginPath(); c.moveTo(L, y0); c.lineTo(R, y0); c.stroke(); c.setLineDash([]);
+  const pill = (text, x, y, align) => {
+    c.font = F(600, 11); const tw = c.measureText(text).width + 14, px = align === "right" ? x - tw : x;
+    c.fillStyle = control; c.beginPath(); c.roundRect(px, y - 10, tw, 20, 10); c.fill();
+    c.fillStyle = ink2; c.textAlign = "left"; c.textBaseline = "middle"; c.fillText(text, px + 7, y + 0.5);
+  };
+  c.font = F(600, 11); c.fillStyle = ink2; c.textAlign = "left"; c.textBaseline = "bottom"; c.fillText("$0 · break-even", L + 2, y0 - 3);
+
+  // lines: leader last so it sits on top, the picked trader above everyone
+  const order = [...set].reverse().sort((p, q) => (p.r === me) - (q.r === me));
+  c.lineJoin = "round"; c.lineCap = "round";
+  for (const s of order) {
+    const d = dense(s.r), M = d.length - 1, K = P * M, k = Math.min(M, Math.floor(K));
+    const isMe = s.r === me;
+    c.strokeStyle = s.color;
+    if (race.hover != null && P < 1) { // the part still ahead of the cursor
+      const from = Math.max(k + 1, d.from);
+      c.globalAlpha = 0.2; c.lineWidth = 1.5; c.beginPath();
+      if (K >= d.from) c.moveTo(X(P), Y(valueAt(d, P))); else c.moveTo(X(d.from / M), Y(d[d.from]));
+      for (let i = from; i <= M; i++) c.lineTo(X(i / M), Y(d[i]));
+      c.stroke(); c.globalAlpha = 1;
+    }
+    if (K < d.from) continue; // hasn't played yet at this point in time
+    c.lineWidth = isMe ? 3.5 : 2;
+    c.globalAlpha = me && !isMe ? 0.55 : 1;
+    c.beginPath(); c.moveTo(X(d.from / M), Y(d[d.from]));
+    for (let i = d.from + 1; i <= k; i++) c.lineTo(X(i / M), Y(d[i]));
+    if (K > k) c.lineTo(X(P), Y(valueAt(d, P)));
+    c.stroke(); c.globalAlpha = 1;
+  }
+
+  // heads + labels, pushed apart so they never overlap
+  const hx = X(P), gap = Math.max(15, Math.min(28, ph / set.length)), av = Math.min(22, gap - 5), fs = gap < 20 ? 11 : 12.5;
+  const heads = set.filter((s) => P * (dense(s.r).length - 1) >= dense(s.r).from)
+    .map((s) => { const v = valueAt(dense(s.r), P); return { ...s, v, y: Y(v), ly: Y(v) }; }).sort((p, q) => p.ly - q.ly);
+  if (heads.length) {
+  for (let i = 1; i < heads.length; i++) heads[i].ly = Math.max(heads[i].ly, heads[i - 1].ly + gap);
+  const over = heads[heads.length - 1].ly - (B - 2);
+  if (over > 0) { heads[heads.length - 1].ly -= over; for (let i = heads.length - 2; i >= 0; i--) heads[i].ly = Math.min(heads[i].ly, heads[i + 1].ly - gap); }
+  }
+  const phase = (performance.now() % 1800) / 1800;
+  for (const h of heads) {
+    const isMe = h.r === me, lead = h.r === set[0].r, lx = hx + 14;
+    if (Math.abs(h.ly - h.y) > 2) { c.strokeStyle = h.color; c.globalAlpha = 0.45; c.lineWidth = 1; c.beginPath(); c.moveTo(hx, h.y); c.lineTo(lx - 2, h.ly); c.stroke(); c.globalAlpha = 1; }
+    if ((lead || isMe) && P === 1 && !reduced) { c.strokeStyle = h.color; c.globalAlpha = 0.5 * (1 - phase); c.lineWidth = 2; c.beginPath(); c.arc(hx, h.y, 5 + phase * 9, 0, 6.2832); c.stroke(); c.globalAlpha = 1; }
+    c.fillStyle = card; c.beginPath(); c.arc(hx, h.y, 5.5, 0, 6.2832); c.fill();
+    c.fillStyle = h.color; c.beginPath(); c.arc(hx, h.y, 3.8, 0, 6.2832); c.fill();
+    // avatar
+    const cx = lx + av / 2, img = raceImg(h.r);
+    c.save(); c.beginPath(); c.arc(cx, h.ly, av / 2, 0, 6.2832); c.clip();
+    c.fillStyle = h.color; c.fillRect(cx - av / 2, h.ly - av / 2, av, av);
+    if (img) c.drawImage(img, cx - av / 2, h.ly - av / 2, av, av);
+    else { c.fillStyle = "#fff"; c.font = F(700, av * 0.5); c.textAlign = "center"; c.textBaseline = "middle"; c.fillText((h.r.u[0] || "?").toUpperCase(), cx, h.ly + 0.5); }
+    c.restore();
+    c.strokeStyle = isMe ? ink : h.color; c.lineWidth = isMe ? 2 : 1.5; c.beginPath(); c.arc(cx, h.ly, av / 2 + (isMe ? 1.5 : 0.5), 0, 6.2832); c.stroke();
+    // name + PnL
+    let tx = lx + av + 6;
+    c.textAlign = "left"; c.textBaseline = "middle";
+    if (!narrow) {
+      c.font = F(isMe ? 700 : 600, fs); c.fillStyle = ink;
+      let name = h.r.u; while (name.length > 4 && c.measureText(name).width > 86) name = name.slice(0, -2) + "…";
+      c.fillText(name, tx, h.ly + 0.5); tx += c.measureText(name).width + 6;
+    }
+    c.font = F(700, fs); c.fillStyle = h.v > 0.004 ? V("--pos") : h.v < -0.004 ? V("--neg") : ink3;
+    const txt = money(h.v); c.fillText(txt, tx, h.ly + 0.5);
+    race.hits.push({ u: h.r.u, x: lx - 4, y: h.ly - gap / 2, w: tx + c.measureText(txt).width - lx + 8, h: gap });
+  }
+
+  // cursor: time under the pointer
+  if (race.hover != null) {
+    c.strokeStyle = ink3; c.lineWidth = 1; c.beginPath(); c.moveTo(Math.round(hx) + 0.5, T - 6); c.lineTo(Math.round(hx) + 0.5, B); c.stroke();
+    const t = t0 + P * (t1 - t0), text = `${day(t)}, ${hm(t)}`;
+    c.font = F(600, 11); const tw = c.measureText(text).width + 14;
+    pill(text, Math.max(L, Math.min(W - tw, hx - tw / 2)), T - 14, "left");
+  }
+}
+
+function raceFrame(now) {
+  race.looping = false;
+  if (race.playing) { race.p = Math.min(1, (now - race.t0) / RACE_MS); if (race.p >= 1) { race.playing = false; $("race-play").textContent = "▶ Replay"; } }
+  drawRace();
+  if (race.visible && !reduced) raceKick();
+}
+function raceKick() { if (race.looping) return; race.looping = true; requestAnimationFrame(raceFrame); }
+function racePlay() {
+  if (reduced) return;
+  race.hover = null; race.playing = true; race.p = 0; race.t0 = performance.now(); race.played = true;
+  $("race-play").textContent = "❚❚ Racing";
+  raceKick();
+}
+$("race-play").onclick = () => { if (race.playing) { race.playing = false; $("race-play").textContent = "▶ Replay"; raceKick(); } else racePlay(); };
+if (reduced) $("race-play").hidden = true;
+$("race-n").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; race.n = +b.dataset.n; [...$("race-n").children].forEach((x) => x.setAttribute("aria-pressed", String(x === b))); raceKick(); };
+$("race-scale").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; race.log = b.dataset.log === "1"; [...$("race-scale").children].forEach((x) => x.setAttribute("aria-pressed", String(x === b))); raceNote(); raceKick(); };
+const raceNote = () => ($("race-note").textContent = race.log ? "Log scale: each gridline is 10× the one before" : "Linear scale");
+raceNote();
+{
+  const cv = $("race-cv");
+  const at = (e) => { const b = cv.getBoundingClientRect(); return { x: e.clientX - b.left, y: e.clientY - b.top, w: b.width }; };
+  const hit = (q) => race.hits.find((h) => q.x >= h.x && q.x <= h.x + h.w && q.y >= h.y && q.y <= h.y + h.h);
+  cv.addEventListener("pointermove", (e) => {
+    const q = at(e), right = q.w - (q.w < 560 ? 112 : 190);
+    cv.style.cursor = hit(q) ? "pointer" : "crosshair";
+    if (race.playing) { race.playing = false; $("race-play").textContent = "▶ Replay"; }
+    race.hover = q.x > right ? null : Math.max(0, Math.min(1, (q.x - 8) / (right - 8)));
+    raceKick();
+  });
+  cv.addEventListener("pointerleave", () => { race.hover = null; raceKick(); });
+  cv.addEventListener("click", (e) => { const h = hit(at(e)); if (h) pick(h.u, false); });
+  new IntersectionObserver(([en]) => {
+    race.visible = en.isIntersecting;
+    if (race.visible && board && !race.played) racePlay(); else if (race.visible) raceKick();
+  }, { threshold: 0.35 }).observe(cv);
+  new ResizeObserver(raceKick).observe(cv.parentElement);
+  document.fonts.ready.then(raceKick);
+}
+
+// ---------- share card ----------
+const loadImg = async (url) => { try { const r = await fetch(url, { referrerPolicy: "no-referrer" }); if (!r.ok) return null; return await createImageBitmap(await r.blob()); } catch { return null; } };
+async function drawCard(r) {
+  const cv = $("cv"), c = cv.getContext("2d"), W = 1200, H = 675, F = '"Open Runde", system-ui, sans-serif';
+  await document.fonts.load(`700 40px "Open Runde"`);
+  const up = r.pnl >= 0;
+  c.fillStyle = "#f5f5f5"; c.fillRect(0, 0, W, H);
+  const rr = (x, y, w, h, rad) => { c.beginPath(); c.roundRect(x, y, w, h, rad); };
+  // card
+  c.fillStyle = "#fff"; rr(40, 40, W - 80, H - 80, 36); c.fill();
+  c.strokeStyle = "#e6e8ea"; c.lineWidth = 2; rr(40, 40, W - 80, H - 80, 36); c.stroke();
+  // header
+  c.fillStyle = "#ff87a6"; rr(84, 84, 56, 56, 14); c.fill();
+  c.strokeStyle = "#7a1230"; c.lineWidth = 5; c.lineCap = "round"; c.lineJoin = "round";
+  c.beginPath(); [[93, 114], [103, 114], [107, 101], [115, 124], [120, 108], [123, 114], [131, 114]].forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y))); c.stroke();
+  c.fillStyle = "#101114"; c.font = `700 30px ${F}`; c.textBaseline = "middle"; c.fillText("Pulse Board", 156, 113);
+  c.font = `600 20px ${F}`; c.fillStyle = "#6e6e6e"; c.textAlign = "right";
+  c.fillText(board.window.tba ? `XO Pulse · last ${board.window.previewDays} days` : "XO Pulse PnL competition", W - 92, 113);
+  c.textAlign = "left";
+  // rank
+  c.fillStyle = "#101114"; c.font = `700 190px ${F}`; c.textBaseline = "alphabetic";
+  c.fillText(`#${r.rank}`, 80, 372);
+  const rw = c.measureText(`#${r.rank}`).width;
+  c.font = `600 26px ${F}`; c.fillStyle = "#8a8f98"; c.fillText(`of ${rows.length} traders`, 92 + rw + 14, 372);
+  // who
+  const img = r.a && (await loadImg(avatarUrl(r.a, "400x400")));
+  c.save(); c.beginPath(); c.arc(124, 458, 40, 0, Math.PI * 2); c.closePath(); c.clip();
+  c.fillStyle = /^#[0-9a-f]{6}$/i.test(r.c) ? r.c : "#a293ff"; c.fillRect(84, 418, 80, 80);
+  if (img) c.drawImage(img, 84, 418, 80, 80);
+  else { c.fillStyle = "#fff"; c.font = `700 38px ${F}`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText((r.u[0] || "?").toUpperCase(), 124, 460); }
+  c.restore(); c.textAlign = "left"; c.textBaseline = "alphabetic";
+  c.fillStyle = "#101114"; c.font = `700 40px ${F}`;
+  let name = r.u; while (c.measureText(name).width > 420 && name.length > 4) name = name.slice(0, -2) + "…";
+  c.fillText(name, 184, 472);
+  // stats
+  const stats = [["Rounds", r.rounds.toLocaleString("en-US")], ["Won", (winRate(r) * 100).toFixed(0) + "%"], ["Volume", money(r.vol, false)], ["Best round", r.best ? money(r.best[0]) : "–"]];
+  stats.forEach(([k, v], i) => {
+    const x = 84 + i * 150;
+    c.font = `500 19px ${F}`; c.fillStyle = "#8a8f98"; c.fillText(k, x, 548);
+    c.font = `700 28px ${F}`; c.fillStyle = "#101114"; c.fillText(v, x, 584);
+  });
+  // pnl panel
+  const px = 700, py = 190, pw = 416, ph = 394;
+  c.fillStyle = up ? "#eaf7f0" : "#fff0f0"; rr(px, py, pw, ph, 28); c.fill();
+  c.font = `600 22px ${F}`; c.fillStyle = "#6e6e6e"; c.fillText("Net profit / loss", px + 32, py + 54);
+  c.font = `700 76px ${F}`; c.fillStyle = up ? "#0f7a42" : "#c0403d";
+  let txt = money(r.pnl), size = 76; while (c.measureText(txt).width > pw - 64 && size > 40) { size -= 4; c.font = `700 ${size}px ${F}`; }
+  c.fillText(txt, px + 32, py + 136);
+  const p = r.spark, mn = Math.min(0, ...p), mx = Math.max(0, ...p), sp = mx - mn || 1, gx = px + 32, gy = py + 180, gw = pw - 64, gh = 170;
+  const X = (i) => gx + (i / (p.length - 1)) * gw, Y = (v) => gy + gh - ((v - mn) / sp) * gh;
+  c.strokeStyle = "rgba(0,0,0,.14)"; c.lineWidth = 2; c.setLineDash([4, 6]); c.beginPath(); c.moveTo(gx, Y(0)); c.lineTo(gx + gw, Y(0)); c.stroke(); c.setLineDash([]);
+  c.strokeStyle = up ? "#0f7a42" : "#c0403d"; c.lineWidth = 5; c.beginPath(); p.forEach((v, i) => (i ? c.lineTo(X(i), Y(v)) : c.moveTo(X(i), Y(v)))); c.stroke();
+  c.fillStyle = c.strokeStyle; c.beginPath(); c.arc(X(p.length - 1), Y(p[p.length - 1]), 8, 0, Math.PI * 2); c.fill();
+}
+const shareUrl = () => `${location.origin}${location.pathname}?u=${encodeURIComponent(me.u)}`;
+async function openShare() {
+  if (!me) return;
+  $("share").showModal();
+  await drawCard(me);
+}
+$("s-close").onclick = () => $("share").close();
+$("share").addEventListener("click", (e) => { if (e.target === $("share")) $("share").close(); });
+$("s-dl").onclick = () => $("cv").toBlob((b) => { const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `pulse-board-${me.u}.png`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1e4); }, "image/png");
+$("s-copy").onclick = async () => { try { await navigator.clipboard.writeText(shareUrl()); $("s-copy").textContent = "Copied"; } catch { $("s-copy").textContent = "Copy failed"; } setTimeout(() => ($("s-copy").textContent = "Copy link"), 1500); };
+$("s-x").onclick = () => {
+  const text = `I'm #${me.rank} of ${rows.length} on the @xomarket Pulse leaderboard with ${money(me.pnl)} net PnL.\n\nWhere are you?`;
+  window.open(`https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl())}`, "_blank", "noopener");
+};
+
+// ---------- data ----------
+async function load() {
+  const local = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+  const get = (u) => fetch(u, { cache: "no-store" }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
+  let b = null;
+  if (!local) b = await get(REMOTE).catch(() => null);
+  const l = await get(LOCAL).catch(() => null);
+  if (l && (!b || l.updatedAt > b.updatedAt)) b = l;
+  if (!b) { if (!board) $("table").innerHTML = `<div class="empty"><b>The board didn't load</b>Refresh in a minute.</div>`; return; }
+  // old data means GitHub skipped the scheduled refresh: ask the server to start it
+  if (!local && Date.now() - b.updatedAt > 12 * 6e4) fetch("/api/nudge").catch(() => {});
+  if (board && b.updatedAt <= board.updatedAt) { $("upd").textContent = `Updated ${ago(board.updatedAt)}`; return; }
+  board = b; rows = b.rows; byName = new Map(rows.map((r) => [r.u.toLowerCase(), r]));
+  const u = me ? me.u : new URLSearchParams(location.search).get("u");
+  if (u) { me = byName.get(u.toLowerCase().replace(/^@/, "")) || null; searched = true; if (!$("q").value) $("q").value = me ? me.u : u; if (me && me.rank > shown) shown = Math.ceil(me.rank / PAGE) * PAGE; }
+  render();
+  if (race.visible && !race.played) racePlay();
+}
+load();
+setInterval(load, 2 * 6e4);
+setInterval(() => { if (board) { $("upd").textContent = `Updated ${ago(board.updatedAt)}`; if (!board.window.tba) tickLeft(); } }, 3e4);
+</script>
+</body>
+</html>

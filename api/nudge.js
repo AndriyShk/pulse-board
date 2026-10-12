@@ -1,0 +1,22 @@
+// GitHub often delays or skips the board workflow's */10 schedule. The page calls this when its data looks old;
+// with a GH_TOKEN env var (fine-grained, Actions: write on this repo) it starts the workflow again,
+// at most once every 10 minutes. Without the token it does nothing.
+// GET /api/nudge → { started }   (edge-cached 60 s, so visitors can't spam GitHub)
+const REPO = 'AndriyShk/pulse-board';
+
+export default async function handler(req, res) {
+  res.setHeader('Cache-Control', 's-maxage=60');
+  const token = process.env.GH_TOKEN;
+  if (!token) return res.status(200).json({ started: false });
+  const gh = (path, opt = {}) => fetch(`https://api.github.com/repos/${REPO}${path}`, { ...opt, headers: { authorization: `Bearer ${token}`, accept: 'application/vnd.github+json', 'user-agent': 'pulse-board' }, signal: AbortSignal.timeout(4000) });
+  try {
+    const runs = await (await gh('/actions/workflows/board.yml/runs?per_page=1')).json();
+    const last = runs.workflow_runs && runs.workflow_runs[0];
+    if (last && Date.now() - Date.parse(last.created_at) < 10 * 6e4) return res.status(200).json({ started: false });
+    const r = await gh('/actions/workflows/board.yml/dispatches', { method: 'POST', body: JSON.stringify({ ref: 'main' }) });
+    res.status(200).json({ started: r.ok });
+  } catch (e) {
+    console.error('nudge failed', e);
+    res.status(200).json({ started: false });
+  }
+}

@@ -1,0 +1,40 @@
+name: board
+# Refreshes the leaderboard every ~10 minutes and publishes it to the `data` branch (one commit, force-pushed,
+# so the history never grows). The page reads board.json from raw.githubusercontent.
+# GitHub often delays or skips scheduled runs; api/nudge.js starts this workflow again when the data gets old.
+on:
+  schedule: [{ cron: '*/10 * * * *' }]
+  workflow_dispatch:
+    inputs:
+      full: { description: 'Rebuild the whole window from scratch', type: boolean, default: false }
+permissions:
+  contents: write
+concurrency: { group: board, cancel-in-progress: false }
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Restore the last published data
+        run: |
+          mkdir -p data
+          if git fetch --depth=1 origin data 2>/dev/null; then
+            git show FETCH_HEAD:state.json > data/state.json
+            git show FETCH_HEAD:board.json > data/board.json
+          fi
+      - name: Build
+        run: node scripts/build-board.mjs
+        env:
+          FULL: ${{ inputs.full && '1' || '' }}
+      - name: Publish to the data branch
+        run: |
+          cd data
+          rm -rf .git && git init -q -b data
+          git config user.name "xo-pulse-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add board.json state.json
+          git commit -q -m "data: board"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data

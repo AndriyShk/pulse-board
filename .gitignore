@@ -1,0 +1,4 @@
+.DS_Store
+.vercel
+data/state.json
+data/*.tmp
