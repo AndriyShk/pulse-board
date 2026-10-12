@@ -214,6 +214,18 @@
   .tab[aria-selected="true"] { background: var(--ink); color: var(--card); }
   .hint { padding: 8px 16px; font-size: 12.5px; color: var(--ink-2); border-bottom: 1px solid var(--line-soft); background: var(--control); }
   .tscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .mlist { display: none; }
+  .mrow { padding: 12px; border-bottom: 1px solid var(--line-soft); cursor: pointer; }
+  .mrow:last-child { border-bottom: 0; }
+  .mrow.me { background: linear-gradient(90deg, var(--up-soft), var(--down-soft)); }
+  .mtop { display: flex; align-items: center; gap: 10px; }
+  .mtop .rk { min-width: 30px; }
+  .mtop .nm { flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; font-weight: 600; font-size: 15px; }
+  .mtop .nm > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mtop .mmain { font-size: 16px; font-weight: 700; white-space: nowrap; }
+  .mstats { display: flex; justify-content: space-between; gap: 6px; margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: var(--control); font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .mrow.me .mstats { background: var(--card); }
+  .mstats i { font-style: normal; font-weight: 500; color: var(--ink-3); margin-right: 4px; }
   table { width: 100%; border-collapse: collapse; }
   th { font-size: 12px; font-weight: 500; color: var(--ink-3); text-align: right; padding: 10px 12px; white-space: nowrap; border-bottom: 1px solid var(--line-soft); }
   th:nth-child(1), th:nth-child(2) { text-align: left; }
@@ -261,17 +273,9 @@
     .pod .sub, .pod svg.spark { display: none; }
     .total { padding: 12px; }
     .total b { font-size: 17px; }
-    /* phones: every column stays, the table scrolls sideways and the rank + name stay pinned */
-    .tscroll table { min-width: 680px; }
-    td, th { padding: 10px 8px; }
-    th:first-child, td:first-child { position: sticky; left: 0; z-index: 1; width: 80px; min-width: 80px; max-width: 80px; padding-left: 12px; padding-right: 4px; background: var(--card); }
-    .rk { gap: 6px; }
-    th:nth-child(2), td:nth-child(2) { position: sticky; left: 80px; z-index: 1; background: var(--card); box-shadow: 8px 0 8px -8px rgba(0,0,0,.18); }
-    td:last-child, th:last-child { padding-right: 12px; }
-    .trader .nm { max-width: 108px; }
-    tbody tr.me { background: var(--up-soft); }
-    tbody tr.me td:first-child, tbody tr.me td:nth-child(2) { background: var(--up-soft); }
-    tbody tr:hover td:first-child, tbody tr:hover td:nth-child(2) { background: var(--control); }
+    /* phones: the table becomes a list of cards, so every number is visible without scrolling sideways */
+    .tscroll { display: none; }
+    .mlist { display: block; }
     /* race controls on one line */
     .race-ctl { flex-wrap: nowrap; gap: 6px; width: 100%; }
     .seg button { padding: 0 8px; }
@@ -541,22 +545,31 @@ function render() {
   if (!list.length) {
     $("table").innerHTML = `<div class="empty"><b>Nobody here yet</b>The first settled round fills this in.</div>`;
   } else {
-    const body = list.slice(0, shown).map((r, i) => {
-      const d = tab === "pnl" ? (r.prev == null ? `<span class="mv new">NEW</span>` : r.prev > r.rank ? `<span class="mv up">▲${r.prev - r.rank}</span>` : r.prev < r.rank ? `<span class="mv dn">▼${r.rank - r.prev}</span>` : "") : "";
-      return `<tr data-u="${esc(r.u)}" class="${me && me.u === r.u ? "me" : ""}">
-        <td><span class="rk"><span class="n num">${i + 1}</span>${d}</span></td>
-        <td><span class="trader">${avatar(r)}<span style="min-width:0"><span class="nm" style="display:flex;align-items:center;gap:4px"><span style="overflow:hidden;text-overflow:ellipsis">${esc(r.u)}</span>${r.v ? VER : ""}</span></span></span></td>
+    const move = (r) => (tab !== "pnl" ? "" : r.prev == null ? `<span class="mv new">NEW</span>` : r.prev > r.rank ? `<span class="mv up">▲${r.prev - r.rank}</span>` : r.prev < r.rank ? `<span class="mv dn">▼${r.rank - r.prev}</span>` : "");
+    const name = (r) => `<span style="overflow:hidden;text-overflow:ellipsis">${esc(r.u)}</span>${r.v ? VER : ""}`;
+    const recent = tab === "pnl" || tab === "rekt"; // which number sits next to the main one
+    const body = list.slice(0, shown).map((r, i) => `<tr data-u="${esc(r.u)}" class="${me && me.u === r.u ? "me" : ""}">
+        <td><span class="rk"><span class="n num">${i + 1}</span>${move(r)}</span></td>
+        <td><span class="trader">${avatar(r)}<span style="min-width:0"><span class="nm" style="display:flex;align-items:center;gap:4px">${name(r)}</span></span></span></td>
         <td class="main num">${T.show(r)}</td>
-        ${tab === "pnl" || tab === "rekt" ? `<td class="num col-x ${cls(r.d24)}">${Math.abs(r.d24) > 0.004 ? money(r.d24) : "–"}</td>` : `<td class="num col-x ${cls(r.pnl)}">${money(r.pnl)}</td>`}
-        <td class="num col-x">${r.rounds.toLocaleString("en-US")}</td>
-        <td class="num col-x"><span class="wr">${(winRate(r) * 100).toFixed(0)}%<i><u style="width:${(winRate(r) * 100).toFixed(0)}%"></u></i></span></td>
-        <td class="num col-x">${money(r.vol, false)}</td>
-        <td class="col-x">${spark(r.spark, 88, 26)}</td>
-      </tr>`;
-    }).join("");
+        ${recent ? `<td class="num ${cls(r.d24)}">${Math.abs(r.d24) > 0.004 ? money(r.d24) : "–"}</td>` : `<td class="num ${cls(r.pnl)}">${money(r.pnl)}</td>`}
+        <td class="num">${r.rounds.toLocaleString("en-US")}</td>
+        <td class="num"><span class="wr">${(winRate(r) * 100).toFixed(0)}%<i><u style="width:${(winRate(r) * 100).toFixed(0)}%"></u></i></span></td>
+        <td class="num">${money(r.vol, false)}</td>
+        <td>${spark(r.spark, 88, 26)}</td>
+      </tr>`).join("");
+    // the same rows as cards, shown instead of the table on phones
+    const cards = list.slice(0, shown).map((r, i) => `<div class="mrow ${me && me.u === r.u ? "me" : ""}" data-u="${esc(r.u)}">
+        <div class="mtop"><span class="rk"><span class="n num">${i + 1}</span>${move(r)}</span>${avatar(r)}<span class="nm">${name(r)}</span><span class="mmain num">${T.show(r)}</span></div>
+        <div class="mstats num">
+          ${recent ? `<span><i>${lookName()}</i><b class="${cls(r.d24)}">${Math.abs(r.d24) > 0.004 ? money(r.d24) : "–"}</b></span>` : `<span><i>PnL</i><b class="${cls(r.pnl)}">${money(r.pnl)}</b></span>`}
+          <span><i>Rounds</i>${r.rounds.toLocaleString("en-US")}</span><span><i>Won</i>${(winRate(r) * 100).toFixed(0)}%</span><span><i>Vol</i>${money(r.vol, false)}</span>
+        </div>
+      </div>`).join("");
     $("table").innerHTML = `<div class="tscroll"><table>
-      <thead><tr><th>#</th><th>Trader</th><th>${txt(T.head)}</th><th class="col-x">${tab === "pnl" || tab === "rekt" ? lookName() : "PnL"}</th><th class="col-x">Rounds</th><th class="col-x">Won</th><th class="col-x">Volume</th><th class="col-x">Trend</th></tr></thead>
+      <thead><tr><th>#</th><th>Trader</th><th>${txt(T.head)}</th><th>${tab === "pnl" || tab === "rekt" ? lookName() : "PnL"}</th><th>Rounds</th><th>Won</th><th>Volume</th><th>Trend</th></tr></thead>
       <tbody>${body}</tbody></table></div>
+      <div class="mlist">${cards}</div>
       ${list.length > shown ? `<div class="more"><button class="btn" id="more">Show ${Math.min(PAGE, list.length - shown)} more of ${list.length - shown}</button></div>` : ""}`;
   }
   renderYou();
