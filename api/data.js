@@ -7,7 +7,8 @@ const FILES = new Set(['board', 'days']);
 
 export default async function handler(req, res) {
   const f = String((req.query && req.query.f) || '');
-  if (!FILES.has(f)) return res.status(400).json({ error: 'unknown file' });
+  // exactly ?f=board or ?f=days: anything else would be a fresh cache key and a free call to GitHub
+  if (!FILES.has(f) || Object.keys(req.query).length !== 1) return res.status(400).json({ error: 'unknown file' });
   const get = (token) => fetch(`https://api.github.com/repos/${REPO}/contents/${f}.json?ref=data`, {
     headers: { accept: 'application/vnd.github.raw', 'user-agent': 'pulse-board', ...(token ? { authorization: `Bearer ${token}` } : {}) },
     signal: AbortSignal.timeout(6000),

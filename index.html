@@ -8,11 +8,12 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Pulse Board: who's up on XO Pulse?">
 <meta property="og:description" content="Every BTC Up or Down 5m trader on XO Market, ranked by net profit / loss. Find your rank.">
-<meta property="og:image" content="/og.png">
+<meta property="og:image" content="https://xo-pulse-board.vercel.app/og.png">
+<meta property="og:url" content="https://xo-pulse-board.vercel.app/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Pulse Board: who's up on XO Pulse?">
 <meta name="twitter:description" content="Every BTC Up or Down 5m trader on XO Market, ranked by net profit / loss. Find your rank.">
-<meta name="twitter:image" content="/og.png">
+<meta name="twitter:image" content="https://xo-pulse-board.vercel.app/og.png">
 <meta name="theme-color" content="#f5f5f5">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%23ff87a6'/><path d='M10 34h11l5-14 9 26 6-18 3 6h10' fill='none' stroke='%237a1230' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 <link rel="preload" href="fonts/open-runde-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -27,7 +28,7 @@
     color-scheme: light;
     --page: #f5f5f5; --card: #fff; --control: #f4f4f5; --control-hover: #ebebeb;
     --line: #e6e8ea; --line-soft: rgba(0,0,0,.06);
-    --ink: #101114; --ink-2: #6e6e6e; --ink-3: #8a8f98;
+    --ink: #101114; --ink-2: #6e6e6e; --ink-3: #6b7078;
     --up: #ff87a6; --up-ink: #7a1230; --up-text: #c12c57; --up-soft: #fff0f4; --up-line: #e99bb2;
     --down: #a293ff; --down-ink: #2a1a6e; --down-text: #6941c6; --down-soft: #f1edff; --down-line: #b9a5e9;
     --pos: #0f7a42; --pos-soft: #eaf7f0; --neg: #c0403d; --neg-soft: #fff0f0;
@@ -211,8 +212,9 @@
   .board-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px 0; flex-wrap: wrap; }
   .board-head h2 { font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
   .upd { font-size: 12px; color: var(--ink-3); margin-left: auto; white-space: nowrap; }
+  .upd.late { color: var(--neg); font-weight: 600; }
   .board-head small { font-size: 13px; color: var(--ink-2); font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
-  .board-head .clear { width: 20px; height: 20px; border: 0; border-radius: 50%; background: var(--control); color: var(--ink-2); font-size: 10px; line-height: 1; cursor: pointer; display: grid; place-items: center; padding: 0; }
+  .board-head .clear { width: 24px; height: 24px; border: 0; border-radius: 50%; background: var(--control); color: var(--ink-2); font-size: 10px; line-height: 1; cursor: pointer; display: grid; place-items: center; padding: 0; }
   .board-head .clear:hover { background: var(--control-hover); color: var(--ink); }
   .days { display: flex; gap: 8px; padding: 12px 16px 2px; overflow-x: auto; scrollbar-width: none; }
   .days::-webkit-scrollbar { display: none; }
@@ -253,6 +255,8 @@
   td:first-child, th:first-child { padding-left: 16px; width: 76px; }
   td:last-child, th:last-child { padding-right: 16px; }
   tbody tr { cursor: pointer; }
+  tbody tr.off, .mrow.off { cursor: default; }
+  tbody tr.off:hover { background: none; }
   tbody tr:hover { background: var(--control); }
   tbody tr.me { background: linear-gradient(90deg, var(--up-soft), var(--down-soft)); }
   .rk { display: flex; align-items: center; gap: 8px; font-weight: 700; }
@@ -294,6 +298,7 @@
     /* phones: the table becomes a list of cards, so every number is visible without scrolling sideways */
     .tscroll { display: none; }
     .mlist { display: block; }
+    .field input { font-size: 16px; } /* under 16px iOS zooms the page when the field is focused */
     /* the three chips above the headline stay on one line */
     .eyebrow { flex-wrap: nowrap; gap: 5px; }
     .chip { padding: 0 8px; font-size: 11.5px; }
@@ -496,6 +501,8 @@ const money = (x, sign = true) => {
 };
 const cls = (x) => (x > 0.004 ? "pos" : x < -0.004 ? "neg" : "muted");
 const ago = (t) => { const m = Math.max(0, Math.round((Date.now() - t) / 6e4)); return m < 1 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`; };
+// "Updated N min ago"; past 20 minutes it turns red and says the data is late (the refresh failed or nobody has visited)
+const showUpdated = () => { const t = days ? days.updatedAt : board.updatedAt, late = Date.now() - t > 20 * 6e4; $("upd").textContent = `Updated ${ago(t)}${late ? " · delayed" : ""}`; $("upd").classList.toggle("late", late); };
 const day = (t) => new Date(t).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 const dayUTC = (t) => new Date(t).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 const hm = (t) => new Date(t).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
@@ -568,7 +575,7 @@ function render() {
     $("t-rounds").textContent = dRounds.toLocaleString("en-US");
     $("t-volume").textContent = money(dVolume, false);
   }
-  $("upd").textContent = `Updated ${ago(board.updatedAt)}`;
+  showUpdated();
 
   // podium: today's top three (UTC day). Without the day record it falls back to the whole period and says so.
   const top3 = rows.slice(0, 3);
@@ -615,7 +622,8 @@ function render() {
       const side = tab === "pnl" || tab === "rekt"
         ? { head: "Best round", short: "Best", val: (r) => (r.best ? `<span class="pos">${money(r.best[0])}</span>` : "–") }
         : { head: "PnL", short: "PnL", val: (r) => `<span class="${cls(r.pnl)}">${money(r.pnl)}</span>` };
-      const body = list.slice(0, shown).map((r, i) => `<tr data-u="${esc(r.u)}" class="${me && me.u === r.u ? "me" : ""}">
+      const off = (r) => (byName.has(r.u.toLowerCase()) ? "" : " off"); // not on today's board: the row is not clickable
+      const body = list.slice(0, shown).map((r, i) => `<tr data-u="${esc(r.u)}" class="${me && me.u === r.u ? "me" : ""}${off(r)}">
           <td><span class="rk"><span class="n num">${i + 1}</span></span></td>
           <td><span class="trader">${avatar(r)}<span style="min-width:0"><span class="nm" style="display:flex;align-items:center;gap:4px">${name(r)}</span></span></span></td>
           <td class="main num">${T.show(r)}</td>
@@ -625,7 +633,7 @@ function render() {
           <td class="num">${money(r.vol, false)}</td>
         </tr>`).join("");
       // the same rows as cards, shown instead of the table on phones
-      const cards = list.slice(0, shown).map((r, i) => `<div class="mrow ${me && me.u === r.u ? "me" : ""}" data-u="${esc(r.u)}">
+      const cards = list.slice(0, shown).map((r, i) => `<div class="mrow ${me && me.u === r.u ? "me" : ""}${off(r)}" data-u="${esc(r.u)}">
           <div class="mtop"><span class="rk"><span class="n num">${i + 1}</span></span>${avatar(r)}<span class="nm">${name(r)}</span><span class="mmain num">${T.show(r)}</span></div>
           <div class="mstats num">
             <span><i>${side.short}</i><b>${side.val(r)}</b></span>
@@ -682,7 +690,7 @@ function pick(name, scroll = true) {
   const r = byName.get(String(name).toLowerCase().replace(/^@/, ""));
   searched = true;
   me = r || null;
-  if (r) $("q").value = r.u;
+  $("q").value = r ? r.u : String(name); // the card below names whoever is in the box, so it must be this trader
   $("sugg").hidden = true;
   render();
   if (scroll) $("find").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -707,6 +715,8 @@ document.addEventListener("click", (e) => {
   const dy = e.target.closest("[data-day]");
   if (dy) { period = dy.dataset.day === period ? "all" : dy.dataset.day; shown = PAGE; return render(); }
   if (t) { tab = t.dataset.tab; shown = PAGE; return render(); }
+  // rows in the table only do something for traders on today's board (a past day's row has no "today" to show)
+  if (u && u.closest("#table") && !byName.has(u.dataset.u.toLowerCase())) return;
   if (u) return pick(u.dataset.u, !u.closest(".sugg"));
   if (!e.target.closest(".field")) $("sugg").hidden = true;
 });
@@ -1069,7 +1079,7 @@ async function load() {
   if (!b) { if (!board) $("table").innerHTML = `<div class="empty"><b>The board didn't load</b>Refresh in a minute.</div>`; return; }
   // data older than 4 minutes: ask the server to start a refresh (GitHub's own schedule is unreliable)
   if (!local && Date.now() - b.updatedAt > 4 * 6e4) fetch("/api/nudge").catch(() => {});
-  if (board && b.updatedAt <= board.updatedAt) { $("upd").textContent = `Updated ${ago(board.updatedAt)}`; return; }
+  if (board && b.updatedAt <= board.updatedAt) { showUpdated(); return; }
   board = b; rows = b.rows; byName = new Map(rows.map((r) => [r.u.toLowerCase(), r]));
   // the day-by-day record rides along; the board works without it
   let dd = local ? null : await live("days", REMOTE_DAYS);
@@ -1092,7 +1102,7 @@ async function load() {
 }
 load();
 setInterval(load, 6e4);
-setInterval(() => { if (board) { $("upd").textContent = `Updated ${ago(board.updatedAt)}`; if (!board.window.tba) tickLeft(); } }, 3e4);
+setInterval(() => { if (board) { showUpdated(); if (!board.window.tba) tickLeft(); } }, 3e4);
 </script>
 </body>
 </html>

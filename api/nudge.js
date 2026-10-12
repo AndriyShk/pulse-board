@@ -5,6 +5,8 @@
 const REPO = 'AndriyShk/pulse-board';
 
 export default async function handler(req, res) {
+  // any query string would be a fresh cache key, i.e. a way to make this function call GitHub on every request
+  if (Object.keys(req.query || {}).length) return res.status(400).json({ started: false });
   res.setHeader('Cache-Control', 's-maxage=60');
   const token = process.env.GH_TOKEN;
   // why nothing started goes to the function log, never to the visitor
