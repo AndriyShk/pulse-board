@@ -608,8 +608,14 @@ const money = (x, sign = true) => {
 };
 const cls = (x) => (x > 0.004 ? "pos" : x < -0.004 ? "neg" : "muted");
 const ago = (t) => { const m = Math.max(0, Math.round((Date.now() - t) / 6e4)); return m < 1 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`; };
-// "Updated N min ago"; past 20 minutes it turns red and says the data is late (the refresh failed or nobody has visited)
-const showUpdated = () => { const t = days.updatedAt, late = Date.now() - t > 20 * 6e4; $("upd").textContent = `Updated ${ago(t)}${late ? " · delayed" : ""}`; $("upd").classList.toggle("late", late); };
+// "Updated N min ago". Old data makes the page ask for a refresh, and for the two minutes that should take it says
+// "refreshing…"; only data that stays old after that (the refresh failed) turns red and says "delayed".
+let staleSince = 0; // when this page first found the current data old
+const showUpdated = () => {
+  const t = days.updatedAt, wait = staleSince && Date.now() - staleSince < 2 * 6e4, late = !wait && Date.now() - t > 20 * 6e4;
+  $("upd").textContent = `Updated ${ago(t)}${wait ? " · refreshing…" : late ? " · delayed" : ""}`;
+  $("upd").classList.toggle("late", late);
+};
 const day = (t) => new Date(t).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 const dayUTC = (t) => new Date(t).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 const hm = (t) => new Date(t).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
@@ -1572,8 +1578,12 @@ async function load() {
   const bundled = await get(DATA_LOCAL).catch(() => null);
   const dd = bundled && (!remote || bundled.updatedAt > remote.updatedAt) ? bundled : remote;
   if (!dd) { if (!days) $("table").innerHTML = `<div class="empty"><b>The board didn't load</b>Refresh in a minute.</div>`; return; }
-  // data older than 4 minutes: ask the server to start a refresh (GitHub's own schedule is unreliable)
-  if (!local && Date.now() - dd.updatedAt > 4 * 6e4) fetch("/api/nudge").catch(() => {});
+  // data older than 4 minutes: ask the server to start a refresh (GitHub's own schedule is unreliable).
+  // A refresh takes about half a minute, so the first time look again then instead of waiting for the next minute tick.
+  if (!local && Date.now() - dd.updatedAt > 4 * 6e4) {
+    fetch("/api/nudge").catch(() => {});
+    if (!staleSince) { staleSince = Date.now(); setTimeout(load, 35e3); setTimeout(load, 50e3); }
+  } else staleSince = 0;
   if (days && dd.updatedAt <= days.updatedAt) { showUpdated(); return; }
   // the chart eases from the lines it was showing to the new ones, but only within the same day
   const was = days && days.today === dd.today ? new Map(rows.map((r) => [r.u, dense(r)])) : null;
