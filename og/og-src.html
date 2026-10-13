@@ -10,32 +10,47 @@
   .card { height: 100%; background: #fff; border: 2px solid #e6e8ea; border-radius: 36px; padding: 48px 56px; display: grid; grid-template-columns: 1.15fr 1fr; gap: 48px; }
   .brand { display: flex; align-items: center; gap: 14px; font-weight: 700; font-size: 30px; }
   .brand svg { width: 52px; height: 52px; }
-  h1 { font-size: 92px; line-height: 1; letter-spacing: -.03em; font-weight: 700; margin-top: 54px; }
+  h1 { font-size: 92px; line-height: 1; letter-spacing: -.03em; font-weight: 700; margin-top: 44px; }
   h1 em { font-style: normal; color: #c12c57; }
   p { font-size: 27px; color: #6e6e6e; margin-top: 22px; font-weight: 500; line-height: 1.3; }
   .chips { display: flex; gap: 10px; margin-top: 30px; }
   .chip { height: 44px; padding: 0 16px; border-radius: 12px; font-size: 21px; font-weight: 600; display: flex; align-items: center; }
   .up { background: #fff0f4; color: #c12c57; } .down { background: #f1edff; color: #6941c6; }
-  .rows { display: grid; gap: 14px; align-content: center; }
-  .row { display: grid; grid-template-columns: 48px 56px 1fr auto; align-items: center; gap: 14px; border: 1px solid #e6e8ea; border-radius: 18px; padding: 14px 20px; font-size: 26px; font-weight: 600; }
-  .n { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-weight: 700; font-size: 22px; background: #f4f4f5; color: #6e6e6e; }
-  .row:nth-child(1) .n { background: #ff87a6; color: #7a1230; } .row:nth-child(2) .n { background: #a293ff; color: #2a1a6e; }
-  .av { width: 52px; height: 52px; border-radius: 50%; }
-  .bar { height: 14px; border-radius: 9px; background: #ececee; }
-  .pos { color: #0f7a42; font-weight: 700; } .neg { color: #c0403d; font-weight: 700; }
+  .side { display: grid; gap: 12px; align-content: center; }
+  .race { border: 1px solid #e6e8ea; border-radius: 18px; padding: 14px 18px 10px; }
+  .race b { display: block; font-size: 21px; font-weight: 700; }
+  .race svg { display: block; width: 100%; height: 150px; margin-top: 4px; }
+  .row { display: grid; grid-template-columns: 44px 44px 1fr auto; align-items: center; gap: 14px; border: 1px solid #e6e8ea; border-radius: 18px; padding: 10px 18px; font-size: 25px; font-weight: 600; }
+  /* gold, silver, bronze as on the site's podium */
+  .n { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; font-weight: 700; font-size: 21px; }
+  .g { background: #C7B583; color: #3A331F; box-shadow: inset 0 0 0 2px #867852; }
+  .s { background: #B7BABE; color: #2C2E30; box-shadow: inset 0 0 0 2px #75787C; }
+  .b { background: #B4967D; color: #3A2E22; box-shadow: inset 0 0 0 2px #6E5A49; }
+  .av { width: 44px; height: 44px; border-radius: 50%; }
+  .bar { height: 13px; border-radius: 9px; background: #ececee; }
+  .pos { color: #0f7a42; font-weight: 700; }
 </style>
 <div class="card">
   <div>
     <div class="brand"><svg viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#ff87a6"/><path d="M10 34h11l5-14 9 26 6-18 3 6h10" fill="none" stroke="#7a1230" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>Pulse Board</div>
     <h1>Who's <em>up</em> on Pulse?</h1>
-    <p>XO Market's BTC 5-minute rounds, ranked by net profit / loss.</p>
-    <div class="chips"><span class="chip up">Live stats</span><span class="chip down">Find your rank</span></div>
+    <p>Today's trading in XO Market's BTC 5-minute rounds. Where do you stand?</p>
+    <div class="chips"><span class="chip up">Live · today</span><span class="chip down">Find your rank</span></div>
   </div>
-  <div class="rows">
-    <div class="row"><span class="n">1</span><span class="av" style="background:#ff87a6"></span><span class="bar" style="width:92%"></span><span class="pos">+$147</span></div>
-    <div class="row"><span class="n">2</span><span class="av" style="background:#a293ff"></span><span class="bar" style="width:74%"></span><span class="pos">+$27</span></div>
-    <div class="row"><span class="n">3</span><span class="av" style="background:#2fc04a"></span><span class="bar" style="width:60%"></span><span class="pos">+$22</span></div>
-    <div class="row"><span class="n">4</span><span class="av" style="background:#f7931a"></span><span class="bar" style="width:44%"></span><span class="neg">−$83</span></div>
-    <div class="row"><span class="n">?</span><span class="av" style="background:#ececee"></span><span style="color:#8a8f98">you</span><span style="color:#8a8f98">?</span></div>
+  <div class="side">
+    <div class="race">
+      <b>Today's race</b>
+      <svg viewBox="0 0 430 150" fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M0 96H392" stroke="#9aa0a8" stroke-width="2" stroke-dasharray="5 6"/>
+        <path d="M0 96h60c10 0 12 18 24 18s14-30 30-30 18 40 36 44 30-2 60-2h182" stroke="#f7931a"/>
+        <path d="M0 96h120c14 0 16-22 32-22s20 10 40 10 26-18 46-18 30 8 50 8h104" stroke="#2fc04a"/>
+        <path d="M0 96h30c10 0 12 14 26 14s20-34 40-36 30 6 54 2 30-26 56-30 40 10 66 4 40-16 60-20 40 0 60 0" stroke="#7c5cff"/>
+        <path d="M0 96h90c12 0 14 12 28 10s22-40 46-46 36 12 60 6 34-30 62-36 40 6 62-6 30-10 44-10" stroke="#ff5c8a"/>
+        <g stroke="#fff" stroke-width="3"><circle cx="392" cy="128" r="7" fill="#f7931a"/><circle cx="392" cy="74" r="7" fill="#2fc04a"/><circle cx="392" cy="30" r="7" fill="#7c5cff"/><circle cx="392" cy="8" r="7" fill="#ff5c8a"/></g>
+      </svg>
+    </div>
+    <div class="row"><span class="n g">1</span><span class="av" style="background:#ff5c8a"></span><span class="bar" style="width:88%"></span><span class="pos">+$147</span></div>
+    <div class="row"><span class="n s">2</span><span class="av" style="background:#7c5cff"></span><span class="bar" style="width:70%"></span><span class="pos">+$62</span></div>
+    <div class="row"><span class="n b">3</span><span class="av" style="background:#2fc04a"></span><span class="bar" style="width:56%"></span><span class="pos">+$27</span></div>
   </div>
 </div>
