@@ -3,7 +3,7 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://pbs.twimg.com; connect-src 'self' https://api-mainnet.xo.market https://orderbooks.xo.market https://raw.githubusercontent.com https://pbs.twimg.com; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://pbs.twimg.com; connect-src 'self' https://api-mainnet.xo.market https://raw.githubusercontent.com https://pbs.twimg.com; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" },
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
       ]

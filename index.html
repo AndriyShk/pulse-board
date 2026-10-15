@@ -569,7 +569,6 @@
 // ---------- config ----------
 const REF = "https://beta.xo.market/?r=andriy_shkinder";
 const XO_API = "https://api-mainnet.xo.market/api";
-const XO_BOOK = "https://orderbooks.xo.market"; // public order book: live Up / Down prices
 // the one data file. The indexer publishes it to the repo's `data` branch; the copy next to the page is the fallback
 const DATA_RAW = "https://raw.githubusercontent.com/AndriyShk/pulse-board/data/days.json", DATA_LOCAL = "data/days.json";
 const PAGE = 50;
@@ -1092,16 +1091,18 @@ tickRound();
 
 // ---------- crowd odds ----------
 // What it costs right now to buy each side of the live round: the best ask for Up and the best ask for Down,
-// read from the public order book every few seconds. The split bar is the two asks relative to each other.
+// read from XO's order book through /api/price every five seconds (the book itself answers only XO's own sites).
+// The split bar is the two asks relative to each other.
 const odds = { start: 0, up: null, down: null, a: null, b: null }; // token ids, last Up ask, last Down ask
-const ask = (token) => fetch(`${XO_BOOK}/price?token_id=${token}&side=SELL`).then((r) => r.json()).then((j) => Number(j.price)); // SELL side of the book = asks
 async function pollOdds() {
   if (!odds.up || !odds.down || document.hidden) return;
   const { up, down } = odds;
   try {
-    const [a, b] = await Promise.all([ask(up), ask(down)]);
-    if (up === odds.up) setOdds(a, b);
-  } catch {} // the book didn't answer: the last prices stay
+    const r = await fetch(`/api/price?up=${up}&down=${down}`);
+    if (!r.ok) return; // the book didn't answer (or this is a local preview without the function): the last prices stay
+    const j = await r.json();
+    if (up === odds.up) setOdds(j.up, j.down);
+  } catch {}
 }
 function setOdds(a, b) {
   const ok = (p) => p > 0 && p < 1; // "0.000" means nobody is selling that side right now: keep its last price
@@ -1116,7 +1117,7 @@ function setOdds(a, b) {
   $("o-bar").style.width = `${(share * 100).toFixed(1)}%`;
   $("o-pct").textContent = `${Math.round(share * 100)}% Up · ${100 - Math.round(share * 100)}% Down`;
 }
-setInterval(pollOdds, 3000);
+setInterval(pollOdds, 5000); // the answer is cached for 5 s, so polling faster would see nothing new
 document.addEventListener("visibilitychange", () => { if (!document.hidden) pollOdds(); });
 
 // the event's countdown
