@@ -72,8 +72,16 @@
   button.chip { border: 0; cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; }
   button.chip:hover { filter: brightness(.96); }
   .c-meter i { background: var(--up); }
-  .c-cta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .c-cta small { font-size: 12.5px; color: var(--ink-2); }
+  .c-cta { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 10px; align-items: stretch; }
+  @media (max-width: 560px) { .c-cta { grid-template-columns: minmax(0,1fr); } }
+  /* XO's own pink, like Up and Sign up in the app */
+  .c-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 46px; padding: 0 20px; border-radius: 12px; background: var(--up); color: var(--up-ink); font-weight: 700; font-size: 15px; text-decoration: none; white-space: nowrap; transition: filter .15s, transform .15s; }
+  .c-btn svg { width: 16px; height: 16px; }
+  .c-btn:hover { filter: brightness(.96); }
+  .c-btn:active { transform: scale(.98); }
+  .c-note { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 12px; background: var(--control); font-size: 12.5px; line-height: 1.4; color: var(--ink-2); min-width: 0; }
+  .c-note svg { width: 18px; height: 18px; flex: none; color: var(--ink-3); }
+  .c-note b { color: var(--ink); font-weight: 600; }
   .c-podium .pod { cursor: default; }
   .place.p1 { background: #C7B583; color: #3A331F; box-shadow: inset 0 0 0 1.5px #867852; }
   .place.p2 { background: #B7BABE; color: #2C2E30; box-shadow: inset 0 0 0 1.5px #75787C; }
@@ -496,7 +504,10 @@
           <div class="total"><small>Volume</small><b class="num" id="c-volume">–</b></div>
         </div>
       </div>
-      <div class="c-cta" id="c-cta"><a class="cta ref" target="_blank" rel="noopener">Trade Pulse on XO</a><small>Public profiles only: make yours public in XO settings to be ranked.</small></div>
+      <div class="c-cta" id="c-cta">
+        <a class="c-btn ref" target="_blank" rel="noopener">Trade Pulse on XO<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        <span class="c-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span><b>Public profiles only.</b> Make yours public in XO settings to be ranked.</span></span>
+      </div>
     </div>
 
     <div class="card live">
