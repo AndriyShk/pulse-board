@@ -539,11 +539,11 @@
     </div>
   </section>
 
-  <section class="card race v-today">
+  <section class="card race" id="race">
     <div class="race-head">
       <div>
-        <h2>Today's race</h2>
-        <p>Today's PnL of the leaders, round by round. Drag across the chart to rewind.</p>
+        <h2 id="race-title">Today's race</h2>
+        <p id="race-sub">Today's PnL of the leaders, round by round. Drag across the chart to rewind.</p>
       </div>
       <div class="race-ctl">
         <div class="seg" id="race-n" role="group" aria-label="Traders shown">
@@ -846,6 +846,10 @@ function render() {
   if (!ev && view === "comp") setView("today", false);
   if (ev) { $("ev-name").textContent = `🏆 ${ev.name} · ${compPhaseLabel()}`; renderComp(); }
   $("how-window").textContent = "Everything on this page is today's trading, unless you pick another day in the leaderboard.";
+  const rc = view === "comp" && !!ev;
+  $("race-title").textContent = rc ? (compPhase() === "after" ? "How the competition was won" : "Competition race") : "Today's race";
+  $("race-sub").textContent = rc ? "Each leader's PnL since the start of the competition. Drag across the chart to rewind." : "Today's PnL of the leaders, round by round. Drag across the chart to rewind.";
+  if (!rc) $("race").hidden = false;
   $("how-day").textContent = `A day on this board runs from ${dayStartLocal()} to ${dayStartLocal()} your time (00:00 to 24:00 UTC); today's numbers keep updating until it ends.`;
   $("how-hidden").textContent = days.hidden ? ` (${days.hidden} right now)` : "";
 
@@ -1190,7 +1194,7 @@ let view = location.hash === "#competition" ? "comp" : "today", compTab = "pnl",
 // a #competition link shows the competition's blocks straight away, not the daily ones first (undone if no competition is set)
 if (view === "comp") { document.querySelectorAll(".v-today").forEach((el) => (el.hidden = true)); document.querySelectorAll(".v-comp").forEach((el) => (el.hidden = false)); }
 function setView(v, scroll = true) {
-  view = v;
+  view = v; compCache = null; race.played = false;
   document.querySelectorAll(".v-today").forEach((el) => (el.hidden = v !== "today"));
   document.querySelectorAll(".v-comp").forEach((el) => (el.hidden = v !== "comp"));
   for (const b of $("views").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.view === v));
@@ -1254,6 +1258,7 @@ function renderComp() {
   $("c-how-window").textContent = `Only BTC Up or Down 5m rounds that open and settle between ${range} UTC count, whatever day they fall on.`;
   $("c-how-hidden").textContent = ev.hidden ? ` (${ev.hidden} so far)` : "";
   $("c-upd").textContent = ph === "before" ? "" : $("upd").textContent;
+  $("race").hidden = view === "comp" && ph === "before"; // no lines before the start
   tickComp();
 
   // top three: the leaders while it runs, the winners once it's over
@@ -1358,7 +1363,18 @@ function raceImg(r) {
   if (!im) { im = new Image(); im.referrerPolicy = "no-referrer"; im.onload = raceKick; im.src = avatarUrl(r.a); race.imgs.set(r.u, im); }
   return im.complete && im.naturalWidth ? im : null;
 }
+// the competition's rows carry its own lines (`spark` over the whole run); built once per data file
+let compCache = null;
+function compRaceRows() {
+  if (compCache && compCache.at === days.updatedAt) return compCache.rows;
+  const sp = days.event.spark || {};
+  const out = compRows().filter((r) => sp[r.u]).map((r) => ({ ...r, spark: sp[r.u] }));
+  compCache = { at: days.updatedAt, rows: out };
+  return out;
+}
+const raceComp = () => view === "comp" && days && days.event;
 function raceSet() {
+  if (raceComp()) return compRaceRows().slice(0, race.n).map((r, i) => ({ r, color: RACE_COLORS[i % RACE_COLORS.length] }));
   const set = rows.slice(0, race.n).map((r, i) => ({ r, color: RACE_COLORS[i % RACE_COLORS.length] }));
   if (me && !set.some((x) => x.r === me)) set.push({ r: me, color: null }); // drawn in the ink colour
   return set;
@@ -1377,13 +1393,14 @@ function drawRace() {
   const set = raceSet();
   for (const x of set) if (!x.color) x.color = ink;
   race.hits = [];
-  if (!set.length) { c.fillStyle = ink2; c.font = F(500, 14); c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("Today's race starts with the first settled round.", W / 2, H / 2); return; }
+  if (!set.length) { c.fillStyle = ink2; c.font = F(500, 14); c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(raceComp() ? "The race starts with the competition's first settled round." : "Today's race starts with the first settled round.", W / 2, H / 2); return; }
 
   const narrow = W < 560;
   const L = 8, R = W - (narrow ? 112 : 190), T = 26, B = H - 26, pw = R - L, ph = B - T;
   const P = race.hover != null ? race.hover : race.playing ? race.p : 1;
-  // today: from 00:00 UTC to the last update
-  const t0 = Date.parse(days.today + "T00:00:00Z"), t1 = days.updatedAt;
+  // today: from 00:00 UTC to the last update; the competition: from its start to the last update (or its end)
+  const comp = raceComp();
+  const t0 = comp ? days.event.start : Date.parse(days.today + "T00:00:00Z"), t1 = comp ? days.event.sparkTo || days.updatedAt : days.updatedAt;
 
   // scale: signed log by default, because one whale would flatten everyone else on a linear axis
   let lo = 0, hi = 0;
@@ -1406,15 +1423,17 @@ function drawRace() {
     c.strokeStyle = line; c.globalAlpha = 0.7; c.beginPath(); c.moveTo(L, Math.round(y) + 0.5); c.lineTo(R, Math.round(y) + 0.5); c.stroke(); c.globalAlpha = 1;
     c.fillStyle = ink3; c.fillText(money(v).replace(/\.00$/, ""), L + 2, y - 3);
   }
-  // hours along the bottom, on the visitor's clock
+  // hours along the bottom on the visitor's clock; over a competition, days (UTC)
   c.textBaseline = "top"; c.textAlign = "center";
-  const span = t1 - t0, step = [1, 2, 3, 6, 12].map((h) => h * 36e5).find((h) => span / h <= (narrow ? 4 : 8));
-  const d0 = new Date(t0); d0.setHours(0, 0, 0, 0);
+  const span = t1 - t0, long = span > 2 * 864e5;
+  const step = long ? [1, 2, 3, 7].map((d) => d * 864e5).find((d) => span / d <= (narrow ? 4 : 8)) || 7 * 864e5 : [1, 2, 3, 6, 12].map((h) => h * 36e5).find((h) => span / h <= (narrow ? 4 : 8));
+  const d0 = new Date(t0);
+  if (long) d0.setUTCHours(0, 0, 0, 0); else d0.setHours(0, 0, 0, 0);
   for (let t = +d0; t < t1; t += step) {
     if (t <= t0) continue;
     const x = X((t - t0) / span);
     if (x < L + 18 || x > R - 18) continue;
-    c.fillStyle = ink3; c.fillText(hm(t), x, B + 8);
+    c.fillStyle = ink3; c.fillText(long ? dayUTC(t) : hm(t), x, B + 8);
     c.strokeStyle = line; c.globalAlpha = 0.5; c.beginPath(); c.moveTo(Math.round(x) + 0.5, T); c.lineTo(Math.round(x) + 0.5, B); c.stroke(); c.globalAlpha = 1;
   }
   // break-even, drawn like Pulse's price to beat
@@ -1485,7 +1504,7 @@ function drawRace() {
   // cursor: time under the pointer
   if (race.hover != null) {
     c.strokeStyle = ink3; c.lineWidth = 1; c.beginPath(); c.moveTo(Math.round(hx) + 0.5, T - 6); c.lineTo(Math.round(hx) + 0.5, B); c.stroke();
-    const text = hm(t0 + P * span);
+    const text = long ? `${dayUTC(t0 + P * span)}, ${fmtUTC(t0 + P * span).slice(-5)} UTC` : hm(t0 + P * span);
     c.font = F(600, 11); const tw = c.measureText(text).width + 14, px = Math.max(L, Math.min(W - tw, hx - tw / 2));
     c.fillStyle = control; c.beginPath(); c.roundRect(px, T - 24, tw, 20, 10); c.fill();
     c.fillStyle = ink2; c.textAlign = "left"; c.textBaseline = "middle"; c.fillText(text, px + 7, T - 13.5);
@@ -1523,7 +1542,7 @@ $("race-scale").onclick = (e) => { const b = e.target.closest("button"); if (!b)
     raceKick();
   });
   cv.addEventListener("pointerleave", () => { race.hover = null; raceKick(); });
-  cv.addEventListener("click", (e) => { const h = hit(at(e)); if (h) pick(h.u, false); });
+  cv.addEventListener("click", (e) => { const h = hit(at(e)); if (h && !raceComp()) pick(h.u, false); });
   new IntersectionObserver(([en]) => {
     race.visible = en.isIntersecting;
     if (race.visible && days && !race.played) racePlay(); else if (race.visible) raceKick();

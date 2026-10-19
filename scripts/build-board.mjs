@@ -17,6 +17,7 @@ const ROUND = 5 * 6e4; // a Pulse round lasts five minutes
 const RECENT = 3 * DAY; // traders seen this recently are re-checked on every run (limit-order fills leave no public trade)
 const MAX_PAGES = 40; // activity pages per round
 const SPARK = 96; // points in each trader's PnL line for today (the race chart)
+const COMP_SPARK = 168; // points in each trader's line over a competition (two weeks: one every two hours)
 const KEEP_DAYS = 60; // finished days kept in the record
 const SHOWN_DAYS = 30; // days the page lists when no competition is on
 
@@ -259,19 +260,26 @@ for (const k of Object.keys(state.days).sort().slice(0, -KEEP_DAYS)) delete stat
 // row: [username, pnl, volume, rounds, wins, losses, best streak, best round], best first
 let comp = null;
 if (event) {
-  const crow = [];
+  const crow = [], cspark = {};
+  // the competition's race chart: running PnL from the start to the last update (or the end), COMP_SPARK points
+  const cEnd = Math.min(now, evEnd), cSpan = Math.max(cEnd - evStart, 1);
   for (const s of Object.values(state.users)) {
     if (s.p || EXCLUDE.has(s.u.toLowerCase())) continue;
     const list = Object.entries(s.r).filter(([, [t]]) => inEvent(t * 1000))
       .map(([id, [t, pnl, stake]]) => ({ t, pnl: NET ? pnl - (s.f[id] || 0) : pnl, stake })).sort((a, b) => a.t - b.t);
     if (!list.length) continue;
     const a = { pnl: 0, vol: 0, rounds: 0, wins: 0, losses: 0, streak: 0, bestStreak: 0, best: 0 };
+    const line = new Array(COMP_SPARK).fill(null);
     for (const x of list) {
       a.pnl += x.pnl; a.vol += x.stake; a.rounds++;
       if (x.pnl > 0.005) { a.wins++; a.streak++; a.bestStreak = Math.max(a.bestStreak, a.streak); }
       else if (x.pnl < -0.005) { a.losses++; a.streak = 0; }
       a.best = Math.max(a.best, x.pnl);
+      line[Math.min(COMP_SPARK - 1, Math.max(0, Math.floor(((x.t * 1000 - evStart) / cSpan) * COMP_SPARK)))] = a.pnl;
     }
+    let run = 0;
+    for (let i = 0; i < COMP_SPARK; i++) { if (line[i] == null) line[i] = run; else run = line[i]; line[i] = r2(line[i]); }
+    cspark[s.u] = line;
     state.meta[s.u] = [s.a, s.v, s.c];
     crow.push([s.u, r2(a.pnl), r2(a.vol), a.rounds, a.wins, a.losses, a.bestStreak, r2(a.best)]);
   }
@@ -279,6 +287,8 @@ if (event) {
   comp = {
     name: event.name || "PnL competition", prizes: event.prizes || null, start: evStart, end: Number.isFinite(evEnd) ? evEnd : null,
     rows: crow,
+    spark: cspark, // username -> running PnL, from the start to `sparkTo`
+    sparkTo: cEnd,
     rounds: Object.values(state.rounds).filter(([t]) => inEvent(t * 1000)).length, // rounds anyone traded, private profiles included
     hidden: Object.values(state.users).filter((s) => s.p && Object.keys(s.f).some((id) => state.rounds[id] && inEvent(state.rounds[id][0] * 1000))).length,
   };
