@@ -1,11 +1,11 @@
 {
   "event": {
-    "enabled": false,
-    "name": "PnL competition",
+    "enabled": true,
+    "name": "Pulse PnL Competition",
     "prizes": null
   },
-  "start": null,
-  "end": null,
+  "start": "2026-10-20T12:00:00Z",
+  "end": "2026-11-03T12:00:00Z",
   "windowDays": 7,
   "metric": "pnl",
   "exclude": [

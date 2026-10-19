@@ -70,17 +70,21 @@ const dayOf = (expSec) => dayKey(expSec * 1000 - ROUND); // a round belongs to t
 // ---------- window ----------
 const cfg = JSON.parse(await readFile(CONFIG, "utf8"));
 const now = Date.now();
-// A competition is an event switched on in config.json ("event": { "enabled": true, ... } plus start/end).
-// Without one the site is plain Pulse statistics, and the window is just how far back days are (re)built.
+// A competition is an event switched on in config.json ("event": { "enabled": true, ... } plus start/end, UTC).
+// The daily statistics always cover the last `windowDays`; while a competition is set, the window also reaches back to
+// its start, so its whole run stays in the record. The competition gets its own ranking (`event` in days.json).
 const event = cfg.event && cfg.event.enabled && cfg.start ? cfg.event : null;
-const start = event ? Date.parse(cfg.start) : now - (cfg.windowDays || 7) * DAY;
-const end = event && cfg.end ? Date.parse(cfg.end) : Infinity;
-if (Number.isNaN(start) || Number.isNaN(end)) throw new Error("config.json: start/end must be ISO dates or null");
+const evStart = event ? Date.parse(cfg.start) : null;
+const evEnd = event && cfg.end ? Date.parse(cfg.end) : Infinity;
+if (Number.isNaN(evStart) || Number.isNaN(evEnd)) throw new Error("config.json: start/end must be ISO dates or null");
+const start = Math.min(now - (cfg.windowDays || 7) * DAY, event ? evStart : Infinity);
+const end = Infinity;
 // accounts left off the board (XO's own market maker): never fetched, never ranked
 const EXCLUDE = new Set((cfg.exclude || []).map((u) => u.toLowerCase()));
 const NET = cfg.metric === "net"; // rank by PnL after taker fees instead of XO's portfolio PnL
-// a round counts when it both opens and settles inside the window
+// a round counts when it both opens and settles inside the window (the competition uses the same rule for its own dates)
 const inWindow = (exp) => exp - ROUND >= start && exp <= end;
+const inEvent = (exp) => !!event && exp - ROUND >= evStart && exp <= evEnd;
 
 // ---------- state ----------
 // users: lowercase username -> { u, a (avatar), v (verified), c (rooster colour), p (private),
@@ -250,19 +254,48 @@ for (const k of Object.keys(state.days)) {
   if (!state.days[k].length) delete state.days[k];
 }
 for (const k of Object.keys(state.days).sort().slice(0, -KEEP_DAYS)) delete state.days[k];
-const listed = new Set(Object.values(state.days).flatMap((rows) => rows.map(([u]) => u)));
+// ---------- 5b. the competition ----------
+// Every round that opens and settles between its start and end, whatever UTC day that is (it starts at 12:00).
+// row: [username, pnl, volume, rounds, wins, losses, best streak, best round], best first
+let comp = null;
+if (event) {
+  const crow = [];
+  for (const s of Object.values(state.users)) {
+    if (s.p || EXCLUDE.has(s.u.toLowerCase())) continue;
+    const list = Object.entries(s.r).filter(([, [t]]) => inEvent(t * 1000))
+      .map(([id, [t, pnl, stake]]) => ({ t, pnl: NET ? pnl - (s.f[id] || 0) : pnl, stake })).sort((a, b) => a.t - b.t);
+    if (!list.length) continue;
+    const a = { pnl: 0, vol: 0, rounds: 0, wins: 0, losses: 0, streak: 0, bestStreak: 0, best: 0 };
+    for (const x of list) {
+      a.pnl += x.pnl; a.vol += x.stake; a.rounds++;
+      if (x.pnl > 0.005) { a.wins++; a.streak++; a.bestStreak = Math.max(a.bestStreak, a.streak); }
+      else if (x.pnl < -0.005) { a.losses++; a.streak = 0; }
+      a.best = Math.max(a.best, x.pnl);
+    }
+    state.meta[s.u] = [s.a, s.v, s.c];
+    crow.push([s.u, r2(a.pnl), r2(a.vol), a.rounds, a.wins, a.losses, a.bestStreak, r2(a.best)]);
+  }
+  crow.sort((a, b) => b[1] - a[1] || b[2] - a[2]);
+  comp = {
+    name: event.name || "PnL competition", prizes: event.prizes || null, start: evStart, end: Number.isFinite(evEnd) ? evEnd : null,
+    rows: crow,
+    rounds: Object.values(state.rounds).filter(([t]) => inEvent(t * 1000)).length, // rounds anyone traded, private profiles included
+    hidden: Object.values(state.users).filter((s) => s.p && Object.keys(s.f).some((id) => state.rounds[id] && inEvent(state.rounds[id][0] * 1000))).length,
+  };
+}
+
+const listed = new Set([...Object.values(state.days).flatMap((rows) => rows.map(([u]) => u)), ...(comp ? comp.rows.map(([u]) => u) : [])]);
 for (const u of Object.keys(state.meta)) if (!listed.has(u)) delete state.meta[u];
 
 // ---------- 6. the page's file ----------
-// with a competition on, only its own days are listed; otherwise the most recent ones
-const shown = Object.keys(state.days).sort().reverse()
-  .filter((k) => !event || (k >= dayKey(start) && k <= dayKey(Math.min(end, now) - 1))).slice(0, event ? KEEP_DAYS : SHOWN_DAYS);
-const names = new Set(shown.flatMap((k) => state.days[k].map(([u]) => u)));
+// the most recent days; the competition has its own ranking below
+const shown = Object.keys(state.days).sort().reverse().slice(0, SHOWN_DAYS);
+const names = new Set([...shown.flatMap((k) => state.days[k].map(([u]) => u)), ...(comp ? comp.rows.map(([u]) => u) : [])]);
 const todayRounds = Object.values(state.rounds).filter(([t]) => dayOf(t) === today).length;
 const out = {
   updatedAt: Date.now(), // when the run finished, not when it started: a run on GitHub can take minutes
   today,
-  event: event ? { name: event.name || "PnL competition", prizes: event.prizes || null, start, end: Number.isFinite(end) ? end : null } : null,
+  event: comp,
   // private profiles that traded today: not ranked, but the page says how many there are
   hidden: Object.values(state.users).filter((s) => s.p && Object.keys(s.f).some((id) => state.rounds[id] && dayOf(state.rounds[id][0]) === today)).length,
   users: Object.fromEntries([...names].map((u) => [u, state.meta[u] || ["", 0, ""]])),
@@ -273,4 +306,4 @@ const out = {
 
 await write(STATE, state);
 await write(OUT, out);
-console.log(`Done: ${(state.days[today] || []).length} ranked today (+${out.hidden} private), ${todayRounds} traded rounds today, ${shown.length} days listed, ${requests} requests`);
+console.log(`Done: ${(state.days[today] || []).length} ranked today (+${out.hidden} private), ${todayRounds} traded rounds today, ${shown.length} days listed${comp ? `, competition: ${comp.rows.length} ranked over ${comp.rounds} rounds` : ""}, ${requests} requests`);

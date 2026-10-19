@@ -65,6 +65,20 @@
   .bar .wrap { display: flex; align-items: center; gap: 12px; height: 56px; }
   .brand { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 17px; letter-spacing: -.01em; text-decoration: none; }
   .brand svg { width: 26px; height: 26px; flex: none; }
+  .views { flex: none; position: relative; }
+  .views button { position: relative; z-index: 1; height: 30px; padding: 0 12px; font-size: 13px; }
+  @media (max-width: 440px) { .brand .bt { display: none; } }
+  @media (max-width: 340px) { .views .trophy { display: none; } }
+  button.chip { border: 0; cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; }
+  button.chip:hover { filter: brightness(.96); }
+  .c-meter i { background: var(--up); }
+  .c-cta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .c-cta small { font-size: 12.5px; color: var(--ink-2); }
+  .c-podium .pod { cursor: default; }
+  .place.p1 { background: #C7B583; color: #3A331F; box-shadow: inset 0 0 0 1.5px #867852; }
+  .place.p2 { background: #B7BABE; color: #2C2E30; box-shadow: inset 0 0 0 1.5px #75787C; }
+  .place.p3 { background: #B4967D; color: #3A2E22; box-shadow: inset 0 0 0 1.5px #6E5A49; }
+  .rk .place { width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; font-size: 12.5px; font-weight: 700; }
   .bar .sp { flex: 1; }
   .icon-btn { width: 36px; height: 36px; border-radius: 10px; border: 0; background: var(--control); display: grid; place-items: center; cursor: pointer; }
   .icon-btn:hover { background: var(--control-hover); }
@@ -428,9 +442,13 @@
   <div class="wrap">
     <a class="brand" href="./" aria-label="Pulse Board home">
       <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#ff87a6"/><path d="M10 34h11l5-14 9 26 6-18 3 6h10" fill="none" stroke="#7a1230" stroke-opacity=".3" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path class="ecg" pathLength="100" d="M10 34h11l5-14 9 26 6-18 3 6h10" fill="none" stroke="#7a1230" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Pulse Board
+      <span class="bt">Pulse Board</span>
     </a>
     <span class="sp"></span>
+    <!-- the daily board and the competition are two views of the same page; the switch shows while a competition is set -->
+    <div class="seg views" id="views" role="group" aria-label="View" hidden>
+      <button data-view="today" aria-pressed="true">Today</button><button data-view="comp" aria-pressed="false"><span class="trophy" aria-hidden="true">🏆 </span>Competition</button>
+    </div>
     <button class="icon-btn" id="theme" aria-label="Switch light / dark theme">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>
     </button>
@@ -439,20 +457,14 @@
 
 <main class="wrap">
   <section class="hero">
-    <div class="card intro">
+    <div class="card intro v-today">
       <div class="eyebrow">
         <span class="chip"><span class="btc">₿</span><span>BTC<span class="long"> Up or Down</span> 5m</span></span>
-        <!-- the two chips and the facts row below exist only while a competition is switched on (config.json "event") -->
-        <span class="chip up ev" id="ev-name" hidden></span>
-        <span class="chip down ev" id="phase" hidden></span>
+        <!-- exists only while a competition is set (config.json "event"): opens the competition view -->
+        <button class="chip up ev go-comp" id="ev-name" hidden></button>
       </div>
       <h1>Who's <em>up</em> on Pulse?</h1>
       <p class="lede">Today's trading in XO Market's five-minute BTC rounds: who's in profit, who's racing ahead, and where you stand. Past days are in the leaderboard.</p>
-      <div class="facts ev" hidden>
-        <div class="fact"><small>Dates (UTC)</small><b id="f-dates"></b></div>
-        <div class="fact"><small>Prizes</small><b id="f-prizes"></b></div>
-        <div class="fact"><small id="f-left-label">Ranked by</small><b id="f-left">Net profit / loss</b></div>
-      </div>
       <div class="today">
         <div class="today-head"><b>Today so far</b><small id="totals-note"></small></div>
         <div class="totals" aria-label="Today's totals">
@@ -461,6 +473,30 @@
           <div class="total"><small>Volume</small><b class="num sk" id="t-volume">–</b></div>
         </div>
       </div>
+    </div>
+
+    <div class="card intro v-comp" hidden>
+      <div class="eyebrow">
+        <span class="chip"><span class="btc">₿</span><span>BTC<span class="long"> Up or Down</span> 5m</span></span>
+        <span class="chip up" id="c-phase"></span>
+      </div>
+      <h1 id="c-title"></h1>
+      <p class="lede" id="c-lede"></p>
+      <div class="facts">
+        <div class="fact"><small id="c-dates-label">Dates (UTC)</small><b id="c-dates"></b></div>
+        <div class="fact"><small>Prizes</small><b id="c-prizes"></b></div>
+        <div class="fact"><small id="c-left-label">Starts in</small><b class="num" id="c-left"></b></div>
+      </div>
+      <div class="meter c-meter" id="c-meter-box"><i id="c-meter"></i></div>
+      <div class="today" id="c-totals-box">
+        <div class="today-head"><b id="c-totals-title">Competition so far</b><small id="c-totals-note"></small></div>
+        <div class="totals" aria-label="Competition totals">
+          <div class="total"><small>Traders</small><b class="num" id="c-traders">–</b></div>
+          <div class="total"><small>Rounds</small><b class="num" id="c-rounds">–</b></div>
+          <div class="total"><small>Volume</small><b class="num" id="c-volume">–</b></div>
+        </div>
+      </div>
+      <div class="c-cta" id="c-cta"><a class="cta ref" target="_blank" rel="noopener">Trade Pulse on XO</a><small>Public profiles only: make yours public in XO settings to be ranked.</small></div>
     </div>
 
     <div class="card live">
@@ -492,7 +528,7 @@
     </div>
   </section>
 
-  <section class="card race">
+  <section class="card race v-today">
     <div class="race-head">
       <div>
         <h2>Today's race</h2>
@@ -512,7 +548,7 @@
     <div class="race-legend"><span><i class="dash"></i>$0 line</span></div>
   </section>
 
-  <section class="card find" id="find">
+  <section class="card find v-today" id="find">
     <div class="find-row">
       <label for="q">Find yourself</label>
       <div class="field">
@@ -524,10 +560,10 @@
     <div id="you"></div>
   </section>
 
-  <div class="sec-title"><h2>Today's top 3</h2><small id="podium-note"></small></div>
-  <section class="podium" id="podium" aria-label="Top three"><div class="sk-card"></div><div class="sk-card"></div><div class="sk-card"></div></section>
+  <div class="sec-title v-today"><h2>Today's top 3</h2><small id="podium-note"></small></div>
+  <section class="podium v-today" id="podium" aria-label="Top three"><div class="sk-card"></div><div class="sk-card"></div><div class="sk-card"></div></section>
 
-  <section class="card board">
+  <section class="card board v-today">
     <div class="board-head">
       <h2>Leaderboard</h2>
       <small id="board-period"></small>
@@ -539,7 +575,30 @@
     <div id="table"><div class="sk-row"></div><div class="sk-row"></div><div class="sk-row"></div><div class="sk-row"></div><div class="sk-row"></div></div>
   </section>
 
-  <section class="card how">
+  <!-- the competition view -->
+  <div class="sec-title v-comp" hidden><h2 id="c-pod-title">Top 3</h2><small id="c-pod-note"></small></div>
+  <section class="podium v-comp c-podium" id="c-podium" aria-label="Competition top three" hidden></section>
+  <section class="card board v-comp" id="competition" hidden>
+    <div class="board-head">
+      <h2 id="c-board-title">Competition leaderboard</h2>
+      <small id="c-period"></small>
+      <span class="upd" id="c-upd"></span>
+    </div>
+    <div class="tabs" role="tablist" id="c-tabs"></div>
+    <div class="hint" id="c-hint" hidden></div>
+    <div id="c-table"></div>
+  </section>
+  <section class="card how v-comp" hidden>
+    <h2>How the competition is counted</h2>
+    <ul>
+      <li id="c-how-window"></li>
+      <li>PnL is XO's own net profit / loss per round, the number on the Pulse page, from each trader's public XO portfolio.</li>
+      <li>Private profiles aren't ranked<span id="c-how-hidden"></span>. Make your profile public in XO settings to appear.</li>
+      <li>The board updates every few minutes. This is a community page: XO Market's own results decide the winners and any prizes.</li>
+    </ul>
+  </section>
+
+  <section class="card how v-today">
     <h2>How this is counted</h2>
     <ul>
       <li>PnL is the sum of your settled BTC Up or Down 5m rounds, taken from your public XO portfolio (the same per-round numbers the app shows).</li>
@@ -547,7 +606,6 @@
       <li id="how-window">Everything on this page is today's trading, unless you pick another day in the leaderboard.</li>
       <li>Private profiles aren't ranked<span id="how-hidden"></span>. Make your profile public in XO settings to appear.</li>
       <li>The Win rate tab needs at least 5 decided rounds that day.</li>
-      <li class="ev" hidden>This is a community page. XO Market's own results decide any prizes.</li>
     </ul>
   </section>
 </main>
@@ -770,19 +828,13 @@ const sorted = (t) => dayRows(period).filter(t.keep || (() => true)).sort((a, b)
 // ---------- render ----------
 function render() {
   if (!days) return;
-  // plain Pulse statistics by default; the competition chips, facts and wording appear only while an event is switched on
+  // plain Pulse statistics by default; while a competition is set, the view switch and a chip that opens it appear
   const ev = days.event;
   document.querySelectorAll(".ev").forEach((el) => (el.hidden = !ev));
-  if (ev) {
-    const live = Date.now() >= ev.start && (!ev.end || Date.now() <= ev.end), over = ev.end && Date.now() > ev.end;
-    $("ev-name").textContent = ev.name;
-    $("phase").textContent = over ? "Final" : live ? "Live" : "Starts soon";
-    $("f-dates").textContent = `${dayUTC(ev.start)} – ${ev.end ? dayUTC(ev.end) : "TBA"}`;
-    $("f-prizes").textContent = ev.prizes || "TBA";
-    $("f-prizes").classList.toggle("tba", !ev.prizes);
-    if (live && ev.end) { $("f-left-label").textContent = "Time left"; tickLeft(); }
-  }
-  $("how-window").textContent = ev ? `Only rounds that open and settle between ${dayUTC(ev.start)} and ${ev.end ? dayUTC(ev.end) : "the end date"}, 00:00 UTC, count.` : "Everything on this page is today's trading, unless you pick another day in the leaderboard.";
+  $("views").hidden = !ev;
+  if (!ev && view === "comp") setView("today", false);
+  if (ev) { $("ev-name").textContent = `🏆 ${ev.name} · ${compPhaseLabel()}`; renderComp(); }
+  $("how-window").textContent = "Everything on this page is today's trading, unless you pick another day in the leaderboard.";
   $("how-day").textContent = `A day on this board runs from ${dayStartLocal()} to ${dayStartLocal()} your time (00:00 to 24:00 UTC); today's numbers keep updating until it ends.`;
   $("how-hidden").textContent = days.hidden ? ` (${days.hidden} right now)` : "";
 
@@ -1120,13 +1172,137 @@ function setOdds(a, b) {
 setInterval(pollOdds, 5000); // the answer is cached for 5 s, so polling faster would see nothing new
 document.addEventListener("visibilitychange", () => { if (!document.hidden) pollOdds(); });
 
-// the event's countdown
-function tickLeft() {
-  const end = days.event.end;
-  if (!end) return;
-  const left = Math.max(0, end - Date.now()), d = Math.floor(left / 864e5), h = Math.floor(left / 36e5) % 24, m = Math.floor(left / 6e4) % 60;
-  $("f-left").textContent = d ? `${d}d ${h}h` : `${h}h ${m}m`;
+// ---------- competition view ----------
+// The daily board and the competition are two views of one page: the switch in the top bar (and #competition in the address)
+// picks one. Before the start the view counts down; while it runs it ranks every round since the start; after the end it's final.
+let view = location.hash === "#competition" ? "comp" : "today", compTab = "pnl", compShown = 20;
+// a #competition link shows the competition's blocks straight away, not the daily ones first (undone if no competition is set)
+if (view === "comp") { document.querySelectorAll(".v-today").forEach((el) => (el.hidden = true)); document.querySelectorAll(".v-comp").forEach((el) => (el.hidden = false)); }
+function setView(v, scroll = true) {
+  view = v;
+  document.querySelectorAll(".v-today").forEach((el) => (el.hidden = v !== "today"));
+  document.querySelectorAll(".v-comp").forEach((el) => (el.hidden = v !== "comp"));
+  for (const b of $("views").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.view === v));
+  movePill($("views"), '[aria-pressed="true"]');
+  history.replaceState(null, "", location.pathname + (v === "comp" ? "#competition" : ""));
+  if (scroll) scrollTo({ top: 0, behavior: noMotion() ? "auto" : "smooth" });
+  if (days) render();
+  if (v === "today") raceKick();
 }
+const compPhase = () => { const ev = days.event, t = Date.now(); return t < ev.start ? "before" : ev.end && t >= ev.end ? "after" : "live"; };
+const compPhaseLabel = () => ({ before: "starts " + whenLeft(days.event.start), live: "live now", after: "final results" }[compPhase()]);
+const fmtUTC = (t) => new Date(t).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "UTC" }).replace(",", "");
+function leftText(ms) {
+  ms = Math.max(0, ms);
+  const d = Math.floor(ms / 864e5), h = Math.floor(ms / 36e5) % 24, m = Math.floor(ms / 6e4) % 60, sec = Math.floor(ms / 1e3) % 60;
+  return d ? `${d}d ${h}h ${String(m).padStart(2, "0")}m` : h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m ${String(sec).padStart(2, "0")}s`;
+}
+const whenLeft = (t) => "in " + leftText(t - Date.now()).replace(/ \d+s$/, "");
+function compRows() {
+  return (days.event.rows || []).map(([u, pnl, vol, rounds, wins, losses, bestStreak, best], i) => {
+    const [a, v, c] = days.users[u] || ["", 0, ""];
+    return { u, a, v, c, pnl, vol, rounds, wins, losses, bestStreak, best, rank: i + 1 };
+  });
+}
+// the clock and the progress bar, every second while the view is open
+function tickComp() {
+  if (!days || !days.event || view !== "comp") return;
+  const ev = days.event, ph = compPhase(), t = Date.now();
+  $("c-left-label").textContent = ph === "before" ? "Starts in" : ph === "live" ? (ev.end ? "Ends in" : "Running") : "Ended";
+  $("c-left").textContent = ph === "before" ? leftText(ev.start - t) : ph === "live" ? (ev.end ? leftText(ev.end - t) : "–") : dayUTC(ev.end);
+  $("c-meter").style.width = ph === "before" ? "0%" : ph === "after" || !ev.end ? "100%" : `${Math.min(100, ((t - ev.start) / (ev.end - ev.start)) * 100).toFixed(2)}%`;
+  if (ph !== lastPhase) { lastPhase = ph; render(); } // the start or the end just passed
+}
+let lastPhase = null;
+function renderComp() {
+  const ev = days.event, ph = compPhase(), list = compRows();
+  lastPhase = ph;
+  const range = `${fmtUTC(ev.start)} – ${ev.end ? fmtUTC(ev.end) : "TBA"}`;
+  $("c-phase").textContent = { before: "Starts soon", live: "Live", after: "Final" }[ph];
+  $("c-phase").className = "chip " + (ph === "after" ? "down" : "up");
+  $("c-title").innerHTML = esc(ev.name).replace(/\bPnL\b/, "<em>PnL</em>");
+  const span = ev.end ? Math.round((ev.end - ev.start) / 864e5) : 0, spanText = span === 14 ? "Two weeks" : span ? `${span} days` : "A run";
+  $("c-lede").textContent = ph === "before"
+    ? `${spanText} of BTC Up or Down 5m on Pulse, ranked by net PnL over the whole run. It starts ${whenLeft(ev.start)}: the leaderboard opens here with the first settled round.`
+    : ph === "live" ? "Net PnL from every BTC Up or Down 5m round since the start, ranked live. Trade Pulse to get on the board."
+    : "The competition is over. These are the final standings; XO Market confirms the winners and the prizes.";
+  // short dates in the fact, the time in its label when start and end share it (they do: 12:00 UTC)
+  const sameTime = ev.end && new Date(ev.start).toISOString().slice(11, 16) === new Date(ev.end).toISOString().slice(11, 16);
+  $("c-dates-label").textContent = sameTime ? `Dates · ${new Date(ev.start).toISOString().slice(11, 16)} UTC` : "Dates (UTC)";
+  $("c-dates").textContent = sameTime ? `${dayUTC(ev.start)} – ${dayUTC(ev.end)}` : range;
+  $("c-prizes").textContent = ev.prizes || "TBA";
+  $("c-prizes").classList.toggle("tba", !ev.prizes);
+  $("c-meter-box").hidden = ph === "before";
+  $("c-totals-box").hidden = ph === "before";
+  $("c-cta").hidden = ph === "after";
+  $("c-traders").textContent = list.length.toLocaleString("en-US");
+  $("c-rounds").textContent = (ev.rounds || 0).toLocaleString("en-US");
+  $("c-volume").textContent = money(list.reduce((sum, r) => sum + r.vol, 0), false);
+  $("c-totals-title").textContent = ph === "after" ? "Final totals" : "Competition so far";
+  $("c-totals-note").textContent = ph === "after" ? "" : `since ${fmtUTC(ev.start)} UTC · live`;
+  $("c-how-window").textContent = `Only BTC Up or Down 5m rounds that open and settle between ${range} UTC count, whatever day they fall on.`;
+  $("c-how-hidden").textContent = ev.hidden ? ` (${ev.hidden} so far)` : "";
+  $("c-upd").textContent = ph === "before" ? "" : $("upd").textContent;
+  tickComp();
+
+  // top three: the leaders while it runs, the winners once it's over
+  $("c-pod-title").textContent = ph === "after" ? "Winners" : "Top 3 so far";
+  $("c-pod-note").textContent = ph === "after" ? `${dayUTC(ev.start)} – ${dayUTC(ev.end)}` : ph === "live" ? "live" : "";
+  const top3 = list.slice(0, 3);
+  // nothing to stand on before the start: the leaderboard below says when it opens
+  $("c-podium").previousElementSibling.hidden = $("c-podium").hidden = view !== "comp" || ph === "before";
+  $("c-podium").innerHTML = ph === "before" || !top3.length
+    ? `<div class="card pod-empty">${ph === "before" ? `The top three appear here once the competition starts, ${fmtUTC(ev.start)} UTC (${hm(ev.start)} your time).` : "No settled rounds yet. The first one starts the board."}</div>`
+    : top3.map((r, i) => `<div class="card pod p${i + 1}">
+        <div class="top"><span class="place">${i + 1}</span>${avatar(r, "md")}<span class="name"><span>${esc(r.u)}</span>${r.v ? VER : ""}</span></div>
+        <div class="pnl num ${cls(r.pnl)}">${money(r.pnl)}</div>
+        <div class="sub"><span><b class="num">${r.rounds.toLocaleString("en-US")}</b> ${plural(r.rounds)}</span><span><b class="num">${(winRate(r) * 100).toFixed(0)}%</b> won</span><span><b class="num">${money(r.vol, false)}</b> vol</span></div>
+      </div>`).join("");
+
+  // the leaderboard, with the same tabs as the daily one
+  $("c-board-title").textContent = ph === "after" ? "Final standings" : "Competition leaderboard";
+  $("c-period").textContent = range + " UTC";
+  $("c-tabs").hidden = ph === "before";
+  if (ph === "before") {
+    $("c-hint").hidden = true;
+    $("c-table").innerHTML = `<div class="empty"><b>Starts ${whenLeft(ev.start)}</b>${fmtUTC(ev.start)} UTC, ${hm(ev.start)} your time. Every BTC Up or Down 5m round from then on counts.</div>`;
+    return;
+  }
+  if (!$("c-tabs").querySelector(".tab")) $("c-tabs").innerHTML = TABS.map((x) => `<button class="tab" role="tab" data-ctab="${x.id}">${x.label}</button>`).join("");
+  for (const b of $("c-tabs").querySelectorAll(".tab")) b.setAttribute("aria-selected", String(b.dataset.ctab === compTab));
+  movePill($("c-tabs"), '.tab[aria-selected="true"]');
+  const T = TABS.find((x) => x.id === compTab);
+  const ranked = list.filter(T.keep || (() => true)).sort((a, b) => (T.asc ? -1 : 1) * (T.num(b) - T.num(a)) || b.vol - a.vol);
+  $("c-hint").hidden = !T.hint;
+  $("c-hint").textContent = T.hint ? T.hint.replace("that day", "in the competition") : "";
+  if (!ranked.length) { $("c-table").innerHTML = `<div class="empty"><b>${list.length ? "Nobody qualifies" : "No settled rounds yet"}</b>${list.length ? "Try another tab." : "The first settled round starts the board."}</div>`; return; }
+  const medal = (i) => (compTab === "pnl" && i < 3 ? `<span class="place p${i + 1}">${i + 1}</span>` : `<span class="n num">${i + 1}</span>`);
+  const name = (r) => `<span style="overflow:hidden;text-overflow:ellipsis">${esc(r.u)}</span>${r.v ? VER : ""}`;
+  const main = (r) => `<span class="mainv ${T.f === "money" ? cls(T.num(r)) : ""}">${fmt[T.f](T.num(r))}</span>`;
+  const side = compTab === "pnl" || compTab === "rekt" ? { head: "Best round", short: "Best", val: (r) => (r.best ? `<span class="pos">${money(r.best)}</span>` : "–") } : { head: "PnL", short: "PnL", val: (r) => `<span class="${cls(r.pnl)}">${money(r.pnl)}</span>` };
+  const page = ranked.slice(0, compShown);
+  $("c-table").innerHTML = `<div class="tscroll"><table>
+      <thead><tr><th>#</th><th>Trader</th><th>${T.head}</th><th>${side.head}</th><th>Rounds</th><th>Won</th><th>Volume</th></tr></thead>
+      <tbody>${page.map((r, i) => `<tr class="off">
+        <td><span class="rk">${medal(i)}</span></td>
+        <td><span class="trader">${avatar(r)}<span style="min-width:0"><span class="nm" style="display:flex;align-items:center;gap:4px">${name(r)}</span></span></span></td>
+        <td class="main num">${main(r)}</td><td class="num">${side.val(r)}</td><td class="num">${r.rounds.toLocaleString("en-US")}</td>
+        <td class="num"><span class="wr">${(winRate(r) * 100).toFixed(0)}%<i><u style="width:${(winRate(r) * 100).toFixed(0)}%"></u></i></span></td>
+        <td class="num">${money(r.vol, false)}</td></tr>`).join("")}</tbody></table></div>
+    <div class="mlist">${page.map((r, i) => `<div class="mrow off">
+        <div class="mtop"><span class="rk">${medal(i)}</span>${avatar(r)}<span class="nm">${name(r)}</span><span class="mmain num">${main(r)}</span></div>
+        <div class="mstats num"><span><i>${side.short}</i><b>${side.val(r)}</b></span><span><i>Rounds</i>${r.rounds.toLocaleString("en-US")}</span><span><i>Won</i>${(winRate(r) * 100).toFixed(0)}%</span><span><i>Vol</i>${money(r.vol, false)}</span></div>
+      </div>`).join("")}</div>
+    ${ranked.length > compShown ? `<div class="more"><button class="btn" id="c-more">Show all ${ranked.length}</button></div>` : ""}`;
+}
+$("views").addEventListener("click", (e) => { const b = e.target.closest("[data-view]"); if (b && b.dataset.view !== view) setView(b.dataset.view); });
+document.addEventListener("click", (e) => {
+  if (e.target.closest(".go-comp")) return setView("comp");
+  const t = e.target.closest("[data-ctab]");
+  if (t) { compTab = t.dataset.ctab; compShown = 20; return render(); }
+  if (e.target.closest("#c-more")) { compShown = 1e9; return render(); }
+});
+setInterval(tickComp, 1000);
 
 // ---------- race chart ----------
 // Canvas line race in the spirit of the Pulse chart: one line per trader, a dashed break-even line where Pulse has
@@ -1598,14 +1774,16 @@ async function load() {
   if (!periodSet && days.days.length) { period = days.days.some((x) => x.d === days.today) ? days.today : days.days[0].d; periodSet = true; }
   // a shared link (?u=name) picks that trader once; the address is then cleaned, so a reload starts with nobody picked
   const u = me ? me.u : searched && $("q").value.trim() ? $("q").value.trim() : new URLSearchParams(location.search).get("u");
-  if (location.search) history.replaceState(null, "", location.pathname);
+  if (location.search) history.replaceState(null, "", location.pathname + location.hash);
   if (u) { me = byName.get(u.toLowerCase().replace(/^@/, "")) || null; searched = true; if (!$("q").value) $("q").value = me ? me.u : u; }
+  if (!viewSet) { viewSet = true; setView(days.event && view === "comp" ? "comp" : "today", false); }
   render();
   if (race.visible && !race.played) racePlay();
 }
+let viewSet = false;
 load();
 setInterval(load, 6e4);
-setInterval(() => { if (days) { showUpdated(); if (days.event) tickLeft(); } }, 3e4);
+setInterval(() => { if (days) showUpdated(); }, 3e4);
 </script>
 </body>
 </html>
