@@ -81,6 +81,19 @@
   .c-btn:active { transform: scale(.98); }
   .c-cta { grid-template-columns: minmax(0,1fr); }
   @media (max-width: 860px) { #c-prizes { white-space: normal; } }
+  /* the Join reminder sits under the round card, beside the contest card */
+  .nudge { padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+  .nudge-head { display: flex; align-items: center; gap: 10px; }
+  .nudge-head b { font-size: 15px; font-weight: 700; }
+  .nudge-ic { width: 22px; height: 22px; border-radius: 50%; background: var(--up-soft); color: var(--up-text); display: grid; place-items: center; font-weight: 800; font-size: 14px; flex: none; }
+  .nudge p { font-size: 13px; color: var(--ink-2); line-height: 1.45; }
+  .nudge-link { font-weight: 700; white-space: nowrap; color: var(--up-text); text-decoration: none; }
+  .nudge-link:hover { text-decoration: underline; }
+  @media (min-width: 861px) {
+    :root[data-view="comp"] .hero { grid-template-rows: auto 1fr; }
+    :root[data-view="comp"] .hero > .intro.v-comp { grid-row: 1 / span 2; }
+    :root[data-view="comp"] .hero > .nudge { grid-column: 2; }
+  }
   /* in the competition view the round card keeps its own height instead of matching the contest card */
   :root[data-view="comp"] .live { align-self: start; justify-content: flex-start; gap: 18px; }
   /* the contest's rules, from XO */
@@ -551,6 +564,10 @@
           <a class="side down ref" target="_blank" rel="noopener" aria-label="Trade Down on XO Market">Down<b class="num" id="o-down"></b></a>
         </div>
       </div>
+    </div>
+    <div class="card nudge v-comp" id="c-nudge" hidden>
+      <div class="nudge-head"><span class="nudge-ic" aria-hidden="true">!</span><b>Don't forget to press Join</b></div>
+      <p>Trades only count after you join. Plenty of traders are on Pulse without joining, so their trades don't count. <a class="nudge-link" id="c-nudge-join" target="_blank" rel="noopener">Join on XO ↗</a></p>
     </div>
   </section>
 
@@ -1320,7 +1337,8 @@ function renderComp() {
   const sameTime = ev.end && new Date(ev.start).toISOString().slice(11, 16) === new Date(ev.end).toISOString().slice(11, 16);
   $("c-dates-label").textContent = sameTime ? `Dates · ${new Date(ev.start).toISOString().slice(11, 16)} UTC` : "Dates (UTC)";
   $("c-dates").textContent = sameTime ? `${dayUTC(ev.start)} – ${dayUTC(ev.end)}` : range;
-  $("c-join").href = (ev.url || "https://beta.xo.market/contests") + "?r=andriy_shkinder";
+  $("c-join").href = $("c-nudge-join").href = (ev.url || "https://beta.xo.market/contests") + "?r=andriy_shkinder";
+  if (view === "comp") $("c-nudge").hidden = ph === "after";
   $("c-prizes").textContent = ev.prizes || "TBA";
   $("c-prizes").classList.toggle("tba", !ev.prizes);
   $("c-meter-box").hidden = ph === "before";
