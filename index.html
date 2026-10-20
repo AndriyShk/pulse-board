@@ -578,7 +578,7 @@
       <span class="v-comp tagkey" hidden><b class="tk ok">#2 · in the prizes</b> top 10</span>
       <span class="v-comp tagkey" hidden><b class="tk near">#14 · $25 behind 10th</b> ranked, PnL short of the prizes</span>
       <span class="v-comp tagkey" hidden><b class="tk need">$40 more volume to qualify</b> joined, needs 100 USDC volume</span>
-      <span class="v-comp tagkey" hidden><b class="tk out">not in the contest</b> hasn't joined, or no trades since joining</span></div>
+      <span class="v-comp tagkey" hidden><b class="tk out">not ranked on XO yet</b> joined with under 100 USDC of counted volume (fills of 5 USDC or more), or hasn't joined: XO doesn't say which</span></div>
   </section>
 
   <section class="card find v-today" id="find">
@@ -1282,7 +1282,8 @@ function offStatus(u) {
   const all = offRows(), r = all.find((x) => x.u.toLowerCase() === u.toLowerCase());
   const det = OFF.detail, minVol = det ? det.minQualifyingVolumeUsdc : 100;
   const paid = det ? Math.max(...(det.prizeBands || []).map((b) => b.rankTo), 0) : 10;
-  if (!r) return { tone: "out", text: "not in the contest", short: "not in" };
+  // XO's public board lists only qualified traders, so someone missing may have joined and still be short of the volume
+  if (!r) return { tone: "out", text: `not ranked on XO yet`, short: "not ranked" };
   if (!r.qualified) { const need = Math.max(0, minVol - r.vol); return { tone: "need", text: `${money(need, false)} more volume to qualify`, short: `${money(need, false)} to go` }; }
   if (r.rank <= paid) return { tone: "ok", text: `#${r.rank} · in the prizes`, short: `#${r.rank}` };
   const last = all.filter((x) => x.qualified).find((x) => x.rank === paid);
