@@ -576,7 +576,7 @@
     <div class="race-legend"><span><i class="dash"></i>$0 line</span>
       <span class="v-comp tagkey" hidden><b class="tk ok">#2 · in the prizes</b></span>
       <span class="v-comp tagkey" hidden><b class="tk near">#14 · $25 behind 10th</b></span>
-      <span class="v-comp tagkey" hidden><b class="tk need">≈$40 more volume to qualify</b></span>
+      <span class="v-comp tagkey" hidden><b class="tk need">≈$40 to qualify</b></span>
       <span class="v-comp tagkey" hidden><b class="tk out">not ranked on XO yet</b></span></div>
   </section>
 
@@ -1285,10 +1285,10 @@ function offStatus(u) {
   // (fills of the minimum size or more since the start), which is exact for anyone who joined before it
   if (!r) {
     const cv = days.event.cvol && days.event.cvol[u];
-    if (cv != null && cv < minVol) return { tone: "need", text: `≈${money(minVol - cv, false)} more volume to qualify`, short: `≈${money(minVol - cv, false)} to go` };
+    if (cv != null && cv < minVol) return { tone: "need", text: `≈${money(minVol - cv, false)} to qualify`, short: `≈${money(minVol - cv, false)}` };
     return { tone: "out", text: "not ranked on XO yet", short: "not ranked" };
   }
-  if (!r.qualified) { const need = Math.max(0, minVol - r.vol); return { tone: "need", text: `${money(need, false)} more volume to qualify`, short: `${money(need, false)} to go` }; }
+  if (!r.qualified) { const need = Math.max(0, minVol - r.vol); return { tone: "need", text: `${money(need, false)} to qualify`, short: money(need, false) }; }
   if (r.rank <= paid) return { tone: "ok", text: `#${r.rank} · in the prizes`, short: `#${r.rank}` };
   const last = all.filter((x) => x.qualified).find((x) => x.rank === paid);
   return { tone: "near", text: `#${r.rank} · ${last ? money(Math.max(0, last.pnl - r.pnl), false) + " behind " + paid + "th" : "outside the prizes"}`, short: `#${r.rank}` };
@@ -1483,7 +1483,7 @@ function drawRace() {
 
   const narrow = W < 560;
   const tags = raceComp() && !!OFF; // XO-board tags beside the names
-  const L = 8, R = W - (narrow ? (tags ? 150 : 112) : tags ? 360 : 190), T = 26, B = H - 26, pw = R - L, ph = B - T;
+  const L = 8, R = W - (narrow ? (tags ? 150 : 112) : tags ? 320 : 190), T = 26, B = H - 26, pw = R - L, ph = B - T;
   const P = race.hover != null ? race.hover : race.playing ? race.p : 1;
   // today: from 00:00 UTC to the last update; the competition: from its start to the last update (or its end)
   const comp = raceComp();
