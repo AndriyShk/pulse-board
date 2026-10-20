@@ -574,10 +574,10 @@
     </div>
     <div class="race-box sk-box"><canvas id="race-cv" role="img" aria-label="Line chart of the leaders' cumulative PnL through today"></canvas></div>
     <div class="race-legend"><span><i class="dash"></i>$0 line</span>
-      <span class="v-comp tagkey" hidden><b class="tk ok">#2 · in the prizes</b></span>
-      <span class="v-comp tagkey" hidden><b class="tk near">#14 · $25 behind 10th</b></span>
-      <span class="v-comp tagkey" hidden><b class="tk need">≈$40 to qualify</b></span>
-      <span class="v-comp tagkey" hidden><b class="tk out">not ranked on XO yet</b></span></div>
+      <span class="v-comp tagkey" hidden><b class="tk ok">In the prizes</b></span>
+      <span class="v-comp tagkey" hidden><b class="tk near">Behind 10th</b></span>
+      <span class="v-comp tagkey" hidden><b class="tk need">More volume to qualify</b></span>
+      <span class="v-comp tagkey" hidden><b class="tk out">Not ranked on XO yet</b></span></div>
   </section>
 
   <section class="card find v-today" id="find">
@@ -1285,13 +1285,13 @@ function offStatus(u) {
   // (fills of the minimum size or more since the start), which is exact for anyone who joined before it
   if (!r) {
     const cv = days.event.cvol && days.event.cvol[u];
-    if (cv != null && cv < minVol) return { tone: "need", text: `≈${money(minVol - cv, false)} to qualify`, short: `≈${money(minVol - cv, false)}` };
-    return { tone: "out", text: "not ranked on XO yet", short: "not ranked" };
+    if (cv != null && cv < minVol) return { tone: "need", text: `≈${money(minVol - cv, false)}` };
+    return { tone: "out", text: "–" };
   }
-  if (!r.qualified) { const need = Math.max(0, minVol - r.vol); return { tone: "need", text: `${money(need, false)} to qualify`, short: money(need, false) }; }
-  if (r.rank <= paid) return { tone: "ok", text: `#${r.rank} · in the prizes`, short: `#${r.rank}` };
+  if (!r.qualified) return { tone: "need", text: money(Math.max(0, minVol - r.vol), false) };
+  if (r.rank <= paid) return { tone: "ok", text: `#${r.rank}` };
   const last = all.filter((x) => x.qualified).find((x) => x.rank === paid);
-  return { tone: "near", text: `#${r.rank} · ${last ? money(Math.max(0, last.pnl - r.pnl), false) + " behind " + paid + "th" : "outside the prizes"}`, short: `#${r.rank}` };
+  return { tone: "near", text: last ? money(Math.max(0, last.pnl - r.pnl), false) : `#${r.rank}` };
 }
 function offRows() {
   if (!OFF) return [];
@@ -1483,7 +1483,7 @@ function drawRace() {
 
   const narrow = W < 560;
   const tags = raceComp() && !!OFF; // XO-board tags beside the names
-  const L = 8, R = W - (narrow ? (tags ? 150 : 112) : tags ? 320 : 190), T = 26, B = H - 26, pw = R - L, ph = B - T;
+  const L = 8, R = W - (narrow ? (tags ? 156 : 112) : tags ? 250 : 190), T = 26, B = H - 26, pw = R - L, ph = B - T;
   const P = race.hover != null ? race.hover : race.playing ? race.p : 1;
   // today: from 00:00 UTC to the last update; the competition: from its start to the last update (or its end)
   const comp = raceComp();
@@ -1589,7 +1589,7 @@ function drawRace() {
     if (tags) {
       const st = offStatus(h.r.u);
       if (st) {
-        const label = narrow ? st.short : st.text, fsz = Math.max(10, fs - 1.5);
+        const label = st.text, fsz = Math.max(10, fs - 1.5);
         c.font = F(600, fsz);
         const tw = c.measureText(label).width + 12, th = fsz + 7, bx = tagEnd + 7, by = h.ly - th / 2;
         const tone = { ok: ["--pos-soft", "--pos"], near: ["--down-soft", "--down-text"], need: ["--up-soft", "--up-text"], out: ["--control", "--ink-3"] }[st.tone];
