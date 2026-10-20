@@ -176,6 +176,9 @@
   .race-box { position: relative; height: 440px; margin-top: 12px; }
   .race-box canvas { width: 100%; height: 100%; display: block; touch-action: pan-y; }
   .race-legend { display: flex; gap: 6px 18px; flex-wrap: wrap; font-size: 12px; color: var(--ink-3); margin-top: 6px; }
+  .race-legend .tk { font-weight: 600; font-size: 11px; border-radius: 99px; padding: 2px 7px; margin-right: 4px; }
+  .tk.ok { background: var(--pos-soft); color: var(--pos); } .tk.near { background: var(--down-soft); color: var(--down-text); }
+  .tk.need { background: var(--up-soft); color: var(--up-text); } .tk.out { background: var(--control); color: var(--ink-3); }
   .race-legend i.dash { display: inline-block; width: 18px; height: 0; border-top: 2px dashed var(--ink-3); vertical-align: middle; margin-right: 6px; }
 
   /* ---------- find me ---------- */
@@ -556,7 +559,11 @@
       </div>
     </div>
     <div class="race-box sk-box"><canvas id="race-cv" role="img" aria-label="Line chart of the leaders' cumulative PnL through today"></canvas></div>
-    <div class="race-legend"><span><i class="dash"></i>$0 line</span></div>
+    <div class="race-legend"><span><i class="dash"></i>$0 line</span>
+      <span class="v-comp tagkey" hidden><b class="tk ok">✓ #1 on XO</b> in XO's prizes</span>
+      <span class="v-comp tagkey" hidden><b class="tk near">#14 · +$25 to top 10</b> on XO's board, outside the prizes</span>
+      <span class="v-comp tagkey" hidden><b class="tk need">needs $40 vol</b> joined, short of 100 USDC volume</span>
+      <span class="v-comp tagkey" hidden><b class="tk out">Join + $100 vol</b> not on XO's board yet</span></div>
   </section>
 
   <section class="card find v-today" id="find">
@@ -849,7 +856,7 @@ function render() {
   $("how-window").textContent = "Everything on this page is today's trading, unless you pick another day in the leaderboard.";
   const rc = view === "comp" && !!ev;
   $("race-title").textContent = rc ? (compPhase() === "after" ? "How the competition was won" : "Competition race") : "Today's race";
-  $("race-sub").textContent = rc ? "Each leader's PnL since the start of the competition. Drag across the chart to rewind." : "Today's PnL of the leaders, round by round. Drag across the chart to rewind.";
+  $("race-sub").textContent = rc ? "Every public trader's Pulse PnL since the contest started, and where each one stands on XO's official board. Drag across the chart to rewind." : "Today's PnL of the leaders, round by round. Drag across the chart to rewind.";
   if (!rc) $("race").hidden = false;
   $("how-day").textContent = `A day on this board runs from ${dayStartLocal()} to ${dayStartLocal()} your time (00:00 to 24:00 UTC); today's numbers keep updating until it ends.`;
   $("how-hidden").textContent = days.hidden ? ` (${days.hidden} right now)` : "";
@@ -1248,11 +1255,23 @@ async function loadOfficial() {
     }
     OFF = { detail, items, updatedAt: Date.parse(first.updatedAt) || Date.now() };
     compCache = null;
-    if (view === "comp") render();
+    if (view === "comp") { render(); raceKick(); }
   } catch (e) { /* keep what we had; the table says when there is nothing yet */ }
 }
 setInterval(loadOfficial, 6e4);
 const prizeFor = (rank) => { const b = OFF && (OFF.detail.prizeBands || []).find((x) => rank >= x.rankFrom && rank <= x.rankTo); return b ? `${b.cp.toLocaleString("en-US")} CP · ${b.usdc.toLocaleString("en-US")} USDC` : ""; };
+// tone: "ok" in the prizes, "near" ranked but outside them, "need" joined without the volume, "out" not on XO's board
+function offStatus(u) {
+  if (!OFF) return null;
+  const all = offRows(), r = all.find((x) => x.u.toLowerCase() === u.toLowerCase());
+  const det = OFF.detail, minVol = det ? det.minQualifyingVolumeUsdc : 100;
+  const paid = det ? Math.max(...(det.prizeBands || []).map((b) => b.rankTo), 0) : 10;
+  if (!r) return { tone: "out", text: `Join + $${minVol} vol`, short: "Join" };
+  if (!r.qualified) { const need = Math.max(0, minVol - r.vol); return { tone: "need", text: `needs ${money(need, false)} vol`, short: money(need, false) }; }
+  if (r.rank <= paid) return { tone: "ok", text: `✓ #${r.rank} on XO`, short: `#${r.rank}` };
+  const last = all.filter((x) => x.qualified).find((x) => x.rank === paid);
+  return { tone: "near", text: `#${r.rank} · ${last ? "+" + money(Math.max(0, last.pnl - r.pnl), false) : ""} to top ${paid}`, short: `#${r.rank}` };
+}
 function offRows() {
   if (!OFF) return [];
   return OFF.items.map((it) => {
@@ -1397,8 +1416,8 @@ function raceImg(r) {
 let compCache = null;
 function compRaceRows() {
   if (compCache && compCache.at === days.updatedAt) return compCache.rows;
-  const sp = (days.event.official && days.event.official.spark) || {};
-  const out = offRows().filter((r) => r.qualified && sp[r.u]).map((r) => ({ ...r, spark: sp[r.u] }));
+  const sp = days.event.spark || {};
+  const out = compRows().filter((r) => sp[r.u]).map((r) => ({ ...r, spark: sp[r.u] }));
   compCache = { at: days.updatedAt, rows: out };
   return out;
 }
@@ -1426,11 +1445,12 @@ function drawRace() {
   if (!set.length) { c.fillStyle = ink2; c.font = F(500, 14); c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(raceComp() ? "The race starts with the competition's first settled round." : "Today's race starts with the first settled round.", W / 2, H / 2); return; }
 
   const narrow = W < 560;
-  const L = 8, R = W - (narrow ? 112 : 190), T = 26, B = H - 26, pw = R - L, ph = B - T;
+  const tags = raceComp() && !!OFF; // XO-board tags beside the names
+  const L = 8, R = W - (narrow ? (tags ? 150 : 112) : tags ? 320 : 190), T = 26, B = H - 26, pw = R - L, ph = B - T;
   const P = race.hover != null ? race.hover : race.playing ? race.p : 1;
   // today: from 00:00 UTC to the last update; the competition: from its start to the last update (or its end)
   const comp = raceComp();
-  const t0 = comp ? days.event.start : Date.parse(days.today + "T00:00:00Z"), t1 = comp ? (days.event.official && days.event.official.sparkTo) || days.event.sparkTo || days.updatedAt : days.updatedAt;
+  const t0 = comp ? days.event.start : Date.parse(days.today + "T00:00:00Z"), t1 = comp ? days.event.sparkTo || days.updatedAt : days.updatedAt;
 
   // scale: signed log by default, because one whale would flatten everyone else on a linear axis
   let lo = 0, hi = 0;
@@ -1528,7 +1548,20 @@ function drawRace() {
     }
     c.font = F(700, fs); c.fillStyle = h.v > 0.004 ? V("--pos") : h.v < -0.004 ? V("--neg") : ink3;
     const txt = money(h.v); c.fillText(txt, tx, h.ly + 0.5);
-    race.hits.push({ u: h.r.u, x: lx - 4, y: h.ly - gap / 2, w: tx + c.measureText(txt).width - lx + 8, h: gap });
+    let tagEnd = tx + c.measureText(txt).width;
+    if (tags) {
+      const st = offStatus(h.r.u);
+      if (st) {
+        const label = narrow ? st.short : st.text, fsz = Math.max(10, fs - 1.5);
+        c.font = F(600, fsz);
+        const tw = c.measureText(label).width + 12, th = fsz + 7, bx = tagEnd + 7, by = h.ly - th / 2;
+        const tone = { ok: ["--pos-soft", "--pos"], near: ["--down-soft", "--down-text"], need: ["--up-soft", "--up-text"], out: ["--control", "--ink-3"] }[st.tone];
+        c.fillStyle = V(tone[0]); c.beginPath(); c.roundRect(bx, by, tw, th, th / 2); c.fill();
+        c.fillStyle = V(tone[1]); c.textAlign = "left"; c.fillText(label, bx + 6, h.ly + 0.5);
+        tagEnd = bx + tw;
+      }
+    }
+    race.hits.push({ u: h.r.u, x: lx - 4, y: h.ly - gap / 2, w: tagEnd - lx + 8, h: gap });
   }
 
   // cursor: time under the pointer
