@@ -186,6 +186,9 @@
   .race-box { position: relative; height: 440px; margin-top: 12px; }
   .race-box canvas { width: 100%; height: 100%; display: block; touch-action: pan-y; }
   .race-legend { display: flex; gap: 6px 18px; flex-wrap: wrap; font-size: 12px; color: var(--ink-3); margin-top: 6px; }
+  tr.sep td { text-align: left; padding: 10px 16px 8px; font-size: 12px; font-weight: 600; color: var(--ink-3); background: var(--control); border-top: 1px solid var(--line); }
+  .msep { padding: 10px 14px 6px; font-size: 12px; font-weight: 600; color: var(--ink-3); background: var(--control); }
+  #c-table .tk { font-weight: 600; font-size: 12px; border-radius: 99px; padding: 3px 9px; white-space: nowrap; }
   .race-legend .tk { font-weight: 600; font-size: 11px; border-radius: 99px; padding: 2px 7px; margin-right: 4px; }
   .tk.ok { background: var(--pos-soft); color: var(--pos); } .tk.near { background: var(--down-soft); color: var(--down-text); }
   .tk.need { background: var(--up-soft); color: var(--up-text); } .tk.out { background: var(--control); color: var(--ink-3); }
@@ -1285,7 +1288,7 @@ function offStatus(u) {
   // (fills of the minimum size or more since the start), which is exact for anyone who joined before it
   if (!r) {
     const cv = days.event.cvol && days.event.cvol[u];
-    if (cv != null && cv < minVol) return { tone: "need", text: `≈${money(minVol - cv, false)}` };
+    if (cv != null && cv < minVol) return { tone: "need", text: `≈$${Math.ceil(minVol - cv)}` };
     return { tone: "out", text: "–" };
   }
   if (!r.qualified) return { tone: "need", text: money(Math.max(0, minVol - r.vol), false) };
@@ -1365,27 +1368,38 @@ function renderComp() {
     return;
   }
   $("c-hint").hidden = false;
-  $("c-hint").textContent = "XO's official board: traders who joined, scored on their trades after joining. The top 10 win prizes.";
+  $("c-hint").textContent = "XO's official board first (traders who joined, scored by XO), then everyone else trading Pulse since the start, with what they still need to get on it.";
   if (!OFF) { $("c-table").innerHTML = `<div class="empty"><b>Loading XO's contest board…</b>It comes straight from XO.</div>`; return; }
-  if (!off.length) { $("c-table").innerHTML = `<div class="empty"><b>Nobody on the board yet</b>Traders appear once they've joined and traded.</div>`; return; }
-  const minVol = det ? det.minQualifyingVolumeUsdc : 100;
-  const rows = [...ranked, ...waiting].slice(0, compShown);
-  const place = (r) => (!r.qualified ? `<span class="n num muted">–</span>` : r.rank <= 3 ? `<span class="place p${r.rank}">${r.rank}</span>` : `<span class="n num">${r.rank}</span>`);
-  const prize = (r) => (r.qualified ? prizeFor(r.rank) || "–" : `<span class="muted">needs ${money(Math.max(0, minVol - r.vol), false)} more volume</span>`);
+  const minVol = det ? det.minQualifyingVolumeUsdc : 100, cvol = ev.cvol || {};
+  // the rest: public traders since the start (our own count), with the volume XO would count for them
+  const onBoard = new Set(off.map((r) => r.u.toLowerCase()));
+  const rest = compRows().filter((r) => !onBoard.has(r.u.toLowerCase())).map((r) => ({ ...r, cv: cvol[r.u] }));
+  const all = [...ranked, ...waiting, ...rest];
+  if (!all.length) { $("c-table").innerHTML = `<div class="empty"><b>Nobody yet</b>Traders appear once they've traded.</div>`; return; }
+  const rows = all.slice(0, compShown), firstRest = ranked.length + waiting.length;
+  const place = (r) => (r.qualified ? (r.rank <= 3 ? `<span class="place p${r.rank}">${r.rank}</span>` : `<span class="n num">${r.rank}</span>`) : `<span class="n num muted">–</span>`);
+  const tag = (tone, text) => `<b class="tk ${tone}">${text}</b>`;
+  const status = (r) => {
+    if (r.qualified) return prizeFor(r.rank) || tag("near", "outside the prizes");
+    const left = r.cv != null ? minVol - r.cv : r.vol != null && "rank" in r ? minVol - r.vol : null;
+    return left != null && left > 0 ? tag("need", `≈$${Math.ceil(left)} more volume`) : tag("out", "not ranked on XO yet");
+  };
+  const volOf = (r) => ("cv" in r ? (r.cv != null ? "≈$" + Math.floor(r.cv) : "–") : money(r.vol, false));
   const name = (r) => `<span style="overflow:hidden;text-overflow:ellipsis">${esc(r.u)}</span>${r.v ? VER : ""}`;
+  const divider = (cols) => cols ? `<tr class="sep"><td colspan="5">Not ranked on XO yet: PnL since the start, volume XO would count (fills of ${det ? det.minTradeUsdc : 5} USDC or more)</td></tr>` : `<div class="msep">Not ranked on XO yet</div>`;
   $("c-table").innerHTML = `<div class="tscroll"><table>
-      <thead><tr><th>#</th><th>Trader</th><th>PnL</th><th>Volume</th><th>Prize</th></tr></thead>
-      <tbody>${rows.map((r) => `<tr class="off">
+      <thead><tr><th>#</th><th>Trader</th><th>PnL</th><th>Counted volume</th><th>Prize</th></tr></thead>
+      <tbody>${rows.map((r, i) => `${i === firstRest && i ? divider(true) : ""}<tr class="off${i >= firstRest ? " rest" : ""}">
         <td><span class="rk">${place(r)}</span></td>
         <td><span class="trader">${avatar(r)}<span style="min-width:0"><span class="nm" style="display:flex;align-items:center;gap:4px">${name(r)}</span></span></span></td>
         <td class="main num"><span class="mainv ${cls(r.pnl)}">${money(r.pnl)}</span></td>
-        <td class="num">${money(r.vol, false)}</td>
-        <td class="num">${prize(r)}</td></tr>`).join("")}</tbody></table></div>
-    <div class="mlist">${rows.map((r) => `<div class="mrow off">
+        <td class="num">${volOf(r)}</td>
+        <td class="num">${status(r)}</td></tr>`).join("")}</tbody></table></div>
+    <div class="mlist">${rows.map((r, i) => `${i === firstRest && i ? divider(false) : ""}<div class="mrow off${i >= firstRest ? " rest" : ""}">
         <div class="mtop"><span class="rk">${place(r)}</span>${avatar(r)}<span class="nm">${name(r)}</span><span class="mmain num"><span class="mainv ${cls(r.pnl)}">${money(r.pnl)}</span></span></div>
-        <div class="mstats num"><span><i>Vol</i>${money(r.vol, false)}</span><span><i>Prize</i>${prize(r)}</span></div>
+        <div class="mstats num"><span><i>Vol</i>${volOf(r)}</span><span>${status(r)}</span></div>
       </div>`).join("")}</div>
-    ${ranked.length + waiting.length > compShown ? `<div class="more"><button class="btn" id="c-more">Show all ${ranked.length + waiting.length}</button></div>` : ""}`;
+    ${all.length > compShown ? `<div class="more"><button class="btn" id="c-more">Show all ${all.length}</button></div>` : ""}`;
 }
 $("views").addEventListener("click", (e) => { const b = e.target.closest("[data-view]"); if (b && b.dataset.view !== view) setView(b.dataset.view); });
 document.addEventListener("click", (e) => {
