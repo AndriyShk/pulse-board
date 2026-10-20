@@ -574,10 +574,11 @@
     </div>
     <div class="race-box sk-box"><canvas id="race-cv" role="img" aria-label="Line chart of the leaders' cumulative PnL through today"></canvas></div>
     <div class="race-legend"><span><i class="dash"></i>$0 line</span>
-      <span class="v-comp tagkey" hidden><b class="tk ok">✓ #1 on XO</b> in XO's prizes</span>
-      <span class="v-comp tagkey" hidden><b class="tk near">#14 · +$25 to top 10</b> on XO's board, outside the prizes</span>
-      <span class="v-comp tagkey" hidden><b class="tk need">needs $40 vol</b> joined, short of 100 USDC volume</span>
-      <span class="v-comp tagkey" hidden><b class="tk out">Join + $100 vol</b> not on XO's board yet</span></div>
+      <span class="v-comp tagkey" hidden>Tags show each trader's place on XO's official board:</span>
+      <span class="v-comp tagkey" hidden><b class="tk ok">#2 · in the prizes</b> top 10</span>
+      <span class="v-comp tagkey" hidden><b class="tk near">#14 · $25 behind 10th</b> ranked, PnL short of the prizes</span>
+      <span class="v-comp tagkey" hidden><b class="tk need">$40 more volume to qualify</b> joined, needs 100 USDC volume</span>
+      <span class="v-comp tagkey" hidden><b class="tk out">not in the contest</b> hasn't joined, or no trades since joining</span></div>
   </section>
 
   <section class="card find v-today" id="find">
@@ -870,7 +871,7 @@ function render() {
   $("how-window").textContent = "Everything on this page is today's trading, unless you pick another day in the leaderboard.";
   const rc = view === "comp" && !!ev;
   $("race-title").textContent = rc ? (compPhase() === "after" ? "How the competition was won" : "Competition race") : "Today's race";
-  $("race-sub").textContent = rc ? "Every public trader's Pulse PnL since the contest started, and where each one stands on XO's official board. Drag across the chart to rewind." : "Today's PnL of the leaders, round by round. Drag across the chart to rewind.";
+  $("race-sub").textContent = rc ? "Every public trader's Pulse PnL since the contest started, plus private contestants' scores from XO's board, and where each one stands on it. Drag across the chart to rewind." : "Today's PnL of the leaders, round by round. Drag across the chart to rewind.";
   if (!rc) $("race").hidden = false;
   $("how-day").textContent = `A day on this board runs from ${dayStartLocal()} to ${dayStartLocal()} your time (00:00 to 24:00 UTC); today's numbers keep updating until it ends.`;
   $("how-hidden").textContent = days.hidden ? ` (${days.hidden} right now)` : "";
@@ -1281,11 +1282,11 @@ function offStatus(u) {
   const all = offRows(), r = all.find((x) => x.u.toLowerCase() === u.toLowerCase());
   const det = OFF.detail, minVol = det ? det.minQualifyingVolumeUsdc : 100;
   const paid = det ? Math.max(...(det.prizeBands || []).map((b) => b.rankTo), 0) : 10;
-  if (!r) return { tone: "out", text: `Join + $${minVol} vol`, short: "Join" };
-  if (!r.qualified) { const need = Math.max(0, minVol - r.vol); return { tone: "need", text: `needs ${money(need, false)} vol`, short: money(need, false) }; }
-  if (r.rank <= paid) return { tone: "ok", text: `✓ #${r.rank} on XO`, short: `#${r.rank}` };
+  if (!r) return { tone: "out", text: "not in the contest", short: "not in" };
+  if (!r.qualified) { const need = Math.max(0, minVol - r.vol); return { tone: "need", text: `${money(need, false)} more volume to qualify`, short: `${money(need, false)} to go` }; }
+  if (r.rank <= paid) return { tone: "ok", text: `#${r.rank} · in the prizes`, short: `#${r.rank}` };
   const last = all.filter((x) => x.qualified).find((x) => x.rank === paid);
-  return { tone: "near", text: `#${r.rank} · ${last ? "+" + money(Math.max(0, last.pnl - r.pnl), false) : ""} to top ${paid}`, short: `#${r.rank}` };
+  return { tone: "near", text: `#${r.rank} · ${last ? money(Math.max(0, last.pnl - r.pnl), false) + " behind " + paid + "th" : "outside the prizes"}`, short: `#${r.rank}` };
 }
 function offRows() {
   if (!OFF) return [];
@@ -1437,8 +1438,12 @@ function raceImg(r) {
 let compCache = null;
 function compRaceRows() {
   if (compCache && compCache.at === days.updatedAt) return compCache.rows;
-  const sp = days.event.spark || {};
+  const sp = days.event.spark || {}, osp = (days.event.official && days.event.official.spark) || {};
   const out = compRows().filter((r) => sp[r.u]).map((r) => ({ ...r, spark: sp[r.u] }));
+  // traders we can't see (private profiles) but XO's board scores: drawn from the scores it publishes
+  const seen = new Set(out.map((r) => r.u.toLowerCase()));
+  for (const r of offRows()) if (!seen.has(r.u.toLowerCase()) && osp[r.u]) out.push({ ...r, rounds: 0, wins: 0, losses: 0, best: 0, spark: osp[r.u], fromXO: true });
+  out.sort((a, b) => b.spark[b.spark.length - 1] - a.spark[a.spark.length - 1]);
   compCache = { at: days.updatedAt, rows: out };
   return out;
 }
@@ -1467,7 +1472,7 @@ function drawRace() {
 
   const narrow = W < 560;
   const tags = raceComp() && !!OFF; // XO-board tags beside the names
-  const L = 8, R = W - (narrow ? (tags ? 150 : 112) : tags ? 320 : 190), T = 26, B = H - 26, pw = R - L, ph = B - T;
+  const L = 8, R = W - (narrow ? (tags ? 150 : 112) : tags ? 360 : 190), T = 26, B = H - 26, pw = R - L, ph = B - T;
   const P = race.hover != null ? race.hover : race.playing ? race.p : 1;
   // today: from 00:00 UTC to the last update; the competition: from its start to the last update (or its end)
   const comp = raceComp();
