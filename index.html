@@ -81,6 +81,9 @@
   .c-btn:active { transform: scale(.98); }
   .c-note { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 12px; background: var(--control); font-size: 12.5px; line-height: 1.4; color: var(--ink-2); min-width: 0; }
   .c-note svg { width: 18px; height: 18px; flex: none; color: var(--ink-3); }
+  .live-note { margin-top: 2px; }
+  @media (min-width: 861px) { .c-cta { grid-template-columns: minmax(0,1fr); } .c-cta .c-note { display: none; } }
+  @media (max-width: 860px) { .live-note { display: none !important; } #c-prizes { white-space: normal; } }
   .c-note b { color: var(--ink); font-weight: 600; }
   .c-podium .pod { cursor: default; }
   .place.p1 { background: #C7B583; color: #3A331F; box-shadow: inset 0 0 0 1.5px #867852; }
@@ -538,6 +541,8 @@
           <a class="side up ref" target="_blank" rel="noopener" aria-label="Trade Up on XO Market">Up<b class="num" id="o-up"></b></a>
           <a class="side down ref" target="_blank" rel="noopener" aria-label="Trade Down on XO Market">Down<b class="num" id="o-down"></b></a>
         </div>
+        <!-- side by side, the contest's rules sit here, under the buttons; stacked on phones they stay by the Join button -->
+        <span class="c-note live-note v-comp" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span><b>Free, with an X account.</b> Only trades after you join count, and you need 100 USDC volume to qualify.</span></span>
       </div>
     </div>
   </section>
@@ -1303,7 +1308,7 @@ function renderComp() {
   $("c-totals-box").hidden = ph === "before";
   $("c-cta").hidden = ph === "after";
   const det = OFF && OFF.detail, off = offRows(), ranked = off.filter((r) => r.qualified), waiting = off.filter((r) => !r.qualified);
-  if (det) { $("c-prizes").textContent = `${det.budgetUsdc >= 1000 ? det.budgetUsdc / 1000 + "K" : det.budgetUsdc} USDC + ${Math.round(det.budgetCp / 1000)}K CP`; $("c-prizes").classList.remove("tba"); }
+  if (det) { $("c-prizes").textContent = `${det.budgetUsdc >= 1000 ? det.budgetUsdc / 1000 + "K" : det.budgetUsdc}\u00a0USDC + ${Math.round(det.budgetCp / 1000)}K\u00a0CP`; // an amount never splits from its unit $("c-prizes").classList.remove("tba"); }
   $("c-traders").textContent = det ? det.participantCount.toLocaleString("en-US") : "–";
   $("c-rounds").textContent = OFF ? ranked.length.toLocaleString("en-US") : "–";
   $("c-volume").textContent = OFF ? money(off.reduce((sum, r) => sum + r.vol, 0), false) : "–";
