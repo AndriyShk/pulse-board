@@ -258,11 +258,12 @@ for (const k of Object.keys(state.days).sort().slice(0, -KEEP_DAYS)) delete stat
 // ---------- 5b. the competition ----------
 // Every round that opens and settles between its start and end, whatever UTC day that is (it starts at 12:00).
 // row: [username, pnl, volume, rounds, wins, losses, best streak, best round], best first
-let comp = null;
+let comp = null, cSpanOf = () => 1;
 if (event) {
   const crow = [], cspark = {};
   // the competition's race chart: running PnL from the start to the last update (or the end), COMP_SPARK points
   const cEnd = Math.min(now, evEnd), cSpan = Math.max(cEnd - evStart, 1);
+  cSpanOf = () => cSpan;
   for (const s of Object.values(state.users)) {
     if (s.p || EXCLUDE.has(s.u.toLowerCase())) continue;
     const list = Object.entries(s.r).filter(([, [t]]) => inEvent(t * 1000))
@@ -285,13 +286,48 @@ if (event) {
   }
   crow.sort((a, b) => b[1] - a[1] || b[2] - a[2]);
   comp = {
-    name: event.name || "PnL competition", prizes: event.prizes || null, url: event.url || null, start: evStart, end: Number.isFinite(evEnd) ? evEnd : null,
+    name: event.name || "PnL competition", prizes: event.prizes || null, url: event.url || null, slug: event.slug || null, start: evStart, end: Number.isFinite(evEnd) ? evEnd : null,
     rows: crow,
     spark: cspark, // username -> running PnL, from the start to `sparkTo`
     sparkTo: cEnd,
     rounds: Object.values(state.rounds).filter(([t]) => inEvent(t * 1000)).length, // rounds anyone traded, private profiles included
     hidden: Object.values(state.users).filter((s) => s.p && Object.keys(s.f).some((id) => state.rounds[id] && inEvent(state.rounds[id][0] * 1000))).length,
   };
+}
+
+// ---------- 5c. XO's official contest board ----------
+// Only traders who joined the contest, scored from their trades after joining (XO's own numbers). XO keeps no history,
+// so every run records each trader's score when it changed; the race chart is drawn from that record.
+// state.official: username -> [[unixSeconds, score], ...]
+if (comp && event.slug) {
+  try {
+    const items = [];
+    for (let page = 1; page <= 20; page++) {
+      const d = await getJSON(`${API}/contests/${encodeURIComponent(event.slug)}/leaderboard?page=${page}&pageSize=50`);
+      if (!d || !d.items) break;
+      items.push(...d.items);
+      if (!d.items.length || items.length >= (d.total || 0)) break;
+    }
+    state.official ??= {};
+    const at = Math.floor(now / 1000);
+    for (const it of items) {
+      const h = (state.official[it.username] ??= []), last = h[h.length - 1], v = r2(Number(it.score || 0));
+      if (!last || last[1] !== v) h.push([at, v]);
+    }
+    const spark = {};
+    for (const [u, h] of Object.entries(state.official)) {
+      if (!items.some((it) => it.username === u)) continue; // left the board
+      const line = new Array(COMP_SPARK);
+      for (let i = 0, j = -1; i < COMP_SPARK; i++) {
+        const t = (evStart + ((i + 1) / COMP_SPARK) * cSpanOf()) / 1000;
+        while (j + 1 < h.length && h[j + 1][0] <= t) j++;
+        line[i] = j < 0 ? 0 : h[j][1];
+      }
+      spark[u] = line;
+    }
+    comp.official = { spark, sparkTo: Math.min(now, evEnd) };
+    console.log(`official board: ${items.length} traders`);
+  } catch (e) { console.log("official board skipped:", e.message); }
 }
 
 const listed = new Set([...Object.values(state.days).flatMap((rows) => rows.map(([u]) => u)), ...(comp ? comp.rows.map(([u]) => u) : [])]);

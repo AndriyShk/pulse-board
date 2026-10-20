@@ -499,8 +499,8 @@
       <div class="today" id="c-totals-box">
         <div class="today-head"><b id="c-totals-title">Competition so far</b><small id="c-totals-note"></small></div>
         <div class="totals" aria-label="Competition totals">
-          <div class="total"><small>Traders</small><b class="num" id="c-traders">–</b></div>
-          <div class="total"><small>Rounds</small><b class="num" id="c-rounds">–</b></div>
+          <div class="total"><small>Joined</small><b class="num" id="c-traders">–</b></div>
+          <div class="total"><small>On the board</small><b class="num" id="c-rounds">–</b></div>
           <div class="total"><small>Volume</small><b class="num" id="c-volume">–</b></div>
         </div>
       </div>
@@ -603,9 +603,9 @@
     <h2>How the competition is counted</h2>
     <ul>
       <li id="c-how-window"></li>
-      <li>PnL is XO's own net profit / loss per round, the number on the Pulse page, from each trader's public XO portfolio. Like XO's own number, a winning round counts once its winnings are claimed in the app; until then it shows as $0.</li>
-      <li>Private profiles aren't ranked<span id="c-how-hidden"></span>. Make your profile public in XO settings to appear.</li>
-      <li>The board updates every few minutes. This is a community page: XO Market's own results decide the winners and any prizes.</li>
+      <li>This is XO's official contest board: only traders who pressed Join, scored by XO on their trades after joining.</li>
+      <li id="c-how-rules">To qualify you need 100 USDC volume; trades under 5 USDC and parlay stakes don't count.</li>
+      <li>The top 10 win prizes, paid automatically by XO. Scores are final at the end time.</li>
     </ul>
   </section>
 
@@ -1230,8 +1230,39 @@ function tickComp() {
   if (ph !== lastPhase) { lastPhase = ph; render(); } // the start or the end just passed
 }
 let lastPhase = null;
+// ---------- XO's official contest board ----------
+// Read straight from XO (its API answers any site) once a minute. Only traders who joined are on it, scored by XO.
+let OFF = null;
+const OFF_API = (slug) => "https://api-mainnet.xo.market/api/contests/" + encodeURIComponent(slug);
+async function loadOfficial() {
+  const ev = days && days.event;
+  if (!ev || !ev.slug) return;
+  try {
+    const get = (u) => fetch(u, { cache: "no-store" }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
+    const base = OFF_API(ev.slug), [detail, first] = await Promise.all([get(base), get(base + "/leaderboard?page=1&pageSize=50")]);
+    const items = [...(first.items || [])];
+    for (let page = 2; items.length < (first.total || 0) && page <= 20; page++) {
+      const d = await get(`${base}/leaderboard?page=${page}&pageSize=50`);
+      if (!d.items || !d.items.length) break;
+      items.push(...d.items);
+    }
+    OFF = { detail, items, updatedAt: Date.parse(first.updatedAt) || Date.now() };
+    compCache = null;
+    if (view === "comp") render();
+  } catch (e) { /* keep what we had; the table says when there is nothing yet */ }
+}
+setInterval(loadOfficial, 6e4);
+const prizeFor = (rank) => { const b = OFF && (OFF.detail.prizeBands || []).find((x) => rank >= x.rankFrom && rank <= x.rankTo); return b ? `${b.cp.toLocaleString("en-US")} CP · ${b.usdc.toLocaleString("en-US")} USDC` : ""; };
+function offRows() {
+  if (!OFF) return [];
+  return OFF.items.map((it) => {
+    const meta = days.users[it.username] || [];
+    return { u: it.username, a: it.profilePictureUrl || meta[0] || "", v: meta[1] || 0, c: meta[2] || "", pnl: Number(it.pnlUsdc ?? it.score ?? 0), vol: Number(it.volumeUsdc || 0), qualified: !!it.qualified, rank: it.rank };
+  });
+}
+
 function renderComp() {
-  const ev = days.event, ph = compPhase(), list = compRows();
+  const ev = days.event, ph = compPhase();
   lastPhase = ph;
   const range = `${fmtUTC(ev.start)} – ${ev.end ? fmtUTC(ev.end) : "TBA"}`;
   $("c-phase").textContent = { before: "Starts soon", live: "Live", after: "Final" }[ph];
@@ -1240,7 +1271,7 @@ function renderComp() {
   const span = ev.end ? Math.round((ev.end - ev.start) / 864e5) : 0, spanText = span === 14 ? "Two weeks" : span ? `${span} days` : "A run";
   $("c-lede").textContent = ph === "before"
     ? `${spanText} of BTC Up or Down 5m on Pulse, ranked by net PnL over the whole run. It starts ${whenLeft(ev.start)}: the leaderboard opens here with the first settled round.`
-    : ph === "live" ? "Net PnL from every BTC Up or Down 5m round since the start, for every public profile, ranked live. XO's own board counts only traders who joined, from the moment they joined."
+    : ph === "live" ? "XO's official board, live: traders who joined the contest, scored on their BTC Up or Down 5m trades since joining. The top 10 win prizes."
     : "The competition is over. These are the final standings; XO Market confirms the winners and the prizes.";
   // short dates in the fact, the time in its label when start and end share it (they do: 12:00 UTC)
   const sameTime = ev.end && new Date(ev.start).toISOString().slice(11, 16) === new Date(ev.end).toISOString().slice(11, 16);
@@ -1252,66 +1283,63 @@ function renderComp() {
   $("c-meter-box").hidden = ph === "before";
   $("c-totals-box").hidden = ph === "before";
   $("c-cta").hidden = ph === "after";
-  $("c-traders").textContent = list.length.toLocaleString("en-US");
-  $("c-rounds").textContent = (ev.rounds || 0).toLocaleString("en-US");
-  $("c-volume").textContent = money(list.reduce((sum, r) => sum + r.vol, 0), false);
-  $("c-totals-title").textContent = ph === "after" ? "Final totals" : "Competition so far";
-  $("c-totals-note").textContent = ph === "after" ? "" : `since ${fmtUTC(ev.start)} UTC · live`;
-  $("c-how-window").textContent = `Only BTC Up or Down 5m rounds that open and settle between ${range} UTC count, whatever day they fall on.`;
-  $("c-how-hidden").textContent = ev.hidden ? ` (${ev.hidden} so far)` : "";
-  $("c-upd").textContent = ph === "before" ? "" : $("upd").textContent;
+  const det = OFF && OFF.detail, off = offRows(), ranked = off.filter((r) => r.qualified), waiting = off.filter((r) => !r.qualified);
+  if (det) { $("c-prizes").textContent = `${det.budgetUsdc >= 1000 ? det.budgetUsdc / 1000 + "K" : det.budgetUsdc} USDC + ${Math.round(det.budgetCp / 1000)}K CP`; $("c-prizes").classList.remove("tba"); }
+  $("c-traders").textContent = det ? det.participantCount.toLocaleString("en-US") : "–";
+  $("c-rounds").textContent = OFF ? ranked.length.toLocaleString("en-US") : "–";
+  $("c-volume").textContent = OFF ? money(off.reduce((sum, r) => sum + r.vol, 0), false) : "–";
+  $("c-totals-title").textContent = ph === "after" ? "Final totals" : "Contest so far";
+  $("c-totals-note").textContent = ph === "after" ? "" : "XO's official board · live";
+  $("c-how-window").textContent = `Only BTC Up or Down 5m trades between ${range} UTC count.`;
+  if (det) $("c-how-rules").textContent = `To qualify you need ${det.minQualifyingVolumeUsdc} USDC volume; trades under ${det.minTradeUsdc} USDC and parlay stakes don't count.`;
+  $("c-upd").textContent = OFF ? `Updated ${hm(OFF.updatedAt)}` : "";
   $("race").hidden = view === "comp" && ph === "before"; // no lines before the start
   tickComp();
 
-  // top three: the leaders while it runs, the winners once it's over
+  // top three: the leaders while it runs, the winners once it's over, with what they would win
   $("c-pod-title").textContent = ph === "after" ? "Winners" : "Top 3 so far";
-  $("c-pod-note").textContent = ph === "after" ? `${dayUTC(ev.start)} – ${dayUTC(ev.end)}` : ph === "live" ? "live" : "";
-  const top3 = list.slice(0, 3);
-  // nothing to stand on before the start: the leaderboard below says when it opens
+  $("c-pod-note").textContent = ph === "after" ? `${dayUTC(ev.start)} – ${dayUTC(ev.end)}` : ph === "live" ? "official · live" : "";
+  const top3 = ranked.slice(0, 3);
   $("c-podium").previousElementSibling.hidden = $("c-podium").hidden = view !== "comp" || ph === "before";
   $("c-podium").innerHTML = ph === "before" || !top3.length
-    ? `<div class="card pod-empty">${ph === "before" ? `The top three appear here once the competition starts, ${fmtUTC(ev.start)} UTC (${hm(ev.start)} your time).` : "No settled rounds yet. The first one starts the board."}</div>`
+    ? `<div class="card pod-empty">${!OFF ? "Loading XO's contest board…" : "Nobody has qualified yet: it takes 100 USDC of volume after joining."}</div>`
     : top3.map((r, i) => `<div class="card pod p${i + 1}">
         <div class="top"><span class="place">${i + 1}</span>${avatar(r, "md")}<span class="name"><span>${esc(r.u)}</span>${r.v ? VER : ""}</span></div>
         <div class="pnl num ${cls(r.pnl)}">${money(r.pnl)}</div>
-        <div class="sub"><span><b class="num">${r.rounds.toLocaleString("en-US")}</b> ${plural(r.rounds)}</span><span><b class="num">${wrText(r)}</b> won</span><span><b class="num">${money(r.vol, false)}</b> vol</span></div>
+        <div class="sub"><span><b class="num">${prizeFor(r.rank)}</b></span><span><b class="num">${money(r.vol, false)}</b> vol</span></div>
       </div>`).join("");
 
-  // the leaderboard, with the same tabs as the daily one
-  $("c-board-title").textContent = ph === "after" ? "Final standings" : "Competition leaderboard";
+  // the board: XO's ranking, the prize each place pays, and who still needs volume to qualify
+  $("c-board-title").textContent = ph === "after" ? "Final standings" : "Contest leaderboard";
   $("c-period").textContent = range + " UTC";
-  $("c-tabs").hidden = ph === "before";
+  $("c-tabs").hidden = true;
   if (ph === "before") {
     $("c-hint").hidden = true;
-    $("c-table").innerHTML = `<div class="empty"><b>Starts ${whenLeft(ev.start)}</b>${fmtUTC(ev.start)} UTC, ${hm(ev.start)} your time. Every BTC Up or Down 5m round from then on counts.</div>`;
+    $("c-table").innerHTML = `<div class="empty"><b>Starts ${whenLeft(ev.start)}</b>${fmtUTC(ev.start)} UTC, ${hm(ev.start)} your time. Join on XO before you trade: only trades after joining count.</div>`;
     return;
   }
-  if (!$("c-tabs").querySelector(".tab")) $("c-tabs").innerHTML = TABS.map((x) => `<button class="tab" role="tab" data-ctab="${x.id}">${x.label}</button>`).join("");
-  for (const b of $("c-tabs").querySelectorAll(".tab")) b.setAttribute("aria-selected", String(b.dataset.ctab === compTab));
-  movePill($("c-tabs"), '.tab[aria-selected="true"]');
-  const T = TABS.find((x) => x.id === compTab);
-  const ranked = list.filter(T.keep || (() => true)).sort((a, b) => (T.asc ? -1 : 1) * (T.num(b) - T.num(a)) || b.vol - a.vol);
-  $("c-hint").hidden = !T.hint;
-  $("c-hint").textContent = T.hint ? T.hint.replace("that day", "in the competition") : "";
-  if (!ranked.length) { $("c-table").innerHTML = `<div class="empty"><b>${list.length ? "Nobody qualifies" : "No settled rounds yet"}</b>${list.length ? "Try another tab." : "The first settled round starts the board."}</div>`; return; }
-  const medal = (i) => (compTab === "pnl" && i < 3 ? `<span class="place p${i + 1}">${i + 1}</span>` : `<span class="n num">${i + 1}</span>`);
+  $("c-hint").hidden = false;
+  $("c-hint").textContent = "XO's official board: traders who joined, scored on their trades after joining. The top 10 win prizes.";
+  if (!OFF) { $("c-table").innerHTML = `<div class="empty"><b>Loading XO's contest board…</b>It comes straight from XO.</div>`; return; }
+  if (!off.length) { $("c-table").innerHTML = `<div class="empty"><b>Nobody on the board yet</b>Traders appear once they've joined and traded.</div>`; return; }
+  const minVol = det ? det.minQualifyingVolumeUsdc : 100;
+  const rows = [...ranked, ...waiting].slice(0, compShown);
+  const place = (r) => (!r.qualified ? `<span class="n num muted">–</span>` : r.rank <= 3 ? `<span class="place p${r.rank}">${r.rank}</span>` : `<span class="n num">${r.rank}</span>`);
+  const prize = (r) => (r.qualified ? prizeFor(r.rank) || "–" : `<span class="muted">needs ${money(Math.max(0, minVol - r.vol), false)} more volume</span>`);
   const name = (r) => `<span style="overflow:hidden;text-overflow:ellipsis">${esc(r.u)}</span>${r.v ? VER : ""}`;
-  const main = (r) => `<span class="mainv ${T.f === "money" ? cls(T.num(r)) : ""}">${fmt[T.f](T.num(r))}</span>`;
-  const side = compTab === "pnl" || compTab === "rekt" ? { head: "Best round", short: "Best", val: (r) => (r.best ? `<span class="pos">${money(r.best)}</span>` : "–") } : { head: "PnL", short: "PnL", val: (r) => `<span class="${cls(r.pnl)}">${money(r.pnl)}</span>` };
-  const page = ranked.slice(0, compShown);
   $("c-table").innerHTML = `<div class="tscroll"><table>
-      <thead><tr><th>#</th><th>Trader</th><th>${T.head}</th><th>${side.head}</th><th>Rounds</th><th>Won</th><th>Volume</th></tr></thead>
-      <tbody>${page.map((r, i) => `<tr class="off">
-        <td><span class="rk">${medal(i)}</span></td>
+      <thead><tr><th>#</th><th>Trader</th><th>PnL</th><th>Volume</th><th>Prize</th></tr></thead>
+      <tbody>${rows.map((r) => `<tr class="off">
+        <td><span class="rk">${place(r)}</span></td>
         <td><span class="trader">${avatar(r)}<span style="min-width:0"><span class="nm" style="display:flex;align-items:center;gap:4px">${name(r)}</span></span></span></td>
-        <td class="main num">${main(r)}</td><td class="num">${side.val(r)}</td><td class="num">${r.rounds.toLocaleString("en-US")}</td>
-        <td class="num"><span class="wr">${wrText(r)}<i><u style="width:${(winRate(r) * 100).toFixed(0)}%"></u></i></span></td>
-        <td class="num">${money(r.vol, false)}</td></tr>`).join("")}</tbody></table></div>
-    <div class="mlist">${page.map((r, i) => `<div class="mrow off">
-        <div class="mtop"><span class="rk">${medal(i)}</span>${avatar(r)}<span class="nm">${name(r)}</span><span class="mmain num">${main(r)}</span></div>
-        <div class="mstats num"><span><i>${side.short}</i><b>${side.val(r)}</b></span><span><i>Rounds</i>${r.rounds.toLocaleString("en-US")}</span><span><i>Won</i>${wrText(r)}</span><span><i>Vol</i>${money(r.vol, false)}</span></div>
+        <td class="main num"><span class="mainv ${cls(r.pnl)}">${money(r.pnl)}</span></td>
+        <td class="num">${money(r.vol, false)}</td>
+        <td class="num">${prize(r)}</td></tr>`).join("")}</tbody></table></div>
+    <div class="mlist">${rows.map((r) => `<div class="mrow off">
+        <div class="mtop"><span class="rk">${place(r)}</span>${avatar(r)}<span class="nm">${name(r)}</span><span class="mmain num"><span class="mainv ${cls(r.pnl)}">${money(r.pnl)}</span></span></div>
+        <div class="mstats num"><span><i>Vol</i>${money(r.vol, false)}</span><span><i>Prize</i>${prize(r)}</span></div>
       </div>`).join("")}</div>
-    ${ranked.length > compShown ? `<div class="more"><button class="btn" id="c-more">Show all ${ranked.length}</button></div>` : ""}`;
+    ${ranked.length + waiting.length > compShown ? `<div class="more"><button class="btn" id="c-more">Show all ${ranked.length + waiting.length}</button></div>` : ""}`;
 }
 $("views").addEventListener("click", (e) => { const b = e.target.closest("[data-view]"); if (b && b.dataset.view !== view) setView(b.dataset.view); });
 document.addEventListener("click", (e) => {
@@ -1369,8 +1397,8 @@ function raceImg(r) {
 let compCache = null;
 function compRaceRows() {
   if (compCache && compCache.at === days.updatedAt) return compCache.rows;
-  const sp = days.event.spark || {};
-  const out = compRows().filter((r) => sp[r.u]).map((r) => ({ ...r, spark: sp[r.u] }));
+  const sp = (days.event.official && days.event.official.spark) || {};
+  const out = offRows().filter((r) => r.qualified && sp[r.u]).map((r) => ({ ...r, spark: sp[r.u] }));
   compCache = { at: days.updatedAt, rows: out };
   return out;
 }
@@ -1402,7 +1430,7 @@ function drawRace() {
   const P = race.hover != null ? race.hover : race.playing ? race.p : 1;
   // today: from 00:00 UTC to the last update; the competition: from its start to the last update (or its end)
   const comp = raceComp();
-  const t0 = comp ? days.event.start : Date.parse(days.today + "T00:00:00Z"), t1 = comp ? days.event.sparkTo || days.updatedAt : days.updatedAt;
+  const t0 = comp ? days.event.start : Date.parse(days.today + "T00:00:00Z"), t1 = comp ? (days.event.official && days.event.official.sparkTo) || days.event.sparkTo || days.updatedAt : days.updatedAt;
 
   // scale: signed log by default, because one whale would flatten everyone else on a linear axis
   let lo = 0, hi = 0;
@@ -1808,7 +1836,7 @@ async function load() {
   const u = me ? me.u : searched && $("q").value.trim() ? $("q").value.trim() : new URLSearchParams(location.search).get("u");
   if (location.search) history.replaceState(null, "", location.pathname + location.hash);
   if (u) { me = byName.get(u.toLowerCase().replace(/^@/, "")) || null; searched = true; if (!$("q").value) $("q").value = me ? me.u : u; }
-  if (!viewSet) { viewSet = true; setView(days.event && view === "comp" ? "comp" : "today", false); }
+  if (!viewSet) { viewSet = true; setView(days.event && view === "comp" ? "comp" : "today", false); loadOfficial(); }
   render();
   if (race.visible && !race.played) racePlay();
 }
