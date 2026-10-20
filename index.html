@@ -1367,8 +1367,7 @@ function renderComp() {
     $("c-table").innerHTML = `<div class="empty"><b>Starts ${whenLeft(ev.start)}</b>${fmtUTC(ev.start)} UTC, ${hm(ev.start)} your time. Join on XO before you trade: only trades after joining count.</div>`;
     return;
   }
-  $("c-hint").hidden = false;
-  $("c-hint").textContent = "XO's official board first (traders who joined, scored by XO), then everyone else trading Pulse since the start, with what they still need to get on it.";
+  $("c-hint").hidden = true;
   if (!OFF) { $("c-table").innerHTML = `<div class="empty"><b>Loading XO's contest board…</b>It comes straight from XO.</div>`; return; }
   const minVol = det ? det.minQualifyingVolumeUsdc : 100, cvol = ev.cvol || {};
   // the rest: public traders since the start (our own count), with the volume XO would count for them
