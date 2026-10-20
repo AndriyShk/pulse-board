@@ -603,7 +603,7 @@
     <h2>How the competition is counted</h2>
     <ul>
       <li id="c-how-window"></li>
-      <li>PnL is XO's own net profit / loss per round, the number on the Pulse page, from each trader's public XO portfolio.</li>
+      <li>PnL is XO's own net profit / loss per round, the number on the Pulse page, from each trader's public XO portfolio. Like XO's own number, a winning round counts once its winnings are claimed in the app; until then it shows as $0.</li>
       <li>Private profiles aren't ranked<span id="c-how-hidden"></span>. Make your profile public in XO settings to appear.</li>
       <li>The board updates every few minutes. This is a community page: XO Market's own results decide the winners and any prizes.</li>
     </ul>
@@ -689,6 +689,7 @@ const dayUTC = (t) => new Date(t).toLocaleDateString("en-US", { month: "short", 
 const hm = (t) => new Date(t).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 const plural = (n) => (n === 1 ? "round" : "rounds");
 const winRate = (r) => (r.wins + r.losses ? r.wins / (r.wins + r.losses) : 0);
+const wrText = (r) => (r.wins + r.losses ? `${(winRate(r) * 100).toFixed(0)}%` : "–"); // no decided round yet: no rate
 
 const avatarUrl = (a, size = "bigger") => (!a ? "" : (a.startsWith("http") ? a : "https://pbs.twimg.com/profile_images/" + a).replace("_normal.", `_${size}.`));
 const avatar = (r, k = "") => `<span class="av ${k}" style="background:${/^#[0-9a-f]{6}$/i.test(r.c) ? r.c : "#a293ff"}">${esc((r.u[0] || "?").toUpperCase())}${r.a ? `<img src="${esc(avatarUrl(r.a))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}</span>`;
@@ -870,7 +871,7 @@ function render() {
       <div class="top"><span class="place">${i + 1}</span>${avatar(r, "md")}<span class="name"><span>${esc(r.u)}</span>${r.v ? VER : ""}</span></div>
       <div class="pnl num ${cls(r.pnl)}" data-k="pod|${esc(r.u)}" data-v="${r.pnl}" data-f="money" data-intro="1">${money(r.pnl)}</div>
       ${spark(r.spark, 300, 44)}
-      <div class="sub"><span><b class="num">${r.rounds.toLocaleString("en-US")}</b> ${plural(r.rounds)}</span><span><b class="num">${(winRate(r) * 100).toFixed(0)}%</b> won</span><span><b class="num">${money(r.vol, false)}</b> vol</span></div>
+      <div class="sub"><span><b class="num">${r.rounds.toLocaleString("en-US")}</b> ${plural(r.rounds)}</span><span><b class="num">${wrText(r)}</b> won</span><span><b class="num">${money(r.vol, false)}</b> vol</span></div>
     </div>`).join("") : `<div class="card pod-empty">No settled rounds yet today. The day started at ${dayStartLocal()} your time.</div>`;
   animateNums($("podium"));
   if (podWas.size && !noMotion() && !document.hidden) for (const el of $("podium").querySelectorAll(".pod")) {
@@ -923,7 +924,7 @@ function render() {
           <td class="main num">${main(r, "")}</td>
           <td class="num">${side.val(r)}</td>
           <td class="num">${r.rounds.toLocaleString("en-US")}</td>
-          <td class="num"><span class="wr">${(winRate(r) * 100).toFixed(0)}%<i><u style="width:${(winRate(r) * 100).toFixed(0)}%"></u></i></span></td>
+          <td class="num"><span class="wr">${wrText(r)}<i><u style="width:${(winRate(r) * 100).toFixed(0)}%"></u></i></span></td>
           <td class="num">${money(r.vol, false)}</td>
         </tr>`).join("");
       // the same rows as cards, shown instead of the table on phones
@@ -931,7 +932,7 @@ function render() {
           <div class="mtop"><span class="rk"><span class="n num">${i + 1}</span></span>${avatar(r)}<span class="nm">${name(r)}</span><span class="mmain num">${main(r, "|m")}</span></div>
           <div class="mstats num">
             <span><i>${side.short}</i><b>${side.val(r)}</b></span>
-            <span><i>Rounds</i>${r.rounds.toLocaleString("en-US")}</span><span><i>Won</i>${(winRate(r) * 100).toFixed(0)}%</span><span><i>Vol</i>${money(r.vol, false)}</span>
+            <span><i>Rounds</i>${r.rounds.toLocaleString("en-US")}</span><span><i>Won</i>${wrText(r)}</span><span><i>Vol</i>${money(r.vol, false)}</span>
           </div>
         </div>`).join("");
       $("table").innerHTML = `<div class="tscroll"><table>
@@ -1272,7 +1273,7 @@ function renderComp() {
     : top3.map((r, i) => `<div class="card pod p${i + 1}">
         <div class="top"><span class="place">${i + 1}</span>${avatar(r, "md")}<span class="name"><span>${esc(r.u)}</span>${r.v ? VER : ""}</span></div>
         <div class="pnl num ${cls(r.pnl)}">${money(r.pnl)}</div>
-        <div class="sub"><span><b class="num">${r.rounds.toLocaleString("en-US")}</b> ${plural(r.rounds)}</span><span><b class="num">${(winRate(r) * 100).toFixed(0)}%</b> won</span><span><b class="num">${money(r.vol, false)}</b> vol</span></div>
+        <div class="sub"><span><b class="num">${r.rounds.toLocaleString("en-US")}</b> ${plural(r.rounds)}</span><span><b class="num">${wrText(r)}</b> won</span><span><b class="num">${money(r.vol, false)}</b> vol</span></div>
       </div>`).join("");
 
   // the leaderboard, with the same tabs as the daily one
@@ -1303,11 +1304,11 @@ function renderComp() {
         <td><span class="rk">${medal(i)}</span></td>
         <td><span class="trader">${avatar(r)}<span style="min-width:0"><span class="nm" style="display:flex;align-items:center;gap:4px">${name(r)}</span></span></span></td>
         <td class="main num">${main(r)}</td><td class="num">${side.val(r)}</td><td class="num">${r.rounds.toLocaleString("en-US")}</td>
-        <td class="num"><span class="wr">${(winRate(r) * 100).toFixed(0)}%<i><u style="width:${(winRate(r) * 100).toFixed(0)}%"></u></i></span></td>
+        <td class="num"><span class="wr">${wrText(r)}<i><u style="width:${(winRate(r) * 100).toFixed(0)}%"></u></i></span></td>
         <td class="num">${money(r.vol, false)}</td></tr>`).join("")}</tbody></table></div>
     <div class="mlist">${page.map((r, i) => `<div class="mrow off">
         <div class="mtop"><span class="rk">${medal(i)}</span>${avatar(r)}<span class="nm">${name(r)}</span><span class="mmain num">${main(r)}</span></div>
-        <div class="mstats num"><span><i>${side.short}</i><b>${side.val(r)}</b></span><span><i>Rounds</i>${r.rounds.toLocaleString("en-US")}</span><span><i>Won</i>${(winRate(r) * 100).toFixed(0)}%</span><span><i>Vol</i>${money(r.vol, false)}</span></div>
+        <div class="mstats num"><span><i>${side.short}</i><b>${side.val(r)}</b></span><span><i>Rounds</i>${r.rounds.toLocaleString("en-US")}</span><span><i>Won</i>${wrText(r)}</span><span><i>Vol</i>${money(r.vol, false)}</span></div>
       </div>`).join("")}</div>
     ${ranked.length > compShown ? `<div class="more"><button class="btn" id="c-more">Show all ${ranked.length}</button></div>` : ""}`;
 }
