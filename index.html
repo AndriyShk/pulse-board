@@ -1479,6 +1479,9 @@ function compRaceRows() {
   // traders we can't see (private profiles) but XO's board scores: drawn from the scores it publishes
   const seen = new Set(out.map((r) => r.u.toLowerCase()));
   for (const r of offRows()) if (!seen.has(r.u.toLowerCase()) && osp[r.u]) out.push({ ...r, rounds: 0, wins: 0, losses: 0, best: 0, spark: osp[r.u], fromXO: true });
+  // a trader on XO's board ends on XO's live score, so the label matches the table (the data file lags it by minutes)
+  const live = new Map(offRows().filter((x) => x.qualified).map((x) => [x.u.toLowerCase(), x.pnl]));
+  for (const r of out) if (live.has(r.u.toLowerCase())) { r.spark = r.spark.slice(); r.spark[r.spark.length - 1] = live.get(r.u.toLowerCase()); }
   out.sort((a, b) => b.spark[b.spark.length - 1] - a.spark[a.spark.length - 1]);
   compCache = { at: days.updatedAt, rows: out };
   return out;
