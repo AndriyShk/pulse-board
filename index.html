@@ -79,12 +79,19 @@
   .c-btn svg { width: 16px; height: 16px; }
   .c-btn:hover { filter: brightness(.96); }
   .c-btn:active { transform: scale(.98); }
-  .c-note { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 12px; background: var(--control); font-size: 12.5px; line-height: 1.4; color: var(--ink-2); min-width: 0; }
-  .c-note svg { width: 18px; height: 18px; flex: none; color: var(--ink-3); }
-  .live-note { margin-top: 2px; }
-  @media (min-width: 861px) { .c-cta { grid-template-columns: minmax(0,1fr); } .c-cta .c-note { display: none; } }
-  @media (max-width: 860px) { .live-note { display: none !important; } #c-prizes { white-space: normal; } }
-  .c-note b { color: var(--ink); font-weight: 600; }
+  .c-cta { grid-template-columns: minmax(0,1fr); }
+  @media (max-width: 860px) { #c-prizes { white-space: normal; } }
+  /* in the competition view the round card keeps its own height instead of matching the contest card */
+  :root[data-view="comp"] .live { align-self: start; justify-content: flex-start; gap: 18px; }
+  /* the contest's rules, from XO */
+  .rules-card { margin-top: 16px; padding: 16px 20px; }
+  .rules-card h2 { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
+  .rules { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .rules > div { padding: 10px 14px; min-width: 0; }
+  .rules > div + div { border-left: 1px solid var(--line); }
+  .rules small { display: block; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .rules b { display: block; font-size: 14px; font-weight: 600; margin-top: 2px; }
+  @media (max-width: 860px) { .rules { grid-template-columns: 1fr 1fr; } .rules > div:nth-child(odd) { border-left: 0; } .rules > div:nth-child(n+3) { border-top: 1px solid var(--line); } }
   .c-podium .pod { cursor: default; }
   .place.p1 { background: #C7B583; color: #3A331F; box-shadow: inset 0 0 0 1.5px #867852; }
   .place.p2 { background: #B7BABE; color: #2C2E30; box-shadow: inset 0 0 0 1.5px #75787C; }
@@ -512,7 +519,6 @@
       </div>
       <div class="c-cta" id="c-cta">
         <a class="c-btn" id="c-join" target="_blank" rel="noopener">Join the contest on XO<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
-        <span class="c-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span><b>Free, with an X account.</b> Only trades after you join count, and you need 100 USDC volume to qualify.</span></span>
       </div>
     </div>
 
@@ -541,10 +547,13 @@
           <a class="side up ref" target="_blank" rel="noopener" aria-label="Trade Up on XO Market">Up<b class="num" id="o-up"></b></a>
           <a class="side down ref" target="_blank" rel="noopener" aria-label="Trade Down on XO Market">Down<b class="num" id="o-down"></b></a>
         </div>
-        <!-- side by side, the contest's rules sit here, under the buttons; stacked on phones they stay by the Join button -->
-        <span class="c-note live-note v-comp" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span><b>Free, with an X account.</b> Only trades after you join count, and you need 100 USDC volume to qualify.</span></span>
       </div>
     </div>
+  </section>
+
+  <section class="card rules-card v-comp" id="c-rules" hidden>
+    <h2>Rules</h2>
+    <div class="rules" id="c-rules-grid"></div>
   </section>
 
   <section class="card race" id="race">
@@ -616,7 +625,7 @@
     <ul>
       <li id="c-how-window"></li>
       <li>This is XO's official contest board: only traders who pressed Join, scored by XO on their trades after joining.</li>
-      <li id="c-how-rules">To qualify you need 100 USDC volume; trades under 5 USDC and parlay stakes don't count.</li>
+      <li>Parlay stakes don't count.</li>
       <li>The top 10 win prizes, paid automatically by XO. Scores are final at the end time.</li>
     </ul>
   </section>
@@ -1205,9 +1214,10 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden) poll
 // picks one. Before the start the view counts down; while it runs it ranks every round since the start; after the end it's final.
 let view = location.hash === "#competition" ? "comp" : "today", compTab = "pnl", compShown = 20;
 // a #competition link shows the competition's blocks straight away, not the daily ones first (undone if no competition is set)
-if (view === "comp") { document.querySelectorAll(".v-today").forEach((el) => (el.hidden = true)); document.querySelectorAll(".v-comp").forEach((el) => (el.hidden = false)); }
+if (view === "comp") { root.dataset.view = "comp"; document.querySelectorAll(".v-today").forEach((el) => (el.hidden = true)); document.querySelectorAll(".v-comp").forEach((el) => (el.hidden = false)); }
 function setView(v, scroll = true) {
   view = v; compCache = null; race.played = false;
+  root.dataset.view = v;
   document.querySelectorAll(".v-today").forEach((el) => (el.hidden = v !== "today"));
   document.querySelectorAll(".v-comp").forEach((el) => (el.hidden = v !== "comp"));
   for (const b of $("views").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.view === v));
@@ -1315,7 +1325,13 @@ function renderComp() {
   $("c-totals-title").textContent = ph === "after" ? "Final totals" : "Contest so far";
   $("c-totals-note").textContent = ph === "after" ? "" : "XO's official board · live";
   $("c-how-window").textContent = `Only BTC Up or Down 5m trades between ${range} UTC count.`;
-  if (det) $("c-how-rules").textContent = `To qualify you need ${det.minQualifyingVolumeUsdc} USDC volume; trades under ${det.minTradeUsdc} USDC and parlay stakes don't count.`;
+  const rules = [
+    ["Entry", det ? `Free${det.eligibility && det.eligibility.requireX ? " · X account required" : ""}` : "Free · X account required"],
+    ["Ranked by", "Profit on eligible positions"],
+    ["To qualify", `${det ? det.minQualifyingVolumeUsdc : 100} USDC volume`],
+    ["Minimum fill", `${det ? det.minTradeUsdc : 5} USDC`],
+  ];
+  $("c-rules-grid").innerHTML = rules.map(([k, v]) => `<div><small>${k}</small><b>${esc(v)}</b></div>`).join("");
   $("c-upd").textContent = OFF ? `Updated ${hm(OFF.updatedAt)}` : "";
   $("race").hidden = view === "comp" && ph === "before"; // no lines before the start
   tickComp();
