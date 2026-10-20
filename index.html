@@ -576,7 +576,7 @@
     <div class="race-legend"><span><i class="dash"></i>$0 line</span>
       <span class="v-comp tagkey" hidden><b class="tk ok">#2 · in the prizes</b></span>
       <span class="v-comp tagkey" hidden><b class="tk near">#14 · $25 behind 10th</b></span>
-      <span class="v-comp tagkey" hidden><b class="tk need">$40 more volume to qualify</b></span>
+      <span class="v-comp tagkey" hidden><b class="tk need">≈$40 more volume to qualify</b></span>
       <span class="v-comp tagkey" hidden><b class="tk out">not ranked on XO yet</b></span></div>
   </section>
 
@@ -1281,8 +1281,13 @@ function offStatus(u) {
   const all = offRows(), r = all.find((x) => x.u.toLowerCase() === u.toLowerCase());
   const det = OFF.detail, minVol = det ? det.minQualifyingVolumeUsdc : 100;
   const paid = det ? Math.max(...(det.prizeBands || []).map((b) => b.rankTo), 0) : 10;
-  // XO's public board lists only qualified traders, so someone missing may have joined and still be short of the volume
-  if (!r) return { tone: "out", text: `not ranked on XO yet`, short: "not ranked" };
+  // XO's public board lists only qualified traders; for the rest the indexer estimates the volume XO counts
+  // (fills of the minimum size or more since the start), which is exact for anyone who joined before it
+  if (!r) {
+    const cv = days.event.cvol && days.event.cvol[u];
+    if (cv != null && cv < minVol) return { tone: "need", text: `≈${money(minVol - cv, false)} more volume to qualify`, short: `≈${money(minVol - cv, false)} to go` };
+    return { tone: "out", text: "not ranked on XO yet", short: "not ranked" };
+  }
   if (!r.qualified) { const need = Math.max(0, minVol - r.vol); return { tone: "need", text: `${money(need, false)} more volume to qualify`, short: `${money(need, false)} to go` }; }
   if (r.rank <= paid) return { tone: "ok", text: `#${r.rank} · in the prizes`, short: `#${r.rank}` };
   const last = all.filter((x) => x.qualified).find((x) => x.rank === paid);

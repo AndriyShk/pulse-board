@@ -327,6 +327,35 @@ if (comp && event.slug) {
     }
     comp.official = { spark, sparkTo: Math.min(now, evEnd) };
     console.log(`official board: ${items.length} traders`);
+
+    // ---------- 5d. volume XO would count, for traders not on its board ----------
+    // XO's public board lists only qualified traders, so for everyone else we estimate the volume it counts the way it
+    // does: their Pulse fills of at least the minimum size since the start (exact for anyone who joined before it).
+    // Checked against XO's own "Counted volume" on 2026-10-20: 79.44 here, 79.42 there. Incremental: newest first,
+    // stopping at the last fill already counted. state.cvol: username -> { v: volume, t: newest fill (ms), k: keys at t }
+    const detail = await getJSON(`${API}/contests/${encodeURIComponent(event.slug)}`).catch(() => null);
+    const minFill = detail && detail.minTradeUsdc != null ? Number(detail.minTradeUsdc) : 5;
+    state.cvol ??= {};
+    const onBoard = new Set(items.filter((it) => it.qualified).map((it) => it.username.toLowerCase()));
+    const contestants = comp.rows.map(([u]) => u).filter((u) => !onBoard.has(u.toLowerCase()));
+    await pool(contestants, 4, async (u) => {
+      const c = (state.cvol[u] ??= { v: 0, t: 0, k: [] }), seenAt = new Set(c.k);
+      let newest = c.t, keys = [...c.k], add = 0;
+      outer: for (let page = 1; page <= 30; page++) {
+        const d = await getJSON(`${API}/profiles/${encodeURIComponent(u)}/activities?marketScope=onlyClobPulse&sortBy=executedAt&sortOrder=DESC&page=${page}&take=100`);
+        if (!d || !d.data || !d.data.length) break;
+        for (const a of d.data) {
+          const t = Date.parse(a.date), key = `${a.date}|${a.positionType}|${a.volumeInUSD}|${a.description}`;
+          if (t < evStart || t < c.t || (t === c.t && seenAt.has(key))) break outer;
+          if (t > evEnd) continue;
+          if (a.activityType === "user" && (a.positionType === "BUY" || a.positionType === "SELL") && Number(a.volumeInUSD) >= minFill) add += Number(a.volumeInUSD);
+          if (t > newest) { newest = t; keys = [key]; } else if (t === newest) keys.push(key);
+        }
+        if (!d.meta || !d.meta.hasNextPage) break;
+      }
+      c.v = r2(c.v + add); c.t = newest; c.k = keys;
+    });
+    comp.cvol = Object.fromEntries(contestants.filter((u) => state.cvol[u]).map((u) => [u, state.cvol[u].v]));
   } catch (e) { console.log("official board skipped:", e.message); }
 }
 
