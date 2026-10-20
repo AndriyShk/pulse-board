@@ -505,8 +505,8 @@
         </div>
       </div>
       <div class="c-cta" id="c-cta">
-        <a class="c-btn ref" target="_blank" rel="noopener">Trade Pulse on XO<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
-        <span class="c-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span><b>Public profiles only.</b> Make yours public in XO settings to be ranked.</span></span>
+        <a class="c-btn" id="c-join" target="_blank" rel="noopener">Join the contest on XO<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        <span class="c-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span><b>Free, with an X account.</b> Only trades after you join count, and you need 100 USDC volume to qualify.</span></span>
       </div>
     </div>
 
@@ -1240,12 +1240,13 @@ function renderComp() {
   const span = ev.end ? Math.round((ev.end - ev.start) / 864e5) : 0, spanText = span === 14 ? "Two weeks" : span ? `${span} days` : "A run";
   $("c-lede").textContent = ph === "before"
     ? `${spanText} of BTC Up or Down 5m on Pulse, ranked by net PnL over the whole run. It starts ${whenLeft(ev.start)}: the leaderboard opens here with the first settled round.`
-    : ph === "live" ? "Net PnL from every BTC Up or Down 5m round since the start, ranked live. Trade Pulse to get on the board."
+    : ph === "live" ? "Net PnL from every BTC Up or Down 5m round since the start, for every public profile, ranked live. XO's own board counts only traders who joined, from the moment they joined."
     : "The competition is over. These are the final standings; XO Market confirms the winners and the prizes.";
   // short dates in the fact, the time in its label when start and end share it (they do: 12:00 UTC)
   const sameTime = ev.end && new Date(ev.start).toISOString().slice(11, 16) === new Date(ev.end).toISOString().slice(11, 16);
   $("c-dates-label").textContent = sameTime ? `Dates · ${new Date(ev.start).toISOString().slice(11, 16)} UTC` : "Dates (UTC)";
   $("c-dates").textContent = sameTime ? `${dayUTC(ev.start)} – ${dayUTC(ev.end)}` : range;
+  $("c-join").href = (ev.url || "https://beta.xo.market/contests") + "?r=andriy_shkinder";
   $("c-prizes").textContent = ev.prizes || "TBA";
   $("c-prizes").classList.toggle("tba", !ev.prizes);
   $("c-meter-box").hidden = ph === "before";

@@ -285,7 +285,7 @@ if (event) {
   }
   crow.sort((a, b) => b[1] - a[1] || b[2] - a[2]);
   comp = {
-    name: event.name || "PnL competition", prizes: event.prizes || null, start: evStart, end: Number.isFinite(evEnd) ? evEnd : null,
+    name: event.name || "PnL competition", prizes: event.prizes || null, url: event.url || null, start: evStart, end: Number.isFinite(evEnd) ? evEnd : null,
     rows: crow,
     spark: cspark, // username -> running PnL, from the start to `sparkTo`
     sparkTo: cEnd,

@@ -1,8 +1,9 @@
 {
   "event": {
     "enabled": true,
-    "name": "Pulse PnL Competition",
-    "prizes": null
+    "name": "Pulse PnL Panache",
+    "prizes": "3,000 USDC + 30K CP",
+    "url": "https://beta.xo.market/contests/trading-contest-btc5-1"
   },
   "start": "2026-10-20T12:00:00Z",
   "end": "2026-11-03T12:00:00Z",
