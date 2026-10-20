@@ -1308,7 +1308,7 @@ function renderComp() {
   $("c-totals-box").hidden = ph === "before";
   $("c-cta").hidden = ph === "after";
   const det = OFF && OFF.detail, off = offRows(), ranked = off.filter((r) => r.qualified), waiting = off.filter((r) => !r.qualified);
-  if (det) { $("c-prizes").textContent = `${det.budgetUsdc >= 1000 ? det.budgetUsdc / 1000 + "K" : det.budgetUsdc}\u00a0USDC + ${Math.round(det.budgetCp / 1000)}K\u00a0CP`; // an amount never splits from its unit $("c-prizes").classList.remove("tba"); }
+  if (det) { $("c-prizes").textContent = `${det.budgetUsdc >= 1000 ? det.budgetUsdc / 1000 + "K" : det.budgetUsdc}\u00a0USDC + ${Math.round(det.budgetCp / 1000)}K\u00a0CP`; $("c-prizes").classList.remove("tba"); }
   $("c-traders").textContent = det ? det.participantCount.toLocaleString("en-US") : "–";
   $("c-rounds").textContent = OFF ? ranked.length.toLocaleString("en-US") : "–";
   $("c-volume").textContent = OFF ? money(off.reduce((sum, r) => sum + r.vol, 0), false) : "–";
