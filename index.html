@@ -1450,7 +1450,12 @@ function compRaceRows() {
 }
 const raceComp = () => view === "comp" && days && days.event;
 function raceSet() {
-  if (raceComp()) return compRaceRows().slice(0, race.n).map((r, i) => ({ r, color: RACE_COLORS[i % RACE_COLORS.length] }));
+  if (raceComp()) {
+    // the top N by PnL, plus everyone on XO's official board whatever their PnL: they're who the contest is about
+    const all = compRaceRows(), ranked = new Set(offRows().filter((x) => x.qualified).map((x) => x.u.toLowerCase()));
+    const pick = all.filter((r, i) => i < race.n || ranked.has(r.u.toLowerCase()));
+    return pick.map((r, i) => ({ r, color: RACE_COLORS[i % RACE_COLORS.length] }));
+  }
   const set = rows.slice(0, race.n).map((r, i) => ({ r, color: RACE_COLORS[i % RACE_COLORS.length] }));
   if (me && !set.some((x) => x.r === me)) set.push({ r: me, color: null }); // drawn in the ink colour
   return set;
