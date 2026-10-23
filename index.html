@@ -474,6 +474,10 @@
   }
   @media (max-width: 380px) { #race-tx { display: none; } }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  /* the CP and USDC coins beside prize amounts */
+  .coin { width: 1.1em; height: 1.1em; vertical-align: -.2em; margin-right: .3em; flex: none; }
+  .amt { white-space: nowrap; }
+  .amt + .amt { margin-left: .6em; }
 </style>
 <script>
   // Vercel Web Analytics: page views only, no cookies. Skipped on localhost, where /_vercel/insights doesn't exist.
@@ -1308,7 +1312,10 @@ async function loadOfficial() {
   } catch (e) { /* keep what we had; the table says when there is nothing yet */ }
 }
 setInterval(loadOfficial, 6e4);
-const prizeFor = (rank) => { const b = OFF && (OFF.detail.prizeBands || []).find((x) => rank >= x.rankFrom && rank <= x.rankTo); return b ? `${b.cp.toLocaleString("en-US")} CP · ${b.usdc.toLocaleString("en-US")} USDC` : ""; };
+// CP and USDC written the way XO's contest page does: the coin, then the amount
+const coin = (k) => k === "cp" ? '<img class="coin" src="icons/cp.svg" alt="CP" title="CP" width="16" height="16">' : '<img class="coin" src="icons/usdc.png" alt="USDC" title="USDC" width="16" height="16">';
+const amt = (k, text) => `<span class="amt">${coin(k)}${text}</span>`;
+const prizeFor = (rank) => { const b = OFF && (OFF.detail.prizeBands || []).find((x) => rank >= x.rankFrom && rank <= x.rankTo); return b ? `${amt("cp", b.cp.toLocaleString("en-US"))}${amt("usdc", b.usdc.toLocaleString("en-US"))}` : ""; };
 // tone: "ok" in the prizes, "near" ranked but outside them, "need" joined without the volume, "out" not on XO's board
 function offStatus(u) {
   if (!OFF) return null;
@@ -1359,7 +1366,7 @@ function renderComp() {
   $("c-totals-box").hidden = ph === "before";
   $("c-cta").hidden = ph === "after";
   const det = OFF && OFF.detail, off = offRows(), ranked = off.filter((r) => r.qualified), waiting = off.filter((r) => !r.qualified);
-  if (det) { $("c-prizes").textContent = `${det.budgetUsdc >= 1000 ? det.budgetUsdc / 1000 + "K" : det.budgetUsdc}\u00a0USDC + ${Math.round(det.budgetCp / 1000)}K\u00a0CP`; $("c-prizes").classList.remove("tba"); }
+  if (det) { $("c-prizes").innerHTML = `${amt("cp", Math.round(det.budgetCp / 1000) + "K")}${amt("usdc", det.budgetUsdc >= 1000 ? det.budgetUsdc / 1000 + "K" : det.budgetUsdc)}`; $("c-prizes").classList.remove("tba"); }
   $("c-traders").textContent = det ? det.participantCount.toLocaleString("en-US") : "–";
   $("c-rounds").textContent = OFF ? ranked.length.toLocaleString("en-US") : "–";
   $("c-volume").textContent = OFF ? money(off.reduce((sum, r) => sum + r.vol, 0), false) : "–";
