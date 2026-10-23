@@ -1542,7 +1542,25 @@ function drawRace() {
 
   const narrow = W < 560;
   const tags = raceComp() && !!OFF; // XO-board tags beside the names
-  const L = 8, R = W - (narrow ? (tags ? 156 : 112) : tags ? 250 : 190), T = 26, B = H - 26, pw = R - L, ph = B - T;
+  const T = 26, B = H - 26, ph = B - T;
+  const gap = Math.max(15, Math.min(28, ph / set.length)), av = Math.min(22, gap - 5), fs = gap < 20 ? 11 : 12.5;
+  // room for the labels on the right: as much as the widest one needs (avatar, name, PnL, tag), the lines get the rest
+  let need = 0;
+  for (const x of set) {
+    let far = 0;
+    for (const v of series(x.r)) if (Math.abs(v) > Math.abs(far)) far = v; // its longest PnL figure along the way
+    let w = 14 + av + 6;
+    if (!narrow) {
+      c.font = F(x.r === me ? 700 : 600, fs);
+      let name = x.r.u; while (name.length > 4 && c.measureText(name).width > 86) name = name.slice(0, -2) + "…";
+      w += c.measureText(name).width + 6;
+    }
+    c.font = F(700, fs); w += c.measureText(money(far)).width;
+    if (tags) { const st = offStatus(x.r.u); if (st) { c.font = F(600, Math.max(10, fs - 1.5)); w += 7 + c.measureText(st.text).width + 12; } }
+    need = Math.max(need, w + 10);
+  }
+  const L = 8, R = W - Math.min(need, W * 0.5), pw = R - L;
+  race.right = R; // the pointer handler maps the cursor onto the same width
   const P = race.hover != null ? race.hover : race.playing ? race.p : 1;
   // today: from 00:00 UTC to the last update; the competition: from its start to the last update (or its end)
   const comp = raceComp();
@@ -1611,7 +1629,7 @@ function drawRace() {
   }
 
   // heads + labels, pushed apart so they never overlap
-  const hx = X(P), gap = Math.max(15, Math.min(28, ph / set.length)), av = Math.min(22, gap - 5), fs = gap < 20 ? 11 : 12.5;
+  const hx = X(P);
   const heads = set.filter((s) => P * (lines.get(s.r).length - 1) >= lines.get(s.r).from)
     .map((s) => { const v = valueAt(lines.get(s.r), P); return { ...s, v, y: Y(v), ly: Y(v) }; }).sort((p, q) => p.ly - q.ly);
   if (heads.length) {
@@ -1694,7 +1712,7 @@ $("race-scale").onclick = (e) => { const b = e.target.closest("button"); if (!b)
   const at = (e) => { const b = cv.getBoundingClientRect(); return { x: e.clientX - b.left, y: e.clientY - b.top, w: b.width }; };
   const hit = (q) => race.hits.find((h) => q.x >= h.x && q.x <= h.x + h.w && q.y >= h.y && q.y <= h.y + h.h);
   cv.addEventListener("pointermove", (e) => {
-    const q = at(e), right = q.w - (q.w < 560 ? 112 : 190);
+    const q = at(e), right = race.right || q.w - (q.w < 560 ? 112 : 190);
     cv.style.cursor = hit(q) ? "pointer" : "crosshair";
     if (race.playing) racePlaying(false);
     race.hover = q.x > right ? null : Math.max(0, Math.min(1, (q.x - 8) / (right - 8)));
