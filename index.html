@@ -418,9 +418,9 @@
   .theming, .theming * { transition: background-color .3s ease, color .3s ease, border-color .3s ease !important; }
 
   /* four totals in two rows on phones */
-  /* up to 1000px the contest card is too narrow for three facts in a row: dates and the countdown side by side,
+  /* up to 1100px the contest card is too narrow for three facts in a row: dates and the countdown side by side,
      the prizes on their own full-width row so they stay on one line */
-  @media (max-width: 1000px) {
+  @media (max-width: 1100px) {
     .facts { grid-template-columns: 1fr 1fr; }
     .fact:nth-child(2) { grid-column: 1 / -1; order: 3; border-left: 0; border-top: 1px solid var(--line); }
     .fact:nth-child(3) { border-left: 1px solid var(--line); }
@@ -1319,7 +1319,8 @@ setInterval(loadOfficial, 6e4);
 // CP and USDC written the way XO's contest page does: the coin, then the amount
 const coin = (k) => k === "cp" ? '<img class="coin" src="icons/cp.svg" alt="CP" title="CP" width="16" height="16">' : '<img class="coin" src="icons/usdc.png" alt="USDC" title="USDC" width="16" height="16">';
 const amt = (k, text) => `<span class="amt">${coin(k)}${text}</span>`;
-const prizeFor = (rank) => { const b = OFF && (OFF.detail.prizeBands || []).find((x) => rank >= x.rankFrom && rank <= x.rankTo); return b ? `${amt("cp", b.cp.toLocaleString("en-US"))}${amt("usdc", b.usdc.toLocaleString("en-US"))}` : ""; };
+const short = (n) => (n >= 1000 && n % 100 === 0 ? n / 1000 + "K" : n.toLocaleString("en-US")); // 30000 -> 30K, 2500 -> 2.5K
+const prizeFor = (rank) => { const b = OFF && (OFF.detail.prizeBands || []).find((x) => rank >= x.rankFrom && rank <= x.rankTo); return b ? `${amt("cp", b.cp.toLocaleString("en-US") + " CP")}${amt("usdc", b.usdc.toLocaleString("en-US") + " USDC")}` : ""; };
 // tone: "ok" in the prizes, "near" ranked but outside them, "need" joined without the volume, "out" not on XO's board
 function offStatus(u) {
   if (!OFF) return null;
@@ -1370,7 +1371,7 @@ function renderComp() {
   $("c-totals-box").hidden = ph === "before";
   $("c-cta").hidden = ph === "after";
   const det = OFF && OFF.detail, off = offRows(), ranked = off.filter((r) => r.qualified), waiting = off.filter((r) => !r.qualified);
-  if (det) { $("c-prizes").innerHTML = `${amt("cp", det.budgetCp.toLocaleString("en-US"))} + ${amt("usdc", det.budgetUsdc.toLocaleString("en-US"))}`; $("c-prizes").classList.remove("tba"); }
+  if (det) { $("c-prizes").innerHTML = `${amt("cp", short(det.budgetCp) + " CP")} + ${amt("usdc", short(det.budgetUsdc) + " USDC")}`; $("c-prizes").classList.remove("tba"); }
   $("c-traders").textContent = det ? det.participantCount.toLocaleString("en-US") : "–";
   $("c-rounds").textContent = OFF ? ranked.length.toLocaleString("en-US") : "–";
   $("c-volume").textContent = OFF ? money(off.reduce((sum, r) => sum + r.vol, 0), false) : "–";
