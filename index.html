@@ -67,8 +67,10 @@
   .brand svg { width: 26px; height: 26px; flex: none; }
   .views { flex: none; position: relative; }
   .views button { position: relative; z-index: 1; height: 30px; padding: 0 12px; font-size: 13px; }
-  @media (max-width: 440px) { .brand .bt { display: none; } }
-  @media (max-width: 340px) { .views .trophy { display: none; } }
+  /* phones: a tighter bar so the name still fits beside the switch; only the narrowest screens drop it */
+  @media (max-width: 440px) { .bar .wrap { gap: 8px; } .brand { gap: 7px; font-size: 15.5px; } .brand svg { width: 24px; height: 24px; } .views button { padding: 0 9px; font-size: 12.5px; } }
+  @media (max-width: 400px) { .views .trophy { display: none; } }
+  @media (max-width: 345px) { .brand .bt { display: none; } }
   button.chip { border: 0; cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; }
   button.chip:hover { filter: brightness(.96); }
   .c-meter i { background: var(--up); }
