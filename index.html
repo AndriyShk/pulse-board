@@ -134,7 +134,7 @@
   .chip .btc { width: 14px; height: 14px; border-radius: 4px; background: #f7931a; color: #fff; font-size: 10px; display: grid; place-items: center; font-weight: 700; }
   h1 { font-size: clamp(28px, 4.2vw, 40px); line-height: 1.08; font-weight: 700; letter-spacing: -.02em; text-wrap: balance; }
   h1 em { font-style: normal; color: var(--up-text); }
-  .facts { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); border: 1px solid var(--line); border-radius: 12px; }
+  .facts { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.35fr) minmax(0,1fr); /* the prizes get the most room */ border: 1px solid var(--line); border-radius: 12px; }
   .today { display: flex; flex-direction: column; gap: 8px; }
   .today-head { display: flex; align-items: baseline; gap: 8px; }
   .today-head b { font-size: 14px; font-weight: 600; }
@@ -418,6 +418,13 @@
   .theming, .theming * { transition: background-color .3s ease, color .3s ease, border-color .3s ease !important; }
 
   /* four totals in two rows on phones */
+  /* up to 1000px the contest card is too narrow for three facts in a row: dates and the countdown side by side,
+     the prizes on their own full-width row so they stay on one line */
+  @media (max-width: 1000px) {
+    .facts { grid-template-columns: 1fr 1fr; }
+    .fact:nth-child(2) { grid-column: 1 / -1; order: 3; border-left: 0; border-top: 1px solid var(--line); }
+    .fact:nth-child(3) { border-left: 1px solid var(--line); }
+  }
   .totals.t4 { grid-template-columns: repeat(4, minmax(0,1fr)); }
   @media (max-width: 480px) {
     .totals.t4 { grid-template-columns: 1fr 1fr; }
@@ -467,10 +474,6 @@
     .find label { width: 100%; }
     main.wrap { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
     .race-box { height: 380px; }
-    .facts { grid-template-columns: 1fr 1fr; }
-    /* dates and the countdown side by side, the prizes on their own full-width row so they stay on one line */
-    .fact:nth-child(2) { grid-column: 1 / -1; order: 3; border-left: 0; border-top: 1px solid var(--line); }
-    .fact:nth-child(3) { border-left: 1px solid var(--line); }
   }
   @media (max-width: 380px) { #race-tx { display: none; } }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
@@ -478,6 +481,7 @@
   .coin { width: 1.1em; height: 1.1em; vertical-align: -.2em; margin-right: .3em; flex: none; }
   .amt { white-space: nowrap; }
   .amt + .amt { margin-left: .6em; }
+  #c-prizes .amt + .amt { margin-left: 0; } /* there a plus sits between them */
 </style>
 <script>
   // Vercel Web Analytics: page views only, no cookies. Skipped on localhost, where /_vercel/insights doesn't exist.
@@ -1366,7 +1370,7 @@ function renderComp() {
   $("c-totals-box").hidden = ph === "before";
   $("c-cta").hidden = ph === "after";
   const det = OFF && OFF.detail, off = offRows(), ranked = off.filter((r) => r.qualified), waiting = off.filter((r) => !r.qualified);
-  if (det) { $("c-prizes").innerHTML = `${amt("cp", Math.round(det.budgetCp / 1000) + "K")}${amt("usdc", det.budgetUsdc >= 1000 ? det.budgetUsdc / 1000 + "K" : det.budgetUsdc)}`; $("c-prizes").classList.remove("tba"); }
+  if (det) { $("c-prizes").innerHTML = `${amt("cp", det.budgetCp.toLocaleString("en-US"))} + ${amt("usdc", det.budgetUsdc.toLocaleString("en-US"))}`; $("c-prizes").classList.remove("tba"); }
   $("c-traders").textContent = det ? det.participantCount.toLocaleString("en-US") : "–";
   $("c-rounds").textContent = OFF ? ranked.length.toLocaleString("en-US") : "–";
   $("c-volume").textContent = OFF ? money(off.reduce((sum, r) => sum + r.vol, 0), false) : "–";
