@@ -416,6 +416,13 @@
   /* light and dark cross-fade (only used where the browser can't snapshot the page) */
   .theming, .theming * { transition: background-color .3s ease, color .3s ease, border-color .3s ease !important; }
 
+  /* four totals in two rows on phones */
+  .totals.t4 { grid-template-columns: repeat(4, minmax(0,1fr)); }
+  @media (max-width: 480px) {
+    .totals.t4 { grid-template-columns: 1fr 1fr; }
+    .t4 .total:nth-child(3) { border-left: 0; }
+    .t4 .total:nth-child(n+3) { border-top: 1px solid var(--line); }
+  }
   @media (max-width: 860px) {
     .hero { grid-template-columns: 1fr; }
     .total { padding: 12px; }
@@ -504,10 +511,11 @@
       <p class="lede">Today's trading in XO Market's five-minute BTC rounds: who's in profit, who's racing ahead, and where you stand. Past days are in the leaderboard.</p>
       <div class="today">
         <div class="today-head"><b>Today so far</b><small id="totals-note"></small></div>
-        <div class="totals" aria-label="Today's totals">
+        <div class="totals t4" aria-label="Today's totals">
           <div class="total"><small>Traders</small><b class="num sk" id="t-traders">–</b></div>
           <div class="total"><small>Rounds</small><b class="num sk" id="t-rounds">–</b></div>
           <div class="total"><small>Volume</small><b class="num sk" id="t-volume">–</b></div>
+          <div class="total"><small>Best today</small><b class="num sk" id="t-best">–</b></div>
         </div>
       </div>
     </div>
@@ -900,6 +908,9 @@ function render() {
   setNum($("t-traders"), "t-traders", rows.length, "int", true);
   setNum($("t-rounds"), "t-rounds", days.todayRounds, "int", true);
   setNum($("t-volume"), "t-volume", rows.reduce((sum, r) => sum + r.vol, 0), "usd", true);
+  // the day's best result so far (the leader's PnL)
+  if (rows.length) { setNum($("t-best"), "t-best", rows[0].pnl, "money", true); $("t-best").className = `num ${cls(rows[0].pnl)}`; }
+  else { numStore.delete("t-best"); $("t-best").textContent = "–"; $("t-best").className = "num"; }
   showUpdated();
 
   // podium: today's top three
