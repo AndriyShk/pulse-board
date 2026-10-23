@@ -1690,7 +1690,7 @@ $("race-scale").onclick = (e) => { const b = e.target.closest("button"); if (!b)
   cv.addEventListener("click", (e) => { const h = hit(at(e)); if (h && !raceComp()) pick(h.u, false); });
   new IntersectionObserver(([en]) => {
     race.visible = en.isIntersecting;
-    if (race.visible && days && !race.played) racePlay(); else if (race.visible) raceKick();
+    if (race.visible) raceKick(); // the finished race; it replays only from the Replay button
   }, { threshold: 0.35 }).observe(cv);
   new ResizeObserver(raceKick).observe(cv.parentElement);
   document.fonts.ready.then(raceKick);
@@ -1953,7 +1953,7 @@ async function load() {
   if (u) { me = byName.get(u.toLowerCase().replace(/^@/, "")) || null; searched = true; if (!$("q").value) $("q").value = me ? me.u : u; }
   if (!viewSet) { viewSet = true; setView(days.event && view === "comp" ? "comp" : "today", false); loadOfficial(); }
   render();
-  if (race.visible && !race.played) racePlay();
+  raceKick();
 }
 let viewSet = false;
 load();
