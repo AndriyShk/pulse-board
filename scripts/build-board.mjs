@@ -308,6 +308,7 @@ if (comp && event.slug) {
       items.push(...d.items);
       if (!d.items.length || items.length >= (d.total || 0)) break;
     }
+    const detail = await getJSON(`${API}/contests/${encodeURIComponent(event.slug)}`).catch(() => null);
     state.official ??= {};
     const at = Math.floor(now / 1000);
     for (const it of items) {
@@ -327,13 +328,23 @@ if (comp && event.slug) {
     }
     comp.official = { spark, sparkTo: Math.min(now, evEnd) };
     console.log(`official board: ${items.length} traders`);
+    // XO's board as of the last run that read it. The page reads XO directly and falls back on this copy, so the final
+    // standings stay up if XO stops serving the board after the end. An empty answer never replaces a full one.
+    if (items.length) {
+      const keep = (o, keys) => Object.fromEntries(keys.filter((k) => o[k] !== undefined).map((k) => [k, o[k]]));
+      state.board = {
+        updatedAt: now,
+        detail: detail ? keep(detail, ["budgetCp", "budgetUsdc", "participantCount", "prizeBands", "minQualifyingVolumeUsdc", "minTradeUsdc", "eligibility"]) : state.board?.detail ?? null,
+        items: items.map((it) => keep(it, ["username", "profilePictureUrl", "pnlUsdc", "score", "volumeUsdc", "qualified", "rank"])),
+        official: comp.official,
+      };
+    }
 
     // ---------- 5d. volume XO would count, for traders not on its board ----------
     // XO's public board lists only qualified traders, so for everyone else we estimate the volume it counts the way it
     // does: their Pulse fills of at least the minimum size since the start (exact for anyone who joined before it).
     // Checked against XO's own "Counted volume" on 2026-10-20: 79.44 here, 79.42 there. Incremental: newest first,
     // stopping at the last fill already counted. state.cvol: username -> { v: volume, t: newest fill (ms), k: keys at t }
-    const detail = await getJSON(`${API}/contests/${encodeURIComponent(event.slug)}`).catch(() => null);
     const minFill = detail && detail.minTradeUsdc != null ? Number(detail.minTradeUsdc) : 5;
     state.cvol ??= {};
     const onBoard = new Set(items.filter((it) => it.qualified).map((it) => it.username.toLowerCase()));
@@ -357,6 +368,10 @@ if (comp && event.slug) {
     });
     comp.cvol = Object.fromEntries(contestants.filter((u) => state.cvol[u]).map((u) => [u, state.cvol[u].v]));
   } catch (e) { console.log("official board skipped:", e.message); }
+  if (state.board) {
+    comp.board = { updatedAt: state.board.updatedAt, detail: state.board.detail, items: state.board.items };
+    comp.official ??= state.board.official; // XO didn't answer this run: the chart keeps the last record
+  }
 }
 
 const listed = new Set([...Object.values(state.days).flatMap((rows) => rows.map(([u]) => u)), ...(comp ? comp.rows.map(([u]) => u) : [])]);

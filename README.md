@@ -48,6 +48,8 @@ flowchart LR
 - XO has no public Pulse leaderboard, so **the indexer** walks the Pulse rounds, collects who traded them and reads each trader's per-round PnL from their public portfolio. It ranks every UTC day and writes `data/days.json`, the only file the page reads. `state.json` keeps what was already fetched, so a normal run makes about 60 requests.
 - **The Action** runs every ~5 minutes and force-pushes the data to the `data` branch as a single commit. Data updates never redeploy the site, and the history never grows.
 - **The page** is one static `index.html` with no build step and no dependencies. During a contest it also reads XO's official board straight from XO once a minute.
+  Each indexer run also keeps a copy of that board in `days.json`; the page shows it until XO answers, and keeps it if XO stops
+  serving the board after the end, so the final standings stay up.
 
 ## What counts
 

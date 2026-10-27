@@ -97,6 +97,9 @@
   }
   /* in the competition view the round card keeps its own height instead of matching the contest card */
   :root[data-view="comp"] .live { align-self: start; justify-content: flex-start; gap: 18px; }
+  /* once it's over the competition view is results only: no live round, the contest card on its own */
+  :root[data-view="comp"][data-final] .live { display: none; }
+  :root[data-view="comp"][data-final] .hero { grid-template-columns: minmax(0,1fr); }
   /* the contest's rules, from XO */
   .rules-card { margin-top: 16px; padding: 16px 20px; }
   .rules-card h2 { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
@@ -618,8 +621,8 @@
     <div class="race-legend"><span><i class="dash"></i>$0 line</span>
       <span class="v-comp tagkey" hidden><b class="tk ok">In the prizes</b></span>
       <span class="v-comp tagkey" hidden><b class="tk near">Behind 10th</b></span>
-      <span class="v-comp tagkey" hidden><b class="tk need">More volume to qualify</b></span>
-      <span class="v-comp tagkey" hidden><b class="tk out">Not ranked on XO yet</b></span></div>
+      <span class="v-comp tagkey" id="key-need" hidden><b class="tk need">More volume to qualify</b></span>
+      <span class="v-comp tagkey" hidden><b class="tk out" id="key-out">Not ranked on XO yet</b></span></div>
   </section>
 
   <section class="card find v-today" id="find">
@@ -1291,8 +1294,9 @@ function compRows() {
 function tickComp() {
   if (!days || !days.event || view !== "comp") return;
   const ev = days.event, ph = compPhase(), t = Date.now();
-  $("c-left-label").textContent = ph === "before" ? "Starts in" : ph === "live" ? (ev.end ? "Ends in" : "Running") : "Ended";
-  $("c-left").textContent = ph === "before" ? leftText(ev.start - t) : ph === "live" ? (ev.end ? leftText(ev.end - t) : "–") : dayUTC(ev.end);
+  const first = ph === "after" && offRows().find((r) => r.qualified && r.rank === 1);
+  $("c-left-label").textContent = ph === "before" ? "Starts in" : ph === "live" ? (ev.end ? "Ends in" : "Running") : "Winner";
+  $("c-left").textContent = ph === "before" ? leftText(ev.start - t) : ph === "live" ? (ev.end ? leftText(ev.end - t) : "–") : first ? first.u : "–";
   $("c-meter").style.width = ph === "before" ? "0%" : ph === "after" || !ev.end ? "100%" : `${Math.min(100, ((t - ev.start) / (ev.end - ev.start)) * 100).toFixed(2)}%`;
   if (ph !== lastPhase) { lastPhase = ph; render(); } // the start or the end just passed
 }
@@ -1301,9 +1305,13 @@ let lastPhase = null;
 // Read straight from XO (its API answers any site) once a minute. Only traders who joined are on it, scored by XO.
 let OFF = null;
 const OFF_API = (slug) => "https://api-mainnet.xo.market/api/contests/" + encodeURIComponent(slug);
+// The indexer keeps a copy of XO's board as of its last run (`event.board`): shown until XO answers, and kept when XO
+// fails or comes back empty, so the final standings stay up if XO stops serving the board after the end.
+const offSnap = (ev) => ev.board && ev.board.items && ev.board.items.length ? { detail: ev.board.detail || {}, items: ev.board.items, updatedAt: ev.board.updatedAt } : null;
 async function loadOfficial() {
   const ev = days && days.event;
   if (!ev || !ev.slug) return;
+  if (!OFF && offSnap(ev)) { OFF = offSnap(ev); compCache = null; if (view === "comp") { render(); raceKick(); } }
   try {
     const get = (u) => fetch(u, { cache: "no-store" }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
     const base = OFF_API(ev.slug), [detail, first] = await Promise.all([get(base), get(base + "/leaderboard?page=1&pageSize=50")]);
@@ -1313,6 +1321,7 @@ async function loadOfficial() {
       if (!d.items || !d.items.length) break;
       items.push(...d.items);
     }
+    if (!items.length && offSnap(ev)) return;
     OFF = { detail, items, updatedAt: Date.parse(first.updatedAt) || Date.now() };
     compCache = null;
     if (view === "comp") { render(); raceKick(); }
@@ -1328,6 +1337,7 @@ const prizeFor = (rank) => { const b = OFF && (OFF.detail.prizeBands || []).find
 function offStatus(u) {
   if (!OFF) return null;
   const all = offRows(), r = all.find((x) => x.u.toLowerCase() === u.toLowerCase());
+  if (compPhase() === "after" && (!r || !r.qualified)) return { tone: "out", text: "–" }; // it's over: volume can't qualify anyone now
   const det = OFF.detail, minVol = det ? det.minQualifyingVolumeUsdc : 100;
   const paid = det ? Math.max(...(det.prizeBands || []).map((b) => b.rankTo), 0) : 10;
   // XO's public board lists only qualified traders; for the rest the indexer estimates the volume XO counts
@@ -1353,6 +1363,9 @@ function offRows() {
 function renderComp() {
   const ev = days.event, ph = compPhase();
   lastPhase = ph;
+  root.toggleAttribute("data-final", ph === "after");
+  $("key-need").hidden = view !== "comp" || ph === "after";
+  $("key-out").textContent = ph === "after" ? "Not ranked" : "Not ranked on XO yet";
   const range = `${fmtUTC(ev.start)} – ${ev.end ? fmtUTC(ev.end) : "TBA"}`;
   $("c-phase").textContent = { before: "Starts soon", live: "Live", after: "Final" }[ph];
   $("c-phase").className = "chip " + (ph === "after" ? "down" : "up");
@@ -1427,12 +1440,15 @@ function renderComp() {
   const tag = (tone, text) => `<b class="tk ${tone}">${text}</b>`;
   const status = (r) => {
     if (r.qualified) return prizeFor(r.rank) || tag("near", "outside the prizes");
+    if (ph === "after") return tag("out", "rank" in r && !("cv" in r) ? "didn't qualify" : "not ranked");
     const left = r.cv != null ? minVol - r.cv : r.vol != null && "rank" in r ? minVol - r.vol : null;
     return left != null && left > 0 ? tag("need", `≈$${Math.ceil(left)} more volume`) : tag("out", "not ranked on XO yet");
   };
   const volOf = (r) => ("cv" in r ? (r.cv != null ? "≈$" + Math.floor(r.cv) : "–") : money(r.vol, false));
   const name = (r) => `<span style="overflow:hidden;text-overflow:ellipsis">${esc(r.u)}</span>${r.v ? VER : ""}`;
-  const divider = (cols) => cols ? `<tr class="sep"><td colspan="5">Not ranked on XO yet: PnL since the start, volume XO would count (fills of ${det ? det.minTradeUsdc : 5} USDC or more)</td></tr>` : `<div class="msep">Not ranked on XO yet</div>`;
+  const divider = (cols) => ph === "after"
+    ? (cols ? `<tr class="sep"><td colspan="5">Not ranked on XO: PnL over the contest for reference, volume XO would have counted (fills of ${det ? det.minTradeUsdc : 5} USDC or more)</td></tr>` : `<div class="msep">Not ranked on XO</div>`)
+    : (cols ? `<tr class="sep"><td colspan="5">Not ranked on XO yet: PnL since the start, volume XO would count (fills of ${det ? det.minTradeUsdc : 5} USDC or more)</td></tr>` : `<div class="msep">Not ranked on XO yet</div>`);
   $("c-table").innerHTML = `<div class="tscroll"><table>
       <thead><tr><th>#</th><th>Trader</th><th>PnL</th><th>Counted volume</th><th>Prize</th></tr></thead>
       <tbody>${rows.map((r, i) => `${i === firstRest && i ? divider(true) : ""}<tr class="off${i >= firstRest ? " rest" : ""}">
