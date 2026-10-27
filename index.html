@@ -482,6 +482,9 @@
   .amt { white-space: nowrap; }
   .amt + .amt { margin-left: .6em; }
   #c-prizes .amt + .amt { margin-left: 0; } /* there a plus sits between them */
+  /* the emoji in front of a page title: tilted, with a slow nod */
+  .h-emoji { display: inline-block; margin-right: .2em; transform: rotate(-10deg); transform-origin: 50% 85%; animation: h-emoji 3.4s ease-in-out infinite; }
+  @keyframes h-emoji { 0%, 100% { transform: rotate(-10deg) translateY(0); } 50% { transform: rotate(6deg) translateY(-3px); } }
 </style>
 <script>
   // Vercel Web Analytics: page views only, no cookies. Skipped on localhost, where /_vercel/insights doesn't exist.
@@ -518,7 +521,7 @@
         <!-- exists only while a competition is set (config.json "event"): opens the competition view -->
         <button class="chip up ev go-comp" id="ev-name" hidden></button>
       </div>
-      <h1>Who's <em>up</em> on Pulse?</h1>
+      <h1><span class="h-emoji" aria-hidden="true">📈</span>Who's <em>up</em> on Pulse?</h1>
       <p class="lede">Today's trading in XO Market's five-minute BTC rounds: who's in profit, who's racing ahead, and where you stand. Past days are in the leaderboard.</p>
       <div class="today">
         <div class="today-head"><b>Today so far</b><small id="totals-note"></small></div>
@@ -1353,7 +1356,7 @@ function renderComp() {
   const range = `${fmtUTC(ev.start)} – ${ev.end ? fmtUTC(ev.end) : "TBA"}`;
   $("c-phase").textContent = { before: "Starts soon", live: "Live", after: "Final" }[ph];
   $("c-phase").className = "chip " + (ph === "after" ? "down" : "up");
-  $("c-title").innerHTML = esc(ev.name).replace(/\bPnL\b/, "<em>PnL</em>");
+  $("c-title").innerHTML = '<span class="h-emoji" aria-hidden="true">🏆</span>' + esc(ev.name).replace(/\bPnL\b/, "<em>PnL</em>");
   const span = ev.end ? Math.round((ev.end - ev.start) / 864e5) : 0, spanText = span === 14 ? "Two weeks" : span ? `${span} days` : "A run";
   $("c-lede").textContent = ph === "before"
     ? `${spanText} of BTC Up or Down 5m on Pulse, ranked by net PnL over the whole run. It starts ${whenLeft(ev.start)}: the leaderboard opens here with the first settled round.`
