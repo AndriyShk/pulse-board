@@ -69,7 +69,7 @@
   .views button { position: relative; z-index: 1; height: 30px; padding: 0 12px; font-size: 13px; }
   /* phones: a tighter bar so the name still fits beside the switch; only the narrowest screens drop it */
   @media (max-width: 440px) { .bar .wrap { gap: 8px; } .brand { gap: 7px; font-size: 15.5px; } .brand svg { width: 24px; height: 24px; } .views button { padding: 0 9px; font-size: 12.5px; } }
-  @media (max-width: 400px) { .views .trophy { display: none; } }
+  @media (max-width: 400px) { .views .v-emoji { display: none; } }
   @media (max-width: 345px) { .brand .bt { display: none; } }
   button.chip { border: 0; cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; }
   button.chip:hover { filter: brightness(.96); }
@@ -508,7 +508,7 @@
     <span class="sp"></span>
     <!-- the daily board and the competition are two views of the same page; the switch shows while a competition is set -->
     <div class="seg views" id="views" role="group" aria-label="View" hidden>
-      <button data-view="today" aria-pressed="true">Today</button><button data-view="comp" aria-pressed="false"><span class="trophy" aria-hidden="true">🏆 </span>Competition</button>
+      <button data-view="today" aria-pressed="true"><span class="v-emoji" aria-hidden="true">📈 </span>Today</button><button data-view="comp" aria-pressed="false"><span class="v-emoji" aria-hidden="true">🏆 </span>Competition</button>
     </div>
     <button class="icon-btn" id="theme" aria-label="Switch light / dark theme">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>
