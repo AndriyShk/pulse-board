@@ -910,6 +910,7 @@ function render() {
   const ev = days.event;
   document.querySelectorAll(".ev").forEach((el) => (el.hidden = !ev));
   $("views").hidden = !ev;
+  if (ev) movePill($("views"), '[aria-pressed="true"]'); // setView can run while the switch is still hidden, with nothing to measure
   if (!ev && view === "comp") setView("today", false);
   if (ev) { $("ev-name").textContent = `🏆 ${ev.name} · ${compPhaseLabel()}`; renderComp(); }
   $("how-window").textContent = "Everything on this page is today's trading, unless you pick another day in the leaderboard.";
@@ -1747,11 +1748,11 @@ $("race-scale").onclick = (e) => { const b = e.target.closest("button"); if (!b)
   new ResizeObserver(raceKick).observe(cv.parentElement);
   document.fonts.ready.then(raceKick);
   // the highlights are measured, so they are placed again whenever sizes can have changed
-  const placePills = () => { movePill($("race-n"), '[aria-pressed="true"]'); movePill($("race-scale"), '[aria-pressed="true"]'); if (!$("tabs").hidden) movePill($("tabs"), '.tab[aria-selected="true"]'); };
+  const placePills = () => { movePill($("race-n"), '[aria-pressed="true"]'); movePill($("race-scale"), '[aria-pressed="true"]'); if (!$("tabs").hidden) movePill($("tabs"), '.tab[aria-selected="true"]'); if (!$("views").hidden) movePill($("views"), '[aria-pressed="true"]'); };
   placePills();
   document.fonts.ready.then(placePills);
   const sized = new ResizeObserver(placePills);
-  for (const id of ["race-n", "race-scale", "tabs"]) sized.observe($(id));
+  for (const id of ["race-n", "race-scale", "tabs", "views"]) sized.observe($(id));
   addEventListener("resize", placePills);
 }
 
