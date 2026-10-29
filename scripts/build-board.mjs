@@ -165,7 +165,10 @@ async function refresh(key, all) {
   for (let page = 1; ; page++) {
     // /profiles/<name>/portfolio pages properly; /users/portfolio ignores `page` for Pulse
     const d = await getJSON(`${API}/profiles/${name}/portfolio?marketScope=onlyClobPulse&sortBy=createdAt&sortOrder=DESC&page=${page}&take=${take}`);
-    if (!d || !d.data) return; // renamed or deleted account
+    // renamed or deleted: the name is gone (a rename comes back under the new name), so its rounds go too, or the
+    // same trades would be ranked twice; a 404 that was only a hiccup heals on the next run, which reads them all again
+    if (!d) { s.r = {}; return; }
+    if (!d.data) return;
     if (page === 1 && !d.data.length) {
       // a private profile answers with an empty portfolio
       const p = await getJSON(`${API}/profiles/${name}`);
