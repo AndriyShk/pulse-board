@@ -508,7 +508,7 @@
     <span class="sp"></span>
     <!-- the daily board and the competition are two views of the same page; the switch shows while a competition is set -->
     <div class="seg views" id="views" role="group" aria-label="View" hidden>
-      <button data-view="today" aria-pressed="true"><span class="v-emoji" aria-hidden="true">📈 </span>Today</button><button data-view="comp" aria-pressed="false"><span class="v-emoji" aria-hidden="true">🏆 </span>Competition</button>
+      <button data-view="today" aria-pressed="true"><span class="v-emoji" aria-hidden="true">📈 </span>Today</button><button data-view="comp" aria-pressed="false"><span class="v-emoji" aria-hidden="true">🏆 </span>Contest</button>
     </div>
     <button class="icon-btn" id="theme" aria-label="Switch light / dark theme">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>
@@ -551,8 +551,8 @@
       </div>
       <div class="meter c-meter" id="c-meter-box"><i id="c-meter"></i></div>
       <div class="today" id="c-totals-box">
-        <div class="today-head"><b id="c-totals-title">Competition so far</b><small id="c-totals-note"></small></div>
-        <div class="totals" aria-label="Competition totals">
+        <div class="today-head"><b id="c-totals-title">Contest so far</b><small id="c-totals-note"></small></div>
+        <div class="totals" aria-label="Contest totals">
           <div class="total"><small>Joined</small><b class="num" id="c-traders">–</b></div>
           <div class="total"><small>On the board</small><b class="num" id="c-rounds">–</b></div>
           <div class="total"><small>Volume</small><b class="num" id="c-volume">–</b></div>
@@ -654,10 +654,10 @@
 
   <!-- the competition view -->
   <div class="sec-title v-comp" hidden><h2 id="c-pod-title">Top 3</h2><small id="c-pod-note"></small></div>
-  <section class="podium v-comp c-podium" id="c-podium" aria-label="Competition top three" hidden></section>
+  <section class="podium v-comp c-podium" id="c-podium" aria-label="Contest top three" hidden></section>
   <section class="card board v-comp" id="competition" hidden>
     <div class="board-head">
-      <h2 id="c-board-title">Competition leaderboard</h2>
+      <h2 id="c-board-title">Contest leaderboard</h2>
       <small id="c-period"></small>
       <span class="upd" id="c-upd"></span>
     </div>
@@ -666,7 +666,7 @@
     <div id="c-table"></div>
   </section>
   <section class="card how v-comp" hidden>
-    <h2>How the competition is counted</h2>
+    <h2>How the contest is counted</h2>
     <ul>
       <li id="c-how-window"></li>
       <li>This is XO's official contest board: only traders who pressed Join, scored by XO on their trades after joining.</li>
@@ -915,7 +915,7 @@ function render() {
   if (ev) { $("ev-name").textContent = `🏆 ${ev.name} · ${compPhaseLabel()}`; renderComp(); }
   $("how-window").textContent = "Everything on this page is today's trading, unless you pick another day in the leaderboard.";
   const rc = view === "comp" && !!ev;
-  $("race-title").textContent = rc ? (compPhase() === "after" ? "How the competition was won" : "Competition race") : "Today's race";
+  $("race-title").textContent = rc ? (compPhase() === "after" ? "How the contest was won" : "Contest race") : "Today's race";
   $("race-sub").textContent = rc ? "Every public trader's Pulse PnL since the contest started, plus private contestants' scores from XO's board, and where each one stands on it. Drag across the chart to rewind." : "Today's PnL of the leaders, round by round. Drag across the chart to rewind.";
   if (!rc) $("race").hidden = false;
   $("how-day").textContent = `A day on this board runs from ${dayStartLocal()} to ${dayStartLocal()} your time (00:00 to 24:00 UTC); today's numbers keep updating until it ends.`;
@@ -1375,7 +1375,7 @@ function renderComp() {
   $("c-lede").textContent = ph === "before"
     ? `${spanText} of BTC Up or Down 5m on Pulse, ranked by net PnL over the whole run. It starts ${whenLeft(ev.start)}: the leaderboard opens here with the first settled round.`
     : ph === "live" ? "XO's official board, live: traders who joined the contest, scored on their BTC Up or Down 5m trades since joining. The top 10 win prizes."
-    : "The competition is over. These are the final standings; XO Market confirms the winners and the prizes.";
+    : "The contest is over. These are the final standings; XO Market confirms the winners and the prizes.";
   // short dates in the fact, the time in its label when start and end share it (they do: 12:00 UTC)
   const sameTime = ev.end && new Date(ev.start).toISOString().slice(11, 16) === new Date(ev.end).toISOString().slice(11, 16);
   $("c-dates-label").textContent = sameTime ? `Dates · ${new Date(ev.start).toISOString().slice(11, 16)} UTC` : "Dates (UTC)";
@@ -1559,7 +1559,7 @@ function drawRace() {
   const set = raceSet();
   for (const x of set) if (!x.color) x.color = ink;
   race.hits = [];
-  if (!set.length) { c.fillStyle = ink2; c.font = F(500, 14); c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(raceComp() ? "The race starts with the competition's first settled round." : "Today's race starts with the first settled round.", W / 2, H / 2); return; }
+  if (!set.length) { c.fillStyle = ink2; c.font = F(500, 14); c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(raceComp() ? "The race starts with the contest's first settled round." : "Today's race starts with the first settled round.", W / 2, H / 2); return; }
 
   const narrow = W < 560;
   const tags = raceComp() && !!OFF; // XO-board tags beside the names

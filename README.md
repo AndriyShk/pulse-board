@@ -3,7 +3,7 @@
 **Live PnL leaderboard for [XO Market](https://beta.xo.market) Pulse, the five-minute "BTC Up or Down" rounds.**
 Who's in profit today, who's racing ahead, and where you stand, plus a live tracker for XO's trading contests.
 
-**→ [xo-pulse-board.vercel.app](https://xo-pulse-board.vercel.app)** · competition view: [`/#competition`](https://xo-pulse-board.vercel.app/#competition)
+**→ [xo-pulse-board.vercel.app](https://xo-pulse-board.vercel.app)** · contest view: [`/#competition`](https://xo-pulse-board.vercel.app/#competition)
 
 <p align="center">
   <img src="docs/today-light.jpg" alt="Pulse Board: today's race, live round and top 3" width="49%">
@@ -19,7 +19,7 @@ Who's in profit today, who's racing ahead, and where you stand, plus a live trac
 - **Find yourself**: type your XO username to see your rank. **Share my rank** makes a card image or a short video of your PnL line, ready for X.
 - Light and dark themes, phone-friendly, no cookies.
 
-**Competition** (switched on in `config.json`, opened with the **Today | Competition** switch)
+**Contest** (switched on in `config.json`, opened with the **Today | Contest** switch)
 - **XO's official board**, read live from XO: only traders who pressed Join, scored by XO on their trades since joining, with each one's prize.
 - **The race for everyone**: every public Pulse trader since the start, plus private contestants drawn from the scores XO publishes. A tag on each line says where they stand:
 
@@ -83,7 +83,7 @@ Node 18+, nothing to install.
 
 | Key | What it does |
 |---|---|
-| `event.enabled` | `false`: plain Pulse statistics, nothing mentions a competition. `true`: adds the **Competition** view. |
+| `event.enabled` | `false`: plain Pulse statistics, nothing mentions a contest. `true`: adds the **Contest** view. |
 | `event.name`, `event.prizes` | Title and prize line, e.g. `"3K USDC + 30K CP"`. |
 | `event.url`, `event.slug` | XO's contest page and id. With a `slug` the view shows XO's official board, rules and prizes. |
 | `start`, `end` | ISO dates (UTC). The window reaches back to `start` while an event is set. |
