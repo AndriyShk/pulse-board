@@ -3,7 +3,7 @@
 **Live PnL leaderboard for [XO Market](https://beta.xo.market) Pulse, the five-minute "BTC Up or Down" rounds.**
 Who's in profit today, who's racing ahead, and where you stand, plus a live tracker for XO's trading contests.
 
-**→ [xo-pulse-board.vercel.app](https://xo-pulse-board.vercel.app)** · contest view: [`/#competition`](https://xo-pulse-board.vercel.app/#competition)
+**→ [xo-pulse-board.vercel.app](https://xo-pulse-board.vercel.app)** · contest view: [`/#contest`](https://xo-pulse-board.vercel.app/#contest)
 
 <p align="center">
   <img src="docs/today-light.jpg" alt="Pulse Board: today's race, live round and top 3" width="49%">

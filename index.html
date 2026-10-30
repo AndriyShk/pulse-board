@@ -1259,10 +1259,11 @@ setInterval(pollOdds, 5000); // the answer is cached for 5 s, so polling faster 
 document.addEventListener("visibilitychange", () => { if (!document.hidden) pollOdds(); });
 
 // ---------- competition view ----------
-// The daily board and the competition are two views of one page: the switch in the top bar (and #competition in the address)
+// The daily board and the competition are two views of one page: the switch in the top bar (and #contest in the address)
 // picks one. Before the start the view counts down; while it runs it ranks every round since the start; after the end it's final.
-let view = location.hash === "#competition" ? "comp" : "today", compTab = "pnl", compShown = 20;
-// a #competition link shows the competition's blocks straight away, not the daily ones first (undone if no competition is set)
+// #competition is the old address: links already posted keep working
+let view = location.hash === "#contest" || location.hash === "#competition" ? "comp" : "today", compTab = "pnl", compShown = 20;
+// a #contest link shows the contest's blocks straight away, not the daily ones first (undone if no competition is set)
 if (view === "comp") { root.dataset.view = "comp"; document.querySelectorAll(".v-today").forEach((el) => (el.hidden = true)); document.querySelectorAll(".v-comp").forEach((el) => (el.hidden = false)); }
 function setView(v, scroll = true) {
   view = v; compCache = null; race.played = false;
@@ -1271,7 +1272,7 @@ function setView(v, scroll = true) {
   document.querySelectorAll(".v-comp").forEach((el) => (el.hidden = v !== "comp"));
   for (const b of $("views").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.view === v));
   movePill($("views"), '[aria-pressed="true"]');
-  history.replaceState(null, "", location.pathname + (v === "comp" ? "#competition" : ""));
+  history.replaceState(null, "", location.pathname + (v === "comp" ? "#contest" : ""));
   if (scroll) scrollTo({ top: 0, behavior: noMotion() ? "auto" : "smooth" });
   if (days) render();
   if (v === "today") raceKick();
