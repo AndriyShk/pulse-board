@@ -480,7 +480,7 @@
     main.wrap { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
     .race-box { height: 380px; }
   }
-  @media (max-width: 380px) { #race-tx { display: none; } }
+  @media (max-width: 560px) { #race-tx, .race-acts .tx { display: none; } } /* phones: icons only; the buttons keep their aria-labels */
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
   /* the CP and USDC coins beside prize amounts */
   .coin { width: 1.1em; height: 1.1em; vertical-align: -.2em; margin-right: .3em; flex: none; }
