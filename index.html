@@ -480,7 +480,19 @@
     main.wrap { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
     .race-box { height: 380px; }
   }
-  @media (max-width: 560px) { #race-tx, .race-acts .tx { display: none; } } /* phones: icons only; the buttons keep their aria-labels */
+  /* phones: icons only (the buttons keep their aria-labels), everything on one line */
+  @media (max-width: 560px) {
+    #race-tx, .race-acts .tx { display: none; }
+    .race-ctl { flex-wrap: nowrap; }
+    .race-acts { gap: 4px; }
+    .race-ctl .race-acts .btn { width: 30px; padding: 0; flex: none; }
+  }
+  @media (max-width: 430px) {
+    #race-n .pre { display: none; }
+    #race-n button, #race-scale button { padding: 0 6px; }
+    .race-ctl { gap: 4px; }
+  }
+  @media (max-width: 340px) { #race-n button, #race-scale button { padding: 0 4px; } .race-ctl .race-acts .btn { width: 28px; } }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
   /* the CP and USDC coins beside prize amounts */
   .coin { width: 1.1em; height: 1.1em; vertical-align: -.2em; margin-right: .3em; flex: none; }
