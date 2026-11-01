@@ -1932,7 +1932,7 @@ async function openRaceShare(mode) {
   if (!days) return;
   share.race = true;
   $("share").showModal();
-  $("s-mode").hidden = !CLIP_TYPE || noMotion();
+  $("s-mode").hidden = $("s-x").hidden = true; // Photo and Video are separate buttons here, and the file is only saved
   // the pictures come first: an image from another site would stop the canvas from being saved, and a video can't add them later
   shareReady(false);
   sizeCard();
@@ -2005,6 +2005,7 @@ async function openShare() {
   if (!me) return;
   share.race = false;
   $("share").showModal();
+  $("s-x").hidden = false;
   $("s-mode").hidden = !CLIP_TYPE || noMotion();
   share.face = null;
   setShareMode("image");
