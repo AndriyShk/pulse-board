@@ -777,8 +777,9 @@ const plural = (n) => (n === 1 ? "round" : "rounds");
 const winRate = (r) => (r.wins + r.losses ? r.wins / (r.wins + r.losses) : 0);
 const wrText = (r) => (r.wins + r.losses ? `${(winRate(r) * 100).toFixed(0)}%` : "–"); // no decided round yet: no rate
 
-const avatarUrl = (a, size = "bigger") => (!a ? "" : (a.startsWith("http") ? a : "https://pbs.twimg.com/profile_images/" + a).replace("_normal.", `_${size}.`));
-const avatar = (r, k = "") => `<span class="av ${k}" style="background:${/^#[0-9a-f]{6}$/i.test(r.c) ? r.c : "#a293ff"}">${esc((r.u[0] || "?").toUpperCase())}${r.a ? `<img src="${esc(avatarUrl(r.a))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}</span>`;
+// X's blank default picture lives on another host (and is only a silhouette): the letter stands in for it
+const avatarUrl = (a, size = "bigger") => (!a || a.includes("/default_profile_images/") ? "" : (a.startsWith("http") ? a : "https://pbs.twimg.com/profile_images/" + a).replace("_normal.", `_${size}.`));
+const avatar = (r, k = "") => `<span class="av ${k}" style="background:${/^#[0-9a-f]{6}$/i.test(r.c) ? r.c : "#a293ff"}">${esc((r.u[0] || "?").toUpperCase())}${avatarUrl(r.a) ? `<img src="${esc(avatarUrl(r.a))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}</span>`;
 const VER = '<svg class="ver" viewBox="0 0 24 24" aria-label="Verified"><path fill="currentColor" d="M12 2l2.4 2.1 3.2-.3.9 3.1 2.7 1.7-1.2 3 1.2 3-2.7 1.7-.9 3.1-3.2-.3L12 22l-2.4-2.1-3.2.3-.9-3.1-2.7-1.7 1.2-3-1.2-3 2.7-1.7.9-3.1 3.2.3z"/><path d="m8.5 12.2 2.4 2.4 4.6-4.9" fill="none" stroke="var(--card)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 function spark(points, w, h) {
@@ -1466,7 +1467,7 @@ function renderComp() {
     const left = r.cv != null ? minVol - r.cv : r.vol != null && "rank" in r ? minVol - r.vol : null;
     return left != null && left > 0 ? tag("need", `≈$${Math.ceil(left)} more volume`) : tag("out", "not ranked on XO yet");
   };
-  const volOf = (r) => ("cv" in r ? (r.cv != null ? "≈$" + Math.floor(r.cv) : "–") : money(r.vol, false));
+  const volOf = (r) => ("cv" in r ? (r.cv != null ? "≈$" + Math.floor(r.cv).toLocaleString("en-US") : "–") : money(r.vol, false));
   const name = (r) => `<span style="overflow:hidden;text-overflow:ellipsis">${esc(r.u)}</span>${r.v ? VER : ""}`;
   const divider = (cols) => ph === "after"
     ? (cols ? `<tr class="sep"><td colspan="5">Not ranked on XO: PnL over the contest for reference, volume XO would have counted (fills of ${det ? det.minTradeUsdc : 5} USDC or more)</td></tr>` : `<div class="msep">Not ranked on XO</div>`)
@@ -1787,7 +1788,7 @@ const CLIP = { lead: 500, draw: 5200, hold: 1800 }; // ms: before the line start
 // X takes MP4; browsers that can only record WebM still get a file to keep
 const CLIP_TYPE = window.MediaRecorder ? ["video/mp4;codecs=avc1.42E01E", "video/mp4", "video/webm;codecs=vp9", "video/webm"].find((t) => MediaRecorder.isTypeSupported(t)) : null;
 const share = { mode: "image", face: null, png: null, video: null, rec: null, run: 0, race: false, faces: new Map() }; // race: the card shows the race, not the picked trader. run: bumped to stop a clip that is no longer wanted
-const loadImg = async (url) => { try { const r = await fetch(url, { referrerPolicy: "no-referrer" }); if (!r.ok) return null; return await createImageBitmap(await r.blob()); } catch { return null; } };
+const loadImg = async (url) => { if (!url) return null; try { const r = await fetch(url, { referrerPolicy: "no-referrer" }); if (!r.ok) return null; return await createImageBitmap(await r.blob()); } catch { return null; } };
 const toneOf = (v) => ({ pos: "pos", neg: "neg" }[cls(v)]); // undefined at break-even
 
 // what the image and the video share: page, card, header, site address. Returns the context and the palette.
